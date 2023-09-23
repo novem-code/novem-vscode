@@ -1,37 +1,69 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import axios from 'axios'
+import axios from 'axios';
 import * as vscode from 'vscode';
 
+// Import the functions from config.ts
+import { getCurrentConfig, UserConfig } from './config';
+
 class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
-    getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
+  private context: vscode.ExtensionContext;
+
+  constructor(context: vscode.ExtensionContext) {
+      this.context = context;
+  }
+  async getTreeItem(element: vscode.TreeItem): Promise<vscode.TreeItem> {
         return element;
     }
-    getChildren(element?: vscode.TreeItem): Thenable<vscode.TreeItem[]> {
-        const token = vscode.workspace.getConfiguration('novem').get('auth_token');
-        if (!token)
-            return Promise.resolve([new vscode.TreeItem("Please configure novem.auth_token")]);
+
+    async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
+        // Get our token from the user config
+        //const [confExists, conf] = await getCurrentConfig();
+
+        const conf = this.context.globalState.get('userConfig') as UserConfig;
+        const token = conf?.token;
+
+        if (!token) {
+            return [new vscode.TreeItem("Please setup novem by running `novem --init`")];
+        }
 
         return axios
-          .get("https://api.novem.no/v1/vis/plots", {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-          .then((response) => {
-            console.log(response);
-            return response.data.map((each: any) => new vscode.TreeItem(each.name));
-          })
-          .catch((error) => {
-            console.log("Error!", !error);
-            return [new vscode.TreeItem("Error loading plots")];
-          });
+            .get("https://api.novem.no/v1/vis/plots", {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+            .then((response) => {
+                console.log(response);
+                return response.data.map((each: any) => new vscode.TreeItem(each.name));
+            })
+            .catch((error) => {
+                console.log("Error!", !error);
+                return [new vscode.TreeItem("Error loading plots")];
+            });
     }
 }
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "novem-vscode" is now active!');
+
+  // Get our token from the user config
+  const [confExists, conf] = await getCurrentConfig();
+  const token = conf?.token;
+
+  // Let's grab our profile information
+  const profile = (await axios
+  .get("https://api.novem.no/v1/admin/profile/overview", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json'
+
+    },
+  }))?.data;
+
+  // Store user information
+  context.globalState.update('userConfig', conf);
+  context.globalState.update('userProfile', profile);
 
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
@@ -45,7 +77,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(disposable);
 
-	vscode.window.registerTreeDataProvider('novem-sidebar', new NovemSideBarProvider());
+	vscode.window.registerTreeDataProvider('novem-sidebar', new NovemSideBarProvider(context));
 }
 
 // This method is called when your extension is deactivated
