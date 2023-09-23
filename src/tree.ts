@@ -5,36 +5,68 @@ import { UserConfig } from './config';
 
 export class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private context: vscode.ExtensionContext;
-    private type: String;
+    private type: string;
   
-    constructor(context: vscode.ExtensionContext, type:String) {
+    constructor(context: vscode.ExtensionContext, type: string) {
         this.context = context;
         this.type = type;
     }
-    async getTreeItem(element: vscode.TreeItem): Promise<vscode.TreeItem> {
-          return element;
-      }
-  
-      async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
 
-          const conf = this.context.globalState.get('userConfig') as UserConfig;
-          const token = conf?.token;
+    async getTreeItem(element: vscode.TreeItem): Promise<vscode.TreeItem> {
+        return element;
+    }
   
-          if (!token) {
-              return [new vscode.TreeItem("Please setup novem by running `novem --init`")];
-          }
+    async getChildren(element?: MyTreeItem): Promise<vscode.TreeItem[]> {
+        const conf = this.context.globalState.get('userConfig') as UserConfig;
+        const token = conf?.token;
   
-          return axios
-              .get(`https://api.novem.no/v1/vis/${this.type}`, {
-                  headers: { Authorization: `Bearer ${token}` },
-              })
-              .then((response) => {
-                  console.log(response);
-                  return response.data.map((each: any) => new vscode.TreeItem(each.name));
-              })
-              .catch((error) => {
-                  console.log("Error!", !error);
-                  return [new vscode.TreeItem("Error loading plots")];
-              });
-      }
-  }
+        if (!token) {
+            return [new vscode.TreeItem("Please setup novem by running `novem --init`")];
+        }
+
+        // Determine the URL to fetch from
+        let url = `https://api.novem.no/v1/vis/${this.type}`;
+        if (element && element.type === 'dir') {
+            url += `/${element.name}`;
+        }
+
+        try {
+            const response = await axios.get(url, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            // Filter items by type and sort them
+            return response.data
+                .filter((each: any) => ['file', 'dir'].includes(each.type))
+                .sort((a: any, b: any) => {
+                    // Sort by type first (directories come first)
+                    if (a.type !== b.type) {
+                        return a.type === 'dir' ? -1 : 1;
+                    }
+                    // If types are the same, sort alphabetically by name
+                    return a.name.localeCompare(b.name);
+                })
+                .map((each: any) => new MyTreeItem(each.name, each.type));
+        } catch (error) {
+            console.error("Error!", error);
+            return [new vscode.TreeItem("Error loading plots")];
+        }
+    }
+}
+
+class MyTreeItem extends vscode.TreeItem {
+    constructor(public readonly name: string, public readonly type: string) {
+        super(name, type === 'dir' ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
+
+        // Set the icon based on type
+        if (type === 'file') {
+            this.iconPath = new vscode.ThemeIcon('file');
+        } else if (type === 'dir') {
+            this.iconPath = new vscode.ThemeIcon('folder');
+        }
+    }
+
+    // This tooltip can be enhanced further
+    tooltip = this.type === 'file' ? `${this.name} (file)` : `${this.name} (directory)`;
+    description = this.type;
+}
