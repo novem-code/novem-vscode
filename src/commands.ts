@@ -11,7 +11,44 @@ To have a modicum of control over naming conventions in the different ways they 
 create a bunch of duplicates and filter them in the package.json file...
 
 Anyway, if someone has a better solution I'm ALL IN.
+
+Below follows a list of commands that we should implement and their stauts
+
+Command Pallete:
+[ ] - View novem profile page (custom webview)
+
+[ ] - Create novem plot by name
+[ ] - Delete novem plot by name
+[ ] - Edit novem plot by name (data file)
+[ ] - View novem plot by name (custom webview of url)
+
+[ ] - Create novem mail by name
+[ ] - Delete novem mail by name
+[ ] - Edit novem mail by name (content file)
+[ ] - View novem mail by name (custom webview of url)
+
+
+Context menu Plot Top level:
+[ ] - Create
+[ ] - Refresh           -- refresh the treeview
+
+Context menu Plot:
+[ ] - Open              -- in vscode (webview)
+[ ] - Open (Browser)    -- run system command to open url
+
+[ ] - Delete            -- delete plot
+
+Context menu Mail:
+[ ] - Open              -- in vscode webview)
+[ ] - Open (Browser)    -- run system command to open url
+
+[ ] - Send              -- Send e-mail
+[ ] - Test (Mail)       -- Send test mail
+
+[ ] - Delete            -- delete plot
+
 */
+
 import axios from 'axios';
 import * as vscode from 'vscode';
 
@@ -19,12 +56,8 @@ import { NovemSideBarProvider, MyTreeItem } from './tree';
 
 export function setupCommands(context: vscode.ExtensionContext){
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
+
 	let disposable = vscode.commands.registerCommand('novem.profile', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
 		vscode.window.showInformationMessage('Hello World from novem!');
 
 	});
