@@ -6,9 +6,11 @@ import { getCurrentConfig, UserConfig } from './config';
 
 class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private context: vscode.ExtensionContext;
+  private type: String;
 
-  constructor(context: vscode.ExtensionContext) {
+  constructor(context: vscode.ExtensionContext, type:String) {
       this.context = context;
+      this.type = type;
   }
   async getTreeItem(element: vscode.TreeItem): Promise<vscode.TreeItem> {
         return element;
@@ -26,7 +28,7 @@ class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
         }
 
         return axios
-            .get("https://api.novem.no/v1/vis/plots", {
+            .get(`https://api.novem.no/v1/vis/${this.type}`, {
                 headers: { Authorization: `Bearer ${token}` },
             })
             .then((response) => {
@@ -77,7 +79,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(disposable);
 
-	vscode.window.registerTreeDataProvider('novem-sidebar', new NovemSideBarProvider(context));
+	vscode.window.registerTreeDataProvider('novem-plots', new NovemSideBarProvider(context, 'plots'));
+    vscode.window.registerTreeDataProvider('novem-mails', new NovemSideBarProvider(context, 'mails'));
 }
 
 // This method is called when your extension is deactivated

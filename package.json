@@ -18,11 +18,30 @@
         "title": "Hello World"
       }
     ],
-    "views": {
-      "explorer": [
+    "viewsContainers": {
+
+      "activitybar": [
         {
-          "id": "novem-sidebar",
-          "name": "Novem"
+          "id": "novem",
+          "title": "Novem",
+          "icon": "$(heart)"
+        }
+      ]
+    },
+
+    "views": {
+      "novem": [
+        {
+          "id": "novem-plots",
+          "name": "Plots"
+        },
+        {
+          "id": "novem-mails",
+          "name": "E-Mails"
+        },
+        {
+          "id": "novem-docs",
+          "name": "Documents"
         }
       ]
     }
