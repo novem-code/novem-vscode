@@ -1,6 +1,6 @@
 {
-  "name": "novem-vscode",
-  "displayName": "novem-vscode",
+  "name": "novem",
+  "displayName": "novem",
   "description": "Easy access to your novem graphs and data",
   "version": "0.0.1",
   "engines": {
@@ -14,8 +14,16 @@
   "contributes": {
     "commands": [
       {
-        "command": "novem-vscode.helloWorld",
-        "title": "Hello World"
+        "command": "novem-vscode.profile",
+        "title": "novem: Profile"
+      },
+      {
+        "command": "novem-vscode.createNovemPlot",
+        "title": "novem: Create Plot"
+      },
+      {
+        "command": "novem-vscode.deleteNovemPlot",
+        "title": "novem: Delete Plot"
       }
     ],
     "viewsContainers": {
@@ -23,7 +31,31 @@
       "activitybar": [
         {
           "id": "novem",
-          "title": "Novem",
+          "title": "novem",
+          "icon": "$(heart)"
+        }
+      ]
+    },
+
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "novem-vscode.deleteNovemPlot",
+          "when": "view == novem-plots && viewItem == plot-top",
+          "title" : "Delete Plot",
+          "icon": "$(heart)"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "novem-vscode.createNovemPlot",
+          "when": "view == novem-plots",
+          "title" : "Create Plot",
+          "icon": "$(heart)"
+        }, {
+          "command": "novem-vscode.deleteNovemPlot",
+          "when": "view == novem-plots && viewItem == plot-top",
+          "title" : "Delete Plot",
           "icon": "$(heart)"
         }
       ]

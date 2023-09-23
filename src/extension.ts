@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 
 // Import the functions from config.ts
 import { getCurrentConfig, UserConfig } from './config';
-import { NovemSideBarProvider } from './tree';
+import { NovemSideBarProvider, MyTreeItem } from './tree';
 
 import { NovemFSProvider } from './vfs';
 
@@ -35,12 +35,50 @@ export async function activate(context: vscode.ExtensionContext) {
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('novem-vscode.helloWorld', () => {
+	let disposable = vscode.commands.registerCommand('novem-vscode.profile', () => {
 		// The code you place here will be executed every time your command is executed
 		// Display a message box to the user
 		vscode.window.showInformationMessage('Hello World from novem-vscode!');
 
 	});
+
+	context.subscriptions.push(disposable);
+
+    context.subscriptions.push(vscode.commands.registerCommand('novem-vscode.createNovemPlot', async () => {
+        // Handle the context menu action for the item
+        
+        let plotId = await vscode.window.showInputBox({
+            prompt: 'Please provide the plot id to create:',
+            placeHolder: 'test_plot_1',
+            validateInput: (inputValue: string) => {
+                if (!/^[a-z0-9_]+$/.test(inputValue)) {
+                    return 'Only lowercase ASCII characters and underscores are allowed!';
+                }
+                return undefined;
+            }
+        });
+        
+        
+        vscode.window.showInformationMessage(`Trying to create new novem plot ${plotId}`);
+    }));
+
+    context.subscriptions.push(vscode.commands.registerCommand('novem-vscode.deleteNovemPlot', async (item: MyTreeItem) => {
+        // Handle the context menu action for the item
+        
+        let plotId  = await vscode.window.showInputBox({
+            prompt: 'Enter a value:',
+            placeHolder: 'e.g. john_doe',
+            validateInput: (inputValue: string) => {
+                if (!/^[a-z0-9_]+$/.test(inputValue)) {
+                    return 'Only lowercase ASCII characters and underscores are allowed!';
+                }
+                return undefined;
+            }
+        });
+        
+        
+        vscode.window.showInformationMessage(`Trying to delete ${plotId}`);
+    }));
 
 
     const fsProvider = new NovemFSProvider(context);
@@ -48,7 +86,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(fsRegistration);
 
-	context.subscriptions.push(disposable);
   
     context.subscriptions.push(vscode.commands.registerCommand('novem-vscode.openFile', async (path: string, type: string, languageId?: string) => {
         const uri = vscode.Uri.parse(`novem:${path}`);
@@ -61,6 +98,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
         vscode.window.showTextDocument(doc);
     }));
+
+   
+
 
 	vscode.window.registerTreeDataProvider('novem-plots', new NovemSideBarProvider(context, 'plots'));
     vscode.window.registerTreeDataProvider('novem-mails', new NovemSideBarProvider(context, 'mails'));
