@@ -3,44 +3,7 @@ import * as vscode from 'vscode';
 
 // Import the functions from config.ts
 import { getCurrentConfig, UserConfig } from './config';
-
-class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
-  private context: vscode.ExtensionContext;
-  private type: String;
-
-  constructor(context: vscode.ExtensionContext, type:String) {
-      this.context = context;
-      this.type = type;
-  }
-  async getTreeItem(element: vscode.TreeItem): Promise<vscode.TreeItem> {
-        return element;
-    }
-
-    async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
-        // Get our token from the user config
-        //const [confExists, conf] = await getCurrentConfig();
-
-        const conf = this.context.globalState.get('userConfig') as UserConfig;
-        const token = conf?.token;
-
-        if (!token) {
-            return [new vscode.TreeItem("Please setup novem by running `novem --init`")];
-        }
-
-        return axios
-            .get(`https://api.novem.no/v1/vis/${this.type}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
-            .then((response) => {
-                console.log(response);
-                return response.data.map((each: any) => new vscode.TreeItem(each.name));
-            })
-            .catch((error) => {
-                console.log("Error!", !error);
-                return [new vscode.TreeItem("Error loading plots")];
-            });
-    }
-}
+import { NovemSideBarProvider } from './tree';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
