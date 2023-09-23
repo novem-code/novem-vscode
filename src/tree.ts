@@ -46,7 +46,7 @@ export class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.Tree
                     // If types are the same, sort alphabetically by name
                     return a.name.localeCompare(b.name);
                 })
-                .map((each: any) => new MyTreeItem(each.name, each.type));
+                .map((each: any) => new MyTreeItem(each.name, each.type, each.permissions));
         } catch (error) {
             console.error("Error!", error);
             return [new vscode.TreeItem("Error loading plots")];
@@ -55,18 +55,36 @@ export class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.Tree
 }
 
 class MyTreeItem extends vscode.TreeItem {
-    constructor(public readonly name: string, public readonly type: string) {
+    constructor(
+        public readonly name: string, 
+        public readonly type: string, 
+        public readonly permissions: string[]
+    ) {
         super(name, type === 'dir' ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
 
-        // Set the icon based on type
+        // Set the icon and its color based on type and permissions
         if (type === 'file') {
-            this.iconPath = new vscode.ThemeIcon('file');
+            this.iconPath = this.createColoredIcon('file', permissions);
         } else if (type === 'dir') {
-            this.iconPath = new vscode.ThemeIcon('folder');
+            this.iconPath = this.createColoredIcon('folder', permissions);
         }
     }
 
     // This tooltip can be enhanced further
-    tooltip = this.type === 'file' ? `${this.name} (file)` : `${this.name} (directory)`;
+    tooltip = `${this.name} (${this.type}) - Permissions: ${this.permissions.join(', ')}`;
     description = this.type;
+
+    private createColoredIcon(iconType: string, permissions: string[]): vscode.ThemeIcon {
+        let color: vscode.ThemeColor | undefined;
+        
+        if (permissions.includes("w")) {
+            color = new vscode.ThemeColor('terminal.ansiGreen');
+        } else if (permissions.includes("r")) {
+            color = new vscode.ThemeColor('terminal.ansiYellow');
+        } else if (permissions.includes("d")) {
+            color = new vscode.ThemeColor('terminal.ansiRed');
+        }
+
+        return new vscode.ThemeIcon(iconType, color);
+    }
 }
