@@ -80,7 +80,7 @@ export class MyTreeItem extends vscode.TreeItem {
             //this.iconPath = this.createColoredIcon('file', permissions);
             this.desc = `[${this.permissionsToUnixStyle(this.permissions)}]`
             this.command = {
-                command: 'novem-vscode.openFile',
+                command: 'novem.openFile',
                 title: 'Open File',
                 arguments: [`/${this.visType}${this.path}`, this.type, doctype]
             };

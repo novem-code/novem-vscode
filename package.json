@@ -14,15 +14,15 @@
   "contributes": {
     "commands": [
       {
-        "command": "novem-vscode.profile",
+        "command": "novem.profile",
         "title": "novem: Profile"
       },
       {
-        "command": "novem-vscode.createNovemPlot",
+        "command": "novem.createNovemPlot",
         "title": "novem: Create Plot"
       },
       {
-        "command": "novem-vscode.deleteNovemPlot",
+        "command": "novem.deleteNovemPlot",
         "title": "novem: Delete Plot"
       }
     ],
@@ -40,7 +40,7 @@
     "menus": {
       "view/item/context": [
         {
-          "command": "novem-vscode.deleteNovemPlot",
+          "command": "novem.deleteNovemPlot",
           "when": "view == novem-plots && viewItem == plot-top",
           "title" : "Delete Plot",
           "icon": "$(heart)"
@@ -48,12 +48,12 @@
       ],
       "view/title": [
         {
-          "command": "novem-vscode.createNovemPlot",
+          "command": "novem.createNovemPlot",
           "when": "view == novem-plots",
           "title" : "Create Plot",
           "icon": "$(heart)"
         }, {
-          "command": "novem-vscode.deleteNovemPlot",
+          "command": "novem.deleteNovemPlot",
           "when": "view == novem-plots && viewItem == plot-top",
           "title" : "Delete Plot",
           "icon": "$(heart)"
