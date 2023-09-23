@@ -46,7 +46,7 @@ export class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.Tree
                     // If types are the same, sort alphabetically by name
                     return a.name.localeCompare(b.name);
                 })
-                .map((each: any) => new MyTreeItem(each.name, each.type, each.permissions, element ? element.path : ''));
+                .map((each: any) => new MyTreeItem(each.name, each.type, each.permissions, this.type, element ? element.path : ''));
         } catch (error) {
             console.error("Error!", error);
             return [new vscode.TreeItem("Error loading plots")];
@@ -55,24 +55,34 @@ export class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.Tree
 }
 
 class MyTreeItem extends vscode.TreeItem {
-    public readonly path: string;  // Store the full path here\
-
+    public readonly path: string;  // Store the full path here
+ 
     constructor(
         public readonly name: string,
         public readonly type: string,
         public readonly permissions: string[],
+        public readonly visType: string,
         parentPath: string = ''  // Parent's path, empty for root items
     ) {
         super(name, type === 'dir' ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
 
         this.path = `${parentPath}/${this.name}`;
+        this.visType = visType;
+
+        const doctype = 'markdown'
 
         // Set the icon and its color based on type and permissions
         if (type === 'file') {
             this.iconPath = this.createColoredIcon('file', permissions);
+            this.command = {
+                command: 'novem-vscode.openFile',
+                title: 'Open File',
+                arguments: [`/${this.visType}${this.path}`, this.type, doctype]
+            };
         } else if (type === 'dir') {
             this.iconPath = this.createColoredIcon('folder', permissions);
         }
+
     }
 
     // This tooltip can be enhanced further
@@ -92,4 +102,6 @@ class MyTreeItem extends vscode.TreeItem {
 
         return new vscode.ThemeIcon(iconType, color);
     }
+
+    
 }
