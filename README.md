@@ -1,2 +1,2 @@
-# novem-vscode
+# novem
 The novem visual studio code extension
