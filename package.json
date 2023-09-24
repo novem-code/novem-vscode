@@ -49,6 +49,10 @@
                 "command": "novem.refreshNovemMails",
                 "title": "Refresh Mails",
                 "icon": "$(refresh)"
+            },
+            {
+                "command": "novem.sendMail",
+                "title": "Send Mail"
             }
         ],
         "viewsContainers": {
@@ -72,14 +76,18 @@
                     "command": "novem.viewNovemMail",
                     "when": "view == novem-mails && viewItem == mail-top",
                     "title": "View Mail",
-                    "icon": "$(heart)",
+                    "group": "1_show"
+                },
+                {
+                    "command": "novem.sendMail",
+                    "when": "view == novem-mails && viewItem == mail-top",
+                    "title": "Send Mail",
                     "group": "1_show"
                 },
                 {
                     "command": "novem.deleteNovemPlot",
                     "when": "view == novem-plots && viewItem == plot-top",
                     "title": "Delete Plot",
-                    "icon": "$(heart)",
                     "group": "4_mainpulate"
                 }
             ],

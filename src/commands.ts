@@ -184,6 +184,26 @@ export function setupCommands(context: vscode.ExtensionContext) {
                     'userConfig',
                 ) as UserConfig;
 
+                let confirm = await vscode.window.showInputBox({
+                    prompt: `Please confirm that you want to delete "${item.name}" by typing DELETE`,
+                    placeHolder: 'type DELETE here',
+                    validateInput: (inputValue: string) => {
+                        if (!/^[DELETE]+$/.test(inputValue)) {
+                            return 'Only uppercase DELETE allowed, hit escape to ABORT';
+                        }
+                        return undefined;
+                    },
+                });
+
+                if (confirm !== 'DELETE') {
+                    if (confirm !== undefined) {
+                        vscode.window.showInformationMessage(
+                            `Action aborted, visualisation not deleted`,
+                        );
+                    }
+                    return;
+                }
+
                 await axios.delete(`${conf.api_root}vis/plots/${item.name}`, {
                     headers: {
                         Authorization: `Bearer ${conf.token}`,
@@ -191,7 +211,7 @@ export function setupCommands(context: vscode.ExtensionContext) {
                     },
                 });
 
-                vscode.window.showInformationMessage(`Deleted ${item.name}`);
+                vscode.window.showWarningMessage(`Deleted "${item.name}"`);
                 item.parent.refresh();
             },
         ),
