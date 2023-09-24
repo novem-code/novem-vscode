@@ -216,19 +216,4 @@ export function setupCommands(context: vscode.ExtensionContext) {
             },
         ),
     );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand(
-            'novem.deleteNovemPlotCtxt',
-            async (item: MyTreeItem) => {
-                // Handle the context menu action for the item
-
-                const plotId = item.name;
-
-                vscode.window.showInformationMessage(
-                    `Trying to delete ${plotId}`,
-                );
-            },
-        ),
-    );
 }
