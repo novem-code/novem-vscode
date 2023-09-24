@@ -1,52 +1,51 @@
-
 {
-  "name": "Novem Markdown",
-  "scopeName": "source.nv_markdown",
-  "fileTypes": ["nvm"],
-  "patterns": [
-      {
-          "name": "meta.section.nv_markdown",
-          "begin": "\\{\\{\\s*(vis|visualisations|callout|paragraph|para|author)\\s*",
-          "end": "\\}\\}",
-          "patterns": [
-              {
-                  "name": "punctuation.section.begin.nv_markdown",
-                  "match": "\\{\\{"
-              },
-              {
-                  "name": "punctuation.section.end.nv_markdown",
-                  "match": "\\}\\}"
-              },
-              {
-                  "name": "meta.yaml.nv_markdown",
-                  "begin": "(?<=\\{\\{\\s*(vis|visualisations|callout|paragraph|para|author)\\s*)",
-                  "end": "(?=\\}\\})",
-                  "contentName": "source.yaml",
-                  "patterns": [
-                      {
-                          "include": "source.yaml"
-                      }
-                  ]
-              }
-          ]
-      },
-      {
-          "name": "meta.section.end.nv_markdown",
-          "begin": "\\{\\{\\s*/(vis|visualisations|callout|paragraph|para|author)\\s*",
-          "end": "\\}\\}",
-          "patterns": [
-              {
-                  "name": "punctuation.section.begin.nv_markdown",
-                  "match": "\\{\\{"
-              },
-              {
-                  "name": "punctuation.section.end.nv_markdown",
-                  "match": "\\}\\}"
-              }
-          ]
-      },
-      {
-          "include": "text.html.markdown"
-      }
-  ]
+    "name": "Novem Markdown",
+    "scopeName": "source.nv_markdown",
+    "fileTypes": ["nvm"],
+    "patterns": [
+        {
+            "name": "meta.section.nv_markdown",
+            "begin": "\\{\\{\\s*(vis|visualisations|callout|paragraph|para|author)\\s*",
+            "end": "\\}\\}",
+            "patterns": [
+                {
+                    "name": "keyword.control.section.begin.nv_markdown",
+                    "match": "\\{\\{"
+                },
+                {
+                    "name": "keyword.control.section.end.nv_markdown",
+                    "match": "\\}\\}"
+                },
+                {
+                    "name": "meta.yaml.nv_markdown",
+                    "begin": "(?<=\\{\\{\\s*(vis|visualisations|callout|paragraph|para|author)\\s*)",
+                    "end": "(?=\\}\\})",
+                    "contentName": "source.yaml",
+                    "patterns": [
+                        {
+                            "include": "source.yaml"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "meta.section.end.nv_markdown",
+            "begin": "\\{\\{\\s*/(vis|visualisations|callout|paragraph|para|author)\\s*",
+            "end": "\\}\\}",
+            "patterns": [
+                {
+                    "name": "keyword.control.section.begin.nv_markdown", 
+                    "match": "\\{\\{"
+                },
+                {
+                    "name": "keyword.control.section.end.nv_markdown", 
+                    "match": "\\}\\}"
+                }
+            ]
+        },
+        {
+            "include": "text.html.markdown"
+        }
+    ]
 }
