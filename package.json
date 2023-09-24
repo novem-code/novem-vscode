@@ -28,11 +28,27 @@
             },
             {
                 "command": "novem.createNovemPlot",
-                "title": "Create Plot"
+                "title": "Create Plot",
+                "icon": "$(new-folder)"
+            },
+            {
+                "command": "novem.refreshNovemPlots",
+                "title": "Refresh Plots",
+                "icon": "$(refresh)"
             },
             {
                 "command": "novem.deleteNovemPlot",
                 "title": "Delete Plot"
+            },
+            {
+                "command": "novem.createNovemMail",
+                "title": "Create Mail",
+                "icon": "$(new-folder)"
+            },
+            {
+                "command": "novem.refreshNovemMails",
+                "title": "Refresh Mails",
+                "icon": "$(refresh)"
             }
         ],
         "viewsContainers": {
@@ -50,7 +66,6 @@
                     "command": "novem.viewNovemPlot",
                     "when": "view == novem-plots && viewItem == plot-top",
                     "title": "View Plot",
-                    "icon": "$(heart)",
                     "group": "1_show"
                 },
                 {
@@ -72,14 +87,22 @@
                 {
                     "command": "novem.createNovemPlot",
                     "when": "view == novem-plots",
-                    "title": "Create Plot",
-                    "icon": "$(heart)"
+                    "group": "navigation"
                 },
                 {
-                    "command": "novem.deleteNovemPlot",
-                    "when": "view == novem-plots && viewItem == plot-top",
-                    "title": "Delete Plot",
-                    "icon": "$(heart)"
+                    "command": "novem.refreshNovemPlots",
+                    "when": "view == novem-plots",
+                    "group": "navigation"
+                },
+                {
+                    "command": "novem.createNovemMail",
+                    "when": "view == novem-mails",
+                    "group": "navigation"
+                },
+                {
+                    "command": "novem.refreshNovemMails",
+                    "when": "view == novem-mails",
+                    "group": "navigation"
                 }
             ],
             "commandPalette": [
@@ -93,7 +116,10 @@
             "novem": [
                 {
                     "id": "novem-plots",
-                    "name": "Plots"
+                    "name": "Plots",
+                    "commands": [
+                        "novem.createNovemPlot"
+                    ]
                 },
                 {
                     "id": "novem-mails",
