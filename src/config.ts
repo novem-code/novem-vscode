@@ -124,6 +124,7 @@ export function getCurrentConfig(kwargs?: {
     return co;
 }
 
+// helpful icon lookup: https://microsoft.github.io/vscode-codicons/dist/codicon.html
 export function typeToIcon(visType: string, pt?: string) {
     if (pt === 'm') return 'mail';
 
@@ -138,6 +139,7 @@ export function typeToIcon(visType: string, pt?: string) {
         mtable: 'table',
         pie: 'pie-chart',
         donut: 'pie-chart',
+        scatter: 'graph-scatter',
         text: 'book',
     };
 
