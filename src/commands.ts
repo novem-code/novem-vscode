@@ -130,6 +130,92 @@ const createViewFunction = (context: vscode.ExtensionContext, type: String) => {
     };
 };
 
+// Open a novem vis inside vscode
+const createViewForUserFunction = (
+    context: vscode.ExtensionContext,
+    type: String,
+) => {
+    const profile = context.globalState.get('userProfile') as UserProfile;
+    const conf = context.globalState.get('userConfig') as UserConfig;
+    const token = conf?.token;
+    const apiRoot = conf?.api_root;
+
+    const uname = profile?.user_info?.username;
+    const pt = type[0];
+
+    return async () => {
+        // Let's grab our profile information
+
+        let username = await vscode.window.showInputBox({
+            prompt: 'Please provide the @username to view:',
+            placeHolder: '@novem_demo',
+            validateInput: (inputValue: string) => {
+                if (!/^@[a-z0-9_]+$/.test(inputValue)) {
+                    return 'Username must start with @ and only lowercase alphanumeric characters and underscores are allowed!';
+                }
+                return undefined;
+            },
+        });
+
+        let visualisations = []
+        try {
+            visualisations = (
+                await axios.get(`${apiRoot}u/${username?.slice(1)}/${pt}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: 'application/json',
+                    },
+                })
+            )?.data;
+        } catch (error) {
+            return;
+        }
+
+        const options = visualisations.map((item: VisInfo) => ({
+            label: `$(${typeToIcon(item.type, pt)}) ${item.name}`,
+            description: item.id,
+            detail: item.summary,
+        }));
+
+        interface QuickPickItem {
+            label: string;
+            description: string;
+            detail: string;
+            // ... any other properties you expect ...
+        }
+
+        const uriMap: { [key: string]: string } = visualisations.reduce(
+            (acc: { [key: string]: string }, item: VisInfo) => {
+                acc[item.id] = item.uri;
+                return acc;
+            },
+            {},
+        );
+
+        const snMap: { [key: string]: string } = visualisations.reduce(
+            (acc: { [key: string]: string }, item: VisInfo) => {
+                acc[item.id] = item.shortname;
+                return acc;
+            },
+            {},
+        );
+
+        let selectedItem = undefined;
+
+        // Present choices
+        selectedItem = (await vscode.window.showQuickPick(options, {
+            placeHolder: 'Select an option...',
+        })) as QuickPickItem | undefined;
+
+        if (selectedItem) {
+            let visId = selectedItem.description;
+            let uri = uriMap[visId];
+            let sn = snMap[visId];
+            createNovemBrowser(visId, sn, uri);
+        }
+    };
+};
+
 const createPlot = (token: String, plotId: String) => {
     console.log(`Creating new plot ${plotId}`);
 };
@@ -145,6 +231,12 @@ export function setupCommands(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand(
             'novem.viewNovemMail',
             createViewFunction(context, 'mails'),
+        ),
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.viewNovemPlotForUser',
+            createViewForUserFunction(context, 'plots'),
         ),
     );
 
