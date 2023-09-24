@@ -31,7 +31,7 @@
       },
       {
         "command": "novem.deleteNovemPlot",
-        "title": "novem: Delete Plot"
+        "title": "Delete Plot"
       }
     ],
     "viewsContainers": {
@@ -79,6 +79,12 @@
           "when": "view == novem-plots && viewItem == plot-top",
           "title": "Delete Plot",
           "icon": "$(heart)"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "novem.deleteNovemPlot",
+          "when": "false"
         }
       ]
     },

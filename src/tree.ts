@@ -12,6 +12,14 @@ export class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.Tree
         this.type = type;
     }
 
+    // implement onDidChangeTreeData
+    private _onDidChangeTreeData: vscode.EventEmitter<MyTreeItem | undefined | null | void> = new vscode.EventEmitter<MyTreeItem | undefined | null | void>();
+    readonly onDidChangeTreeData: vscode.Event<MyTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+
+    refresh(): void {
+        this._onDidChangeTreeData.fire();
+    }
+
     async getTreeItem(element: vscode.TreeItem): Promise<vscode.TreeItem> {
         return element;
     }
@@ -47,7 +55,7 @@ export class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.Tree
                     // If types are the same, sort alphabetically by name
                     return a.name.localeCompare(b.name);
                 })
-                .map((each: any) => new MyTreeItem(each.name, each.type, each.permissions, this.type, element ? element.path : ''));
+                .map((each: any) => new MyTreeItem(this, each.name, each.type, each.permissions, this.type, element ? element.path : ''));
         } catch (error) {
             console.error("Error!", error);
             return [new vscode.TreeItem("Error loading plots")];
@@ -62,6 +70,7 @@ export class MyTreeItem extends vscode.TreeItem {
     public readonly desc: string;
 
     constructor(
+        public readonly parent: NovemSideBarProvider,
         public readonly name: string,
         public readonly type: string,
         public readonly permissions: string[],

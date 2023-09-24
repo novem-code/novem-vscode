@@ -170,26 +170,36 @@ export function setupCommands(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage(`Trying to create new novem plot ${plotId}`);
     }));
 
-    context.subscriptions.push(vscode.commands.registerCommand('novem.deleteNovemPlot', async (item: MyTreeItem) => {
-        // Handle the context menu action for the item
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.deleteNovemPlot',
+            async (item: MyTreeItem) => {
+                // Handle the context menu action for the item
+                const profile = context.globalState.get(
+                    'userProfile',
+                ) as UserProfile;
+                const conf = context.globalState.get(
+                    'userConfig',
+                ) as UserConfig;
 
-        let plotId = await vscode.window.showInputBox({
-            prompt: 'Enter a value:',
-            placeHolder: 'e.g. john_doe',
-            validateInput: (inputValue: string) => {
-                if (!/^[a-z0-9_]+$/.test(inputValue)) {
-                    return 'Only lowercase ASCII characters and underscores are allowed!';
-                }
-                return undefined;
-            }
-        });
+                await axios.delete(`${conf.api_root}vis/plots/${item.name}`, {
+                    headers: {
+                        Authorization: `Bearer ${conf.token}`,
+                        Accept: 'application/json',
+                    },
+                });
 
+                vscode.window.showInformationMessage(`Deleted ${item.name}`);
+                item.parent.refresh();
+            },
+        ),
+    );
 
-        vscode.window.showInformationMessage(`Trying to delete ${plotId}`);
-    }));
-
-    context.subscriptions.push(vscode.commands.registerCommand('novem.deleteNovemPlotCtxt', async (item: MyTreeItem) => {
-        // Handle the context menu action for the item
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.deleteNovemPlotCtxt',
+            async (item: MyTreeItem) => {
+                // Handle the context menu action for the item
 
         const plotId = item.name;
 
