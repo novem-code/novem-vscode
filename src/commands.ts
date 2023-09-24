@@ -69,7 +69,7 @@ const createViewFunction = (context: vscode.ExtensionContext, type: String) => {
     const pt = type[0];
 
 
-    return async () => {
+    return async (item: MyTreeItem) => {
 
         // Let's grab our profile information
         const visualisations = (await axios
@@ -77,7 +77,7 @@ const createViewFunction = (context: vscode.ExtensionContext, type: String) => {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     Accept: 'application/json'
-    
+
                 },
             }))?.data;
 
@@ -103,11 +103,20 @@ const createViewFunction = (context: vscode.ExtensionContext, type: String) => {
             acc[item.id] = item.shortname;
             return acc;
         }, {});
-        
-        // Present choices
-        const selectedItem = await vscode.window.showQuickPick(options, {
-            placeHolder: 'Select an option...'
-        }) as (QuickPickItem | undefined);
+
+        let selectedItem = undefined;
+
+        if (item) {
+            selectedItem = options.find((vis: QuickPickItem) => vis.description === item?.name) as (QuickPickItem | undefined)
+        } else {
+            // Present choices
+            selectedItem = await vscode.window.showQuickPick(options, {
+                placeHolder: 'Select an option...'
+            }) as (QuickPickItem | undefined);
+
+        }
+
+
 
         if (selectedItem) {
             let visId = selectedItem.description;
@@ -116,11 +125,10 @@ const createViewFunction = (context: vscode.ExtensionContext, type: String) => {
             createNovemBrowser(visId, sn, uri);
             // Open a browser view with the supplied url
             // Handle the selected item
-          //  vscode.window.showInformationMessage(`You selected: ${selectedItem.label || selectedItem}`);
+            //  vscode.window.showInformationMessage(`You selected: ${selectedItem.label || selectedItem}`);
         }
     }
 }
-
 
 
 
@@ -132,19 +140,21 @@ const createPlot = (token: String, plotId: String) => {
     console.log(`Creating new plot ${plotId}`)
 }
 
-export function setupCommands(context: vscode.ExtensionContext){
-    
-    context.subscriptions.push(vscode.commands.registerCommand('novem.viewNovemPlot', createViewFunction(context, 'plots')));
- 
-	let disposable = vscode.commands.registerCommand('novem.profile', () => {
-		vscode.window.showInformationMessage('Hello World from novem!');
+export function setupCommands(context: vscode.ExtensionContext) {
 
-	});
+    context.subscriptions.push(vscode.commands.registerCommand('novem.viewNovemPlot', createViewFunction(context, 'plots')));
+    context.subscriptions.push(vscode.commands.registerCommand('novem.viewNovemMail', createViewFunction(context, 'mails')));
+
+
+    let disposable = vscode.commands.registerCommand('novem.profile', () => {
+        vscode.window.showInformationMessage('Hello World from novem!');
+
+    });
     context.subscriptions.push(disposable);
 
     context.subscriptions.push(vscode.commands.registerCommand('novem.createNovemPlot', async () => {
         // Handle the context menu action for the item
-        
+
         let plotId = await vscode.window.showInputBox({
             prompt: 'Please provide the plot id to create:',
             placeHolder: 'test_plot_1',
@@ -155,15 +165,15 @@ export function setupCommands(context: vscode.ExtensionContext){
                 return undefined;
             }
         });
-        
-        
+
+
         vscode.window.showInformationMessage(`Trying to create new novem plot ${plotId}`);
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('novem.deleteNovemPlot', async (item: MyTreeItem) => {
         // Handle the context menu action for the item
-        
-        let plotId  = await vscode.window.showInputBox({
+
+        let plotId = await vscode.window.showInputBox({
             prompt: 'Enter a value:',
             placeHolder: 'e.g. john_doe',
             validateInput: (inputValue: string) => {
@@ -173,8 +183,8 @@ export function setupCommands(context: vscode.ExtensionContext){
                 return undefined;
             }
         });
-        
-        
+
+
         vscode.window.showInformationMessage(`Trying to delete ${plotId}`);
     }));
 
@@ -182,7 +192,7 @@ export function setupCommands(context: vscode.ExtensionContext){
         // Handle the context menu action for the item
 
         const plotId = item.name;
-        
+
         vscode.window.showInformationMessage(`Trying to delete ${plotId}`);
     }));
 

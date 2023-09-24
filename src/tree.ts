@@ -60,7 +60,7 @@ export class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.Tree
 export class MyTreeItem extends vscode.TreeItem {
     public readonly path: string;  // Store the full path here
     public readonly desc: string;
-    
+
     constructor(
         public readonly name: string,
         public readonly type: string,
@@ -86,13 +86,14 @@ export class MyTreeItem extends vscode.TreeItem {
                 arguments: [`/${this.visType}${this.path}`, this.type, doctype]
             };
         } else if (type === 'dir') {
-            if(depth === 0 && this.visType === 'plots'){
-              this.iconPath = this.createColoredIcon('graph-line', permissions);
-              this.contextValue = 'plot-top';  // Add this line
+            if (depth === 0 && this.visType === 'plots') {
+                this.iconPath = this.createColoredIcon('graph-line', permissions);
+                this.contextValue = 'plot-top';  // Add this line
             }
-            if(depth === 0 && this.visType === 'mails'){
+            if (depth === 0 && this.visType === 'mails') {
                 this.iconPath = this.createColoredIcon('mail', permissions);
-              }
+                this.contextValue = 'mail-top';  // Add this line
+            }
             //this.iconPath = this.createColoredIcon('folder', permissions);
         }
 
@@ -102,7 +103,7 @@ export class MyTreeItem extends vscode.TreeItem {
     // This tooltip can be enhanced further
     tooltip = `${this.name} (${this.type}) - Permissions: ${this.permissions.join(', ')}`;
     //description = this.type;
-  
+
 
     private createColoredIcon(iconType: string, permissions: string[]): vscode.ThemeIcon {
         let color: vscode.ThemeColor | undefined;

@@ -31,17 +31,17 @@ function getWebviewContent(visId: string, shortname: string, uri: string) {
 }
 
 
-export function createNovemBrowser(visId:string, shortname:string, uri:string) {
+export function createNovemBrowser(visId: string, shortname: string, uri: string) {
     const panel = vscode.window.createWebviewPanel(
+        shortname,
         visId,
-        'Web View',
         vscode.ViewColumn.One,
         {
             enableScripts: true,
             retainContextWhenHidden: true
         }
     );
-  // Set the HTML content of the WebView panel
-  panel.webview.html = getWebviewContent(visId, shortname, uri);
+    // Set the HTML content of the WebView panel
+    panel.webview.html = getWebviewContent(visId, shortname, uri);
 }
 
