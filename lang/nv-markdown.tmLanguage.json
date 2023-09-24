@@ -3,53 +3,53 @@
     "scopeName": "source.nv_markdown",
     "fileTypes": ["nvm"],
     "patterns": [
-        {
-            "name": "meta.section.nv_markdown",
-            "begin": "\\{\\{\\s*(vis|visualisations|callout|paragraph|para|author)\\s*",
-            "end": "\\}\\}",
-            "patterns": [
-                {
-                    "name": "storage.type",
-                    "match": "\\{\\{"
-                },
-                {
-                    "name": "storage.type",
-                    "match": "\\}\\}"
-                },
-                {
-                    "name": "keyword",
-                    "match": "(vis|visualisations|callout|paragraph|para|author)"
-                },
-                {
-                    "name": "meta.yaml.nv_markdown",
-                    "begin": "(?<=\\{\\{\\s*(vis|visualisations|callout|paragraph|para|author)\\s*)",
-                    "end": "(?=\\}\\})",
-                    "contentName": "source.yaml",
-                    "patterns": [
-                        {
-                            "include": "source.yaml"
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "name": "meta.section.end.nv_markdown",
-            "begin": "\\{\\{\\s*/(vis|visualisations|callout|paragraph|para|author)\\s*",
-            "end": "\\}\\}",
-            "patterns": [
-                {
-                    "name": "storage.type",
-                    "match": "\\{\\{"
-                },
-                {
-                    "name": "storage.type",
-                    "match": "\\}\\}"
-                }
-            ]
-        },
-        {
-            "include": "text.html.markdown"
-        }
+      {
+        "name": "meta.section.nv_markdown",
+        "begin": "\\{\\{\\s*(vis|visualisations|callout|paragraph|para|author)\\s*",
+        "end": "\\}\\}",
+        "patterns": [
+            {
+                "name": "string.punctuation.begin", 
+                "match": "\\{\\{"
+            },
+            {
+                "name": "string.punctuation.end", 
+                "match": "\\}\\}"
+            },
+            {
+                "name": "storage.type", 
+                "match": "(vis|visualisations|callout|paragraph|para|author)"
+            },
+            {
+                "name": "meta.yaml.nv_markdown",
+                "begin": "(?<=\\{\\{\\s*(vis|visualisations|callout|paragraph|para|author)\\s*)",
+                "end": "(?=\\}\\})",
+                "contentName": "source.yaml",
+                "patterns": [
+                    {
+                        "include": "source.yaml"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "meta.section.end.nv_markdown",
+        "begin": "\\{\\{\\s*/(vis|visualisations|callout|paragraph|para|author)\\s*",
+        "end": "\\}\\}",
+        "patterns": [
+            {
+                "name": "string.punctuation.begin", 
+                "match": "\\{\\{"
+            },
+            {
+                "name": "string.punctuation.end",
+                "match": "\\}\\}"
+            }
+        ]
+    },
+    {
+        "include": "text.html.markdown"
+    }
     ]
 }
