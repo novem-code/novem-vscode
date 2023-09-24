@@ -6,7 +6,7 @@
     {
       "name": "meta.custom-tag",
       "begin": "\\{\\{\\s*(\\w+)",
-      "end": "\\}\\}",
+      "end": "\\{\\{\\s*/\\1\\s*\\}\\}",
       "contentName": "text.html.markdown",
       "captures": {
         "1": { "name": "keyword.tag.custom" }
@@ -21,10 +21,7 @@
         },
         {
           "match": "\\{\\{\\s*/(\\w+)\\s*\\}\\}",
-          "name": "keyword.tag.custom.end",
-          "captures": {
-            "1": { "name": "keyword.tag.custom" }
-          }
+          "name": "keyword.tag.custom.end"
         },
         {
           "include": "text.html.markdown"
