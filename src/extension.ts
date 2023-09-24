@@ -106,6 +106,13 @@ export async function activate(context: vscode.ExtensionContext) {
         'novem-mails',
         new NovemSideBarProvider(context, 'mails'),
     );*/
+
+    return {
+        extendMarkdownIt(md: any) {
+            const mdnv = require('./markdown-nv').default;
+            return md.use(mdnv);
+        },
+    };
 }
 
 // This method is called when your extension is deactivated

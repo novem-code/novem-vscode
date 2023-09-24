@@ -134,7 +134,8 @@
                     "name": "E-Mails"
                 }
             ]
-        }
+        },
+        "markdown.markdownItPlugins": true
     },
     "scripts": {
         "vscode:prepublish": "yarn run compile",
