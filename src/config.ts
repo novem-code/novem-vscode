@@ -146,7 +146,7 @@ export function typeToIcon(visType: string, pt?: string) {
         const normalizedType = visType.toLowerCase();
 
         // Return the corresponding icon or a default icon if the chart type is not recognized
-        return chartIcons[normalizedType] || 'default_icon_path';
+        return chartIcons[normalizedType] || 'blank';
     } catch (error) {
         //console.error('Error!', error);
         return 'blank';
