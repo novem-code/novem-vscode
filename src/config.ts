@@ -141,9 +141,14 @@ export function typeToIcon(visType: string, pt?: string) {
         text: 'book',
     };
 
-    // Normalize the input string
-    const normalizedType = visType.toLowerCase();
+    try {
+        // Normalize the input string
+        const normalizedType = visType.toLowerCase();
 
-    // Return the corresponding icon or a default icon if the chart type is not recognized
-    return chartIcons[normalizedType] || 'default_icon_path';
+        // Return the corresponding icon or a default icon if the chart type is not recognized
+        return chartIcons[normalizedType] || 'default_icon_path';
+    } catch (error) {
+        //console.error('Error!', error);
+        return 'blank';
+    }
 }
