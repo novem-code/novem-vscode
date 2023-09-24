@@ -123,3 +123,34 @@ export function getCurrentConfig(kwargs?: {
 
     return co;
 }
+
+// helpful icon lookup: https://microsoft.github.io/vscode-codicons/dist/codicon.html
+export function typeToIcon(visType: string, pt?: string) {
+    if (pt === 'm') return 'mail';
+
+    // Define a lookup object
+    const chartIcons: Record<string, string> = {
+        sbar: 'graph',
+        gbar: 'graph',
+        bar: 'graph',
+        line: 'graph-line',
+        mline: 'graph-line',
+        table: 'table',
+        mtable: 'table',
+        pie: 'pie-chart',
+        donut: 'pie-chart',
+        scatter: 'graph-scatter',
+        text: 'book',
+    };
+
+    try {
+        // Normalize the input string
+        const normalizedType = visType.toLowerCase();
+
+        // Return the corresponding icon or a default icon if the chart type is not recognized
+        return chartIcons[normalizedType] || 'blank';
+    } catch (error) {
+        //console.error('Error!', error);
+        return 'blank';
+    }
+}

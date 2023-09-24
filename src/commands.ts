@@ -53,7 +53,7 @@ import axios from 'axios';
 import * as vscode from 'vscode';
 
 import { NovemSideBarProvider, MyTreeItem } from './tree';
-import { UserConfig, UserProfile, VisInfo } from './config';
+import { UserConfig, UserProfile, VisInfo, typeToIcon } from './config';
 import { createNovemBrowser } from './browser';
 
 // Open a novem vis inside vscode
@@ -78,7 +78,7 @@ const createViewFunction = (context: vscode.ExtensionContext, type: String) => {
         )?.data;
 
         const options = visualisations.map((item: VisInfo) => ({
-            label: item.name,
+            label: `$(${typeToIcon(item.type, pt)}) ${item.name}`,
             description: item.id,
             detail: item.summary,
         }));
@@ -124,9 +124,6 @@ const createViewFunction = (context: vscode.ExtensionContext, type: String) => {
             let uri = uriMap[visId];
             let sn = snMap[visId];
             createNovemBrowser(visId, sn, uri);
-            // Open a browser view with the supplied url
-            // Handle the selected item
-            //  vscode.window.showInformationMessage(`You selected: ${selectedItem.label || selectedItem}`);
         }
     };
 };

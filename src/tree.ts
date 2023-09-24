@@ -1,7 +1,7 @@
 import axios from 'axios';
 import * as vscode from 'vscode';
 
-import { UserConfig } from './config';
+import { UserConfig, UserProfile, typeToIcon } from './config';
 
 export class NovemSideBarProvider
     implements vscode.TreeDataProvider<vscode.TreeItem>
@@ -32,6 +32,9 @@ export class NovemSideBarProvider
 
     async getChildren(element?: MyTreeItem): Promise<vscode.TreeItem[]> {
         const conf = this.context.globalState.get('userConfig') as UserConfig;
+        const profile = this.context.globalState.get(
+            'userProfile',
+        ) as UserProfile;
         const token = conf?.token;
         const apiRoot = conf?.api_root;
 
@@ -49,35 +52,71 @@ export class NovemSideBarProvider
             url += element.path; // Use the full path stored in the MyTreeItem
         }
 
-        try {
-            const response = await axios.get(url, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+        if (!element) {
+            if (this.type == 'plots') {
+                url = `${apiRoot}u/${profile?.user_info?.username}/p/`;
+            } else if (this.type == 'mails') {
+                url = `${apiRoot}u/${profile?.user_info?.username}/m/`;
+            }
 
-            return response.data
-                .filter((each: any) => ['file', 'dir'].includes(each.type))
-                .sort((a: any, b: any) => {
-                    // Sort by type first (directories come first)
-                    if (a.type !== b.type) {
-                        return a.type === 'dir' ? -1 : 1;
-                    }
-                    // If types are the same, sort alphabetically by name
-                    return a.name.localeCompare(b.name);
-                })
-                .map(
-                    (each: any) =>
-                        new MyTreeItem(
-                            this,
-                            each.name,
-                            each.type,
-                            each.permissions,
-                            this.type,
-                            element ? element.path : '',
-                        ),
-                );
-        } catch (error) {
-            console.error('Error!', error);
-            return [new vscode.TreeItem('Error loading plots')];
+            try {
+                const response = await axios.get(url, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                return response.data
+                    .sort((a: any, b: any) => {
+                        // If types are the same, sort alphabetically by name
+                        return a.id.localeCompare(b.id);
+                    })
+                    .map(
+                        (each: any) =>
+                            new MyTreeItem(
+                                this,
+                                each.id,
+                                'dir',
+                                ['r', 'd'],
+                                this.type,
+                                '',
+                                each.type,
+                            ),
+                    );
+            } catch (error) {
+                console.error('Error!', error);
+                return [new vscode.TreeItem('Error loading plots')];
+            }
+        } else {
+            try {
+                const response = await axios.get(url, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                return response.data
+                    .filter((each: any) => ['file', 'dir'].includes(each.type))
+                    .sort((a: any, b: any) => {
+                        // Sort by type first (directories come first)
+                        if (a.type !== b.type) {
+                            return a.type === 'dir' ? -1 : 1;
+                        }
+                        // If types are the same, sort alphabetically by name
+                        return a.name.localeCompare(b.name);
+                    })
+                    .map(
+                        (each: any) =>
+                            new MyTreeItem(
+                                this,
+                                each.name,
+                                each.type,
+                                each.permissions,
+                                this.type,
+                                element ? element.path : '',
+                                '',
+                            ),
+                    );
+            } catch (error) {
+                console.error('Error!', error);
+                return [new vscode.TreeItem('Error loading plots')];
+            }
         }
     }
 }
@@ -93,6 +132,7 @@ export class MyTreeItem extends vscode.TreeItem {
         public readonly permissions: string[],
         public readonly visType: string,
         parentPath: string = '', // Parent's path, empty for root items
+        public readonly iconType: string,
     ) {
         super(
             name,
@@ -119,7 +159,7 @@ export class MyTreeItem extends vscode.TreeItem {
         } else if (type === 'dir') {
             if (depth === 0 && this.visType === 'plots') {
                 this.iconPath = this.createColoredIcon(
-                    'graph-line',
+                    typeToIcon(iconType),
                     permissions,
                 );
                 this.contextValue = 'plot-top'; // Add this line
@@ -154,6 +194,7 @@ export class MyTreeItem extends vscode.TreeItem {
             color = new vscode.ThemeColor('terminal.ansiRed');
         }
 
+        color = new vscode.ThemeColor('terminal.ansiGreen');
         return new vscode.ThemeIcon(iconType, color);
     }
 
