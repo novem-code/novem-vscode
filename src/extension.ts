@@ -14,13 +14,27 @@ import { NovemFSProvider } from './vfs';
 export async function activate(context: vscode.ExtensionContext) {
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
-    console.log('Congratulations, your extension "novem" is now active!');
 
     // Get our token from the user config
-    const [confExists, conf] = await getCurrentConfig();
-    const token = conf?.token;
+    const config = getCurrentConfig();
 
-    const apiRoot = conf?.api_root;
+    if (!config) {
+        // make a warning dialog
+        vscode.window.showWarningMessage(
+            'Novem is not configured. Please configure it first.',
+        );
+        return;
+    }
+
+
+    const strippedConfig = {...config};
+    delete strippedConfig.token;
+
+    console.debug('Read config', strippedConfig);
+
+    const token = config?.token;
+
+    const apiRoot = config?.api_root;
 
     // Let's grab our profile information
     const profile = (await axios
@@ -34,7 +48,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     console.log(profile)
     // Store user information
-    context.globalState.update('userConfig', conf);
+    context.globalState.update('userConfig', config);
     context.globalState.update('userProfile', profile);
 
     setupCommands(context)
