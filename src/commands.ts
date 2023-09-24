@@ -53,16 +53,94 @@ import axios from 'axios';
 import * as vscode from 'vscode';
 
 import { NovemSideBarProvider, MyTreeItem } from './tree';
+import { UserConfig, UserProfile, VisInfo } from './config';
+import { createNovemBrowser } from './browser'
+
+
+
+// Open a novem vis inside vscode
+const createViewFunction = (context: vscode.ExtensionContext, type: String) => {
+    const profile = context.globalState.get('userProfile') as UserProfile;
+    const conf = context.globalState.get('userConfig') as UserConfig;
+    const token = conf?.token;
+    const apiRoot = conf?.api_root;
+
+    const uname = profile?.user_info?.username
+    const pt = type[0];
+
+
+    return async () => {
+
+        // Let's grab our profile information
+        const visualisations = (await axios
+            .get(`${apiRoot}u/${uname}/${pt}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: 'application/json'
+    
+                },
+            }))?.data;
+
+        const options = visualisations.map((item: VisInfo) => ({
+            label: item.name,
+            description: item.id,
+            detail: item.summary
+        }));
+
+        interface QuickPickItem {
+            label: string;
+            description: string;
+            detail: string;
+            // ... any other properties you expect ...
+        }
+
+        const uriMap: { [key: string]: string } = visualisations.reduce((acc: { [key: string]: string }, item: VisInfo) => {
+            acc[item.id] = item.uri;
+            return acc;
+        }, {});
+
+        const snMap: { [key: string]: string } = visualisations.reduce((acc: { [key: string]: string }, item: VisInfo) => {
+            acc[item.id] = item.shortname;
+            return acc;
+        }, {});
+        
+        // Present choices
+        const selectedItem = await vscode.window.showQuickPick(options, {
+            placeHolder: 'Select an option...'
+        }) as (QuickPickItem | undefined);
+
+        if (selectedItem) {
+            let visId = selectedItem.description;
+            let uri = uriMap[visId]
+            let sn = snMap[visId]
+            createNovemBrowser(visId, sn, uri);
+            // Open a browser view with the supplied url
+            // Handle the selected item
+          //  vscode.window.showInformationMessage(`You selected: ${selectedItem.label || selectedItem}`);
+        }
+    }
+}
+
+
+
+
+
+
+
+
+const createPlot = (token: String, plotId: String) => {
+    console.log(`Creating new plot ${plotId}`)
+}
 
 export function setupCommands(context: vscode.ExtensionContext){
-
-
+    
+    context.subscriptions.push(vscode.commands.registerCommand('novem.viewNovemPlot', createViewFunction(context, 'plots')));
+ 
 	let disposable = vscode.commands.registerCommand('novem.profile', () => {
 		vscode.window.showInformationMessage('Hello World from novem!');
 
 	});
-
-	context.subscriptions.push(disposable);
+    context.subscriptions.push(disposable);
 
     context.subscriptions.push(vscode.commands.registerCommand('novem.createNovemPlot', async () => {
         // Handle the context menu action for the item
@@ -96,6 +174,14 @@ export function setupCommands(context: vscode.ExtensionContext){
             }
         });
         
+        
+        vscode.window.showInformationMessage(`Trying to delete ${plotId}`);
+    }));
+
+    context.subscriptions.push(vscode.commands.registerCommand('novem.deleteNovemPlotCtxt', async (item: MyTreeItem) => {
+        // Handle the context menu action for the item
+
+        const plotId = item.name;
         
         vscode.window.showInformationMessage(`Trying to delete ${plotId}`);
     }));

@@ -20,9 +20,11 @@ export async function activate(context: vscode.ExtensionContext) {
     const [confExists, conf] = await getCurrentConfig();
     const token = conf?.token;
 
+    const apiRoot = conf?.api_root;
+
     // Let's grab our profile information
     const profile = (await axios
-        .get("https://api.novem.no/v1/admin/profile/overview", {
+        .get(`${apiRoot}admin/profile/overview`, {
             headers: {
                 Authorization: `Bearer ${token}`,
                 Accept: 'application/json'
@@ -30,6 +32,7 @@ export async function activate(context: vscode.ExtensionContext) {
             },
         }))?.data;
 
+    console.log(profile)
     // Store user information
     context.globalState.update('userConfig', conf);
     context.globalState.update('userProfile', profile);

@@ -19,13 +19,14 @@ export class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.Tree
     async getChildren(element?: MyTreeItem): Promise<vscode.TreeItem[]> {
         const conf = this.context.globalState.get('userConfig') as UserConfig;
         const token = conf?.token;
+        const apiRoot = conf?.api_root;
 
         if (!token) {
             return [new vscode.TreeItem("Please setup novem by running `novem --init`")];
         }
 
         // Determine the URL to fetch from
-        let url = `https://api.novem.no/v1/vis/${this.type}`;
+        let url = `${apiRoot}vis/${this.type}`;
         if (element && element.type === 'dir') {
             url += element.path;  // Use the full path stored in the MyTreeItem
         }

@@ -26,15 +26,20 @@ export class NovemFSProvider implements vscode.FileSystemProvider {
         return conf?.token;
     }
 
+    private getApiRoot(): string | undefined {
+        const conf = this.context.globalState.get('userConfig') as UserConfig;
+        return conf?.api_root;
+    }
+
     async readFile(uri: vscode.Uri): Promise<Uint8Array> {
         // TODO: Let's add some caching here so we don't have to fetch it from the server all the time?
-        const content = await fetchDataFromServer(uri.path, this.getToken());
+        const content = await fetchDataFromServer(uri.path, this.getToken(), this.getApiRoot());
         return new TextEncoder().encode(content);
     }
 
     async writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): Promise<void> {
         const data = new TextDecoder().decode(content);
-        await postDataToServer(uri.path, data, this.getToken());
+        await postDataToServer(uri.path, data, this.getToken(), this.getApiRoot());
     }
 
 
@@ -80,8 +85,9 @@ export class NovemFSProvider implements vscode.FileSystemProvider {
 
 
 // Helper functions
-async function fetchDataFromServer(filePath: string, token?: string): Promise<string> {
-    const url = `https://api.novem.no/v1/vis${filePath}`;
+async function fetchDataFromServer(filePath: string, token?: string, apiRoot?: string): Promise<string> {
+
+    const url = `${apiRoot}vis${filePath}`;
 
     try {
         const response = await axios.get(url, {
@@ -94,8 +100,9 @@ async function fetchDataFromServer(filePath: string, token?: string): Promise<st
     }
 }
 
-async function postDataToServer(filePath: string, content: string, token?: string): Promise<void> {
-    const url = `https://api.novem.no/v1/vis${filePath}`;
+async function postDataToServer(filePath: string, content: string, token?: string, apiRoot?: string): Promise<void> {
+    
+    const url = `${apiRoot}vis${filePath}`;
 
     try {
         await axios.post(url,
