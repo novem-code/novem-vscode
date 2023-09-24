@@ -13,6 +13,30 @@
     "main": "./out/extension.js",
     "icon": "icons/novem.svg",
     "contributes": {
+        "languages": [
+            {
+                "id": "nv_markdown",
+                "aliases": [
+                    "NV Markdown",
+                    "nv_markdown"
+                ],
+                "extensions": [
+                    ".nvm",
+                    ".nvmd"
+                ],
+                "filenames": [],
+                "mimetypes": [
+                    "text/nv_markdown"
+                ]
+            }
+        ],
+        "grammars": [
+            {
+                "language": "nv_markdown",
+                "scopeName": "source.nv_markdown",
+                "path": "./lang/nv-markdown.tmLanguage.json"
+            }
+        ],
         "commands": [
             {
                 "command": "novem.profile",

@@ -1,0 +1,43 @@
+{
+    "name": "Novem Markdown",
+    "scopeName": "source.nv_markdown",
+    "fileTypes": ["nvm"],
+    "patterns": [
+        {
+            "begin": "\\{\\{\\s*(vis|visualisations|callout|paragraph|para|preview|author)",
+            "end": "\\}\\}",
+            "name": "keyword.section.nv_markdown",
+            "patterns": [
+                {
+                    "match": "\\{\\{",
+                    "name": "punctuation.definition.section.begin.nv_markdown"
+                },
+                {
+                    "match": "(vis|visualisations|callout|paragraph|para|preview|author)",
+                    "name": "support.function.section.nv_markdown"
+                },
+                {
+                    "begin": "(?<=\\{\\{\\s*(vis|visualisations|callout|paragraph|para|preview|author)\\s*)",
+                    "end": "(?=\\}\\})",
+                    "contentName": "source.yaml",
+                    "patterns": [
+                        {
+                            "include": "source.yaml"
+                        }
+                    ]
+                },
+                {
+                    "match": "\\}\\}",
+                    "name": "punctuation.definition.section.end.nv_markdown "
+                }
+            ]
+        },
+        {
+            "match": "\\{\\{\\s*/(vis|visualisations|callout|paragraph|para|preview|author)\\s*\\}\\}",
+            "name": "keyword.section.end.nv_markdown"
+        },
+        {
+            "include": "text.html.markdown"
+        }
+    ]
+}
