@@ -56,7 +56,7 @@ import { NovemSideBarProvider, MyTreeItem } from './tree';
 import { UserConfig, UserProfile, VisInfo, typeToIcon } from './config';
 import { createNovemBrowser } from './browser';
 
-import { plotsProvider } from './extension';
+import { mailsProvider, plotsProvider } from './extension';
 
 // Open a novem vis inside vscode
 const createViewFunction = (context: vscode.ExtensionContext, type: String) => {
@@ -152,6 +152,49 @@ export function setupCommands(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage('Hello World from novem!');
     });
     context.subscriptions.push(disposable);
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.createNovemMail', async () => {
+            const profile = context.globalState.get(
+                'userProfile',
+            ) as UserProfile;
+            const conf = context.globalState.get('userConfig') as UserConfig;
+
+            let plotId = await vscode.window.showInputBox({
+                prompt: 'Please provide the mail id to create:',
+                placeHolder: 'test_mail_1',
+                validateInput: (inputValue: string) => {
+                    if (!/^[a-z0-9_]+$/.test(inputValue)) {
+                        return 'Only lowercase ASCII characters and underscores are allowed!';
+                    }
+                    return undefined;
+                },
+            });
+
+            if (!plotId) return;
+
+            let url = `${conf.api_root}vis/mails/${plotId}`;
+            console.log(`Create plot: "${url}"`);
+            try {
+                await axios.put(url, null, {
+                    headers: {
+                        Authorization: `Bearer ${conf.token}`,
+                    },
+                });
+            } catch (error) {
+                console.log('error', error);
+                vscode.window.showErrorMessage(
+                    `Failed to create new plot ${plotId}`,
+                );
+                return;
+            }
+
+            mailsProvider.refresh();
+
+            vscode.window.showInformationMessage(`New mail ${plotId} created`);
+            // let's refresh our plot treeview
+        }),
+    );
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.createNovemPlot', async () => {
