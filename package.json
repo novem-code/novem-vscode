@@ -18,6 +18,10 @@
         "title": "novem: Profile"
       },
       {
+        "command": "novem.viewNovemPlot",
+        "title": "novem: View Plot"
+      },
+      {
         "command": "novem.createNovemPlot",
         "title": "novem: Create Plot"
       },
@@ -43,7 +47,8 @@
           "command": "novem.deleteNovemPlot",
           "when": "view == novem-plots && viewItem == plot-top",
           "title" : "Delete Plot",
-          "icon": "$(heart)"
+          "icon": "$(heart)",
+          "group":"mainpulate"
         }
       ],
       "view/title": [

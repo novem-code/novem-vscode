@@ -108,5 +108,31 @@ export async function getCurrentConfig(kwargs?: {
 
 export interface UserConfig {
     token?: string;
+    api_root?: string;
     // ... add other properties as needed
+}
+
+export interface UserProfile {
+    user_info: {
+        avatar?: String;
+        bio?: String;
+        chat?: String;
+        email?: String;
+        member_since?: String;
+        name?: String;
+        subscription?: String;
+        username?: String;
+    };
+    // ... add other properties as needed
+}
+
+export interface VisInfo {
+    created: string;
+    id: string;
+    name: string;
+    shortname: string;
+    summary: string;
+    type: string;
+    uri: string;
+    vis_type: string;
 }
