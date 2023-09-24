@@ -101,7 +101,7 @@ async function fetchDataFromServer(filePath: string, token?: string, apiRoot?: s
 }
 
 async function postDataToServer(filePath: string, content: string, token?: string, apiRoot?: string): Promise<void> {
-    
+
     const url = `${apiRoot}vis${filePath}`;
 
     try {
