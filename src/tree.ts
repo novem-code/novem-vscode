@@ -145,7 +145,7 @@ export class MyTreeItem extends vscode.TreeItem {
         this.path = `${parentPath}/${this.name}`;
         this.visType = visType;
 
-        const doctype = 'markdown';
+        const doctype = 'nv_markdown';
         this.desc = ``;
         // Set the icon and its color based on type and permissions
         if (type === 'file') {

@@ -1,0 +1,35 @@
+{
+  "name": "Novem Markdown",
+  "scopeName": "source.nv_markdown",
+  "fileTypes": ["nvm"],
+  "patterns": [
+    {
+      "name": "meta.custom-tag",
+      "begin": "\\{\\{\\s*(\\w+)",
+      "end": "\\}\\}",
+      "contentName": "text.html.markdown",
+      "captures": {
+        "1": { "name": "keyword.tag.custom" }
+      },
+      "patterns": [
+        {
+          "match": "(param):\\s*(\\w+)",
+          "captures": {
+            "1": { "name": "keyword.key.custom" },
+            "2": { "name": "string.value.custom" }
+          }
+        },
+        {
+          "match": "\\{\\{\\s*/(\\w+)\\s*\\}\\}",
+          "name": "keyword.tag.custom.end",
+          "captures": {
+            "1": { "name": "keyword.tag.custom" }
+          }
+        },
+        {
+          "include": "text.html.markdown"
+        }
+      ]
+    }
+  ]
+}
