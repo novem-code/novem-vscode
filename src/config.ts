@@ -9,6 +9,7 @@ const NOVEM_NAME = 'novem.conf';
 export interface UserConfig {
     token?: string;
     api_root?: string;
+    ignore_ssl_warn?: boolean;
     // ... add other properties as needed
 }
 
@@ -107,7 +108,7 @@ export function getCurrentConfig(kwargs?: {
         }
         co.token = userProfile.token;
         co.username = userProfile.username;
-        co.ignore_ssl_warn = userProfile.ignore_ssl_warn === 'true';
+        co.ignore_ssl_warn = userProfile.ignore_ssl_warn === true;
     } else {
         return co;
     }

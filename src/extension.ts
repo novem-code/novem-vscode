@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as vscode from 'vscode';
+import * as https from 'https';
 
 // Import the functions from config.ts
 import { getCurrentConfig, UserConfig } from './config';
@@ -29,6 +30,10 @@ export async function activate(context: vscode.ExtensionContext) {
     const strippedConfig = { ...config };
     delete strippedConfig.token;
 
+    if (config?.ignore_ssl_warn) {
+        https.globalAgent.options.rejectUnauthorized = false;
+    }
+
     console.debug('Read config', strippedConfig);
 
     const token = config?.token;
@@ -45,7 +50,6 @@ export async function activate(context: vscode.ExtensionContext) {
         })
     )?.data;
 
-    console.log(profile);
     // Store user information
     context.globalState.update('userConfig', config);
     context.globalState.update('userProfile', profile);
