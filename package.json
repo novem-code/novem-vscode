@@ -91,10 +91,6 @@
         {
           "id": "novem-mails",
           "name": "E-Mails"
-        },
-        {
-          "id": "novem-docs",
-          "name": "Documents"
         }
       ]
     }
