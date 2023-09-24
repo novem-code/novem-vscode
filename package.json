@@ -11,6 +11,7 @@
     ],
     "activationEvents": [],
     "main": "./out/extension.js",
+    "icon": "icons/novem.svg",
     "contributes": {
         "commands": [
             {
@@ -39,7 +40,7 @@
                 {
                     "id": "novem",
                     "title": "novem",
-                    "icon": "$(heart)"
+                    "icon": "icons/novem.svg"
                 }
             ]
         },
