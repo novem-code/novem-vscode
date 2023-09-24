@@ -55,6 +55,8 @@ export class NovemSideBarProvider
         if (!element) {
             if (this.type == 'plots') {
                 url = `${apiRoot}u/${profile?.user_info?.username}/p/`;
+            } else if (this.type == 'mails') {
+                url = `${apiRoot}u/${profile?.user_info?.username}/m/`;
             }
 
             try {

@@ -124,8 +124,8 @@ export function getCurrentConfig(kwargs?: {
     return co;
 }
 
-export function typeToIcon(visType: string) {
-    if (visType === 'mail') return 'mail';
+export function typeToIcon(visType: string, pt?: string) {
+    if (pt === 'm') return 'mail';
 
     // Define a lookup object
     const chartIcons: Record<string, string> = {

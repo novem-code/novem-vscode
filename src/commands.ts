@@ -78,7 +78,7 @@ const createViewFunction = (context: vscode.ExtensionContext, type: String) => {
         )?.data;
 
         const options = visualisations.map((item: VisInfo) => ({
-            label: `$(${typeToIcon(item.type)}) ${item.name}`,
+            label: `$(${typeToIcon(item.type, pt)}) ${item.name}`,
             description: item.id,
             detail: item.summary,
         }));
