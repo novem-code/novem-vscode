@@ -123,3 +123,27 @@ export function getCurrentConfig(kwargs?: {
 
     return co;
 }
+
+export function typeToIcon(visType: string) {
+    if (visType === 'mail') return 'mail';
+
+    // Define a lookup object
+    const chartIcons: Record<string, string> = {
+        sbar: 'graph',
+        gbar: 'graph',
+        bar: 'graph',
+        line: 'graph-line',
+        mline: 'graph-line',
+        table: 'table',
+        mtable: 'table',
+        pie: 'pie-chart',
+        donut: 'pie-chart',
+        text: 'book',
+    };
+
+    // Normalize the input string
+    const normalizedType = visType.toLowerCase();
+
+    // Return the corresponding icon or a default icon if the chart type is not recognized
+    return chartIcons[normalizedType] || 'default_icon_path';
+}

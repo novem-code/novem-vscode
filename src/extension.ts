@@ -50,6 +50,8 @@ export async function activate(context: vscode.ExtensionContext) {
         })
     )?.data;
 
+    console.log(profile);
+
     // Store user information
     context.globalState.update('userConfig', config);
     context.globalState.update('userProfile', profile);
