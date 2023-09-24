@@ -9,12 +9,16 @@
             "end": "\\}\\}",
             "patterns": [
                 {
-                    "name": "keyword.control.section.begin.nv_markdown",
+                    "name": "storage.type",
                     "match": "\\{\\{"
                 },
                 {
-                    "name": "keyword.control.section.end.nv_markdown",
+                    "name": "storage.type",
                     "match": "\\}\\}"
+                },
+                {
+                    "name": "keyword",
+                    "match": "(vis|visualisations|callout|paragraph|para|author)"
                 },
                 {
                     "name": "meta.yaml.nv_markdown",
@@ -35,11 +39,11 @@
             "end": "\\}\\}",
             "patterns": [
                 {
-                    "name": "keyword.control.section.begin.nv_markdown", 
+                    "name": "storage.type",
                     "match": "\\{\\{"
                 },
                 {
-                    "name": "keyword.control.section.end.nv_markdown", 
+                    "name": "storage.type",
                     "match": "\\}\\}"
                 }
             ]
