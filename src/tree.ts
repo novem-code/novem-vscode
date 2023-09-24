@@ -64,18 +64,23 @@ export class NovemSideBarProvider
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
-                return response.data.map(
-                    (each: any) =>
-                        new MyTreeItem(
-                            this,
-                            each.id,
-                            'dir',
-                            ['r', 'd'],
-                            this.type,
-                            '',
-                            each.type,
-                        ),
-                );
+                return response.data
+                    .sort((a: any, b: any) => {
+                        // If types are the same, sort alphabetically by name
+                        return a.id.localeCompare(b.id);
+                    })
+                    .map(
+                        (each: any) =>
+                            new MyTreeItem(
+                                this,
+                                each.id,
+                                'dir',
+                                ['r', 'd'],
+                                this.type,
+                                '',
+                                each.type,
+                            ),
+                    );
             } catch (error) {
                 console.error('Error!', error);
                 return [new vscode.TreeItem('Error loading plots')];
