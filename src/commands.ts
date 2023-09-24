@@ -304,4 +304,16 @@ export function setupCommands(context: vscode.ExtensionContext) {
             },
         ),
     );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.refreshNovemPlots', async () => {
+            plotsProvider.refresh();
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.refreshNovemMails', async () => {
+            mailsProvider.refresh();
+        }),
+    );
 }
