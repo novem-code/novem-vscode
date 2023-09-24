@@ -239,6 +239,12 @@ export function setupCommands(context: vscode.ExtensionContext) {
             createViewForUserFunction(context, 'plots'),
         ),
     );
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.viewNovemMailForUser',
+            createViewForUserFunction(context, 'mails'),
+        ),
+    );
 
     let disposable = vscode.commands.registerCommand('novem.profile', () => {
         vscode.window.showInformationMessage('Hello World from novem!');

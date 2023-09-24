@@ -51,6 +51,10 @@
                 "title": "View Plot for User"
             },
             {
+                "command": "novem.viewNovemMailForUser",
+                "title": "View Mail for User"
+            },
+            {
                 "command": "novem.viewNovemMail",
                 "title": "View Mail"
             },
