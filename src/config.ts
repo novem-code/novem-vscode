@@ -3,8 +3,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as ini from 'ini';
 
-const NOVEM_PATH = "novem";
-const NOVEM_NAME = "novem.conf";
+const NOVEM_PATH = 'novem';
+const NOVEM_NAME = 'novem.conf';
 
 export interface UserConfig {
     token?: string;
@@ -85,7 +85,7 @@ export function getCurrentConfig(kwargs?: {
         return null;
     }
 
-    console.debug("opening file", configPath);
+    console.debug('opening file', configPath);
     const configContent = fs.readFileSync(configPath, 'utf-8');
     const config = ini.parse(configContent);
 

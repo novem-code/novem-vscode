@@ -3,7 +3,9 @@ import * as vscode from 'vscode';
 
 import { UserConfig } from './config';
 
-export class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+export class NovemSideBarProvider
+    implements vscode.TreeDataProvider<vscode.TreeItem>
+{
     private context: vscode.ExtensionContext;
     private type: string;
 
@@ -13,8 +15,12 @@ export class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.Tree
     }
 
     // implement onDidChangeTreeData
-    private _onDidChangeTreeData: vscode.EventEmitter<MyTreeItem | undefined | null | void> = new vscode.EventEmitter<MyTreeItem | undefined | null | void>();
-    readonly onDidChangeTreeData: vscode.Event<MyTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+    private _onDidChangeTreeData: vscode.EventEmitter<
+        MyTreeItem | undefined | null | void
+    > = new vscode.EventEmitter<MyTreeItem | undefined | null | void>();
+    readonly onDidChangeTreeData: vscode.Event<
+        MyTreeItem | undefined | null | void
+    > = this._onDidChangeTreeData.event;
 
     refresh(): void {
         this._onDidChangeTreeData.fire();
@@ -30,20 +36,23 @@ export class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.Tree
         const apiRoot = conf?.api_root;
 
         if (!token) {
-            return [new vscode.TreeItem("Please setup novem by running `novem --init`")];
+            return [
+                new vscode.TreeItem(
+                    'Please setup novem by running `novem --init`',
+                ),
+            ];
         }
 
         // Determine the URL to fetch from
         let url = `${apiRoot}vis/${this.type}`;
         if (element && element.type === 'dir') {
-            url += element.path;  // Use the full path stored in the MyTreeItem
+            url += element.path; // Use the full path stored in the MyTreeItem
         }
 
         try {
             const response = await axios.get(url, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` },
             });
-
 
             return response.data
                 .filter((each: any) => ['file', 'dir'].includes(each.type))
@@ -55,18 +64,26 @@ export class NovemSideBarProvider implements vscode.TreeDataProvider<vscode.Tree
                     // If types are the same, sort alphabetically by name
                     return a.name.localeCompare(b.name);
                 })
-                .map((each: any) => new MyTreeItem(this, each.name, each.type, each.permissions, this.type, element ? element.path : ''));
+                .map(
+                    (each: any) =>
+                        new MyTreeItem(
+                            this,
+                            each.name,
+                            each.type,
+                            each.permissions,
+                            this.type,
+                            element ? element.path : '',
+                        ),
+                );
         } catch (error) {
-            console.error("Error!", error);
-            return [new vscode.TreeItem("Error loading plots")];
+            console.error('Error!', error);
+            return [new vscode.TreeItem('Error loading plots')];
         }
     }
 }
 
-
-
 export class MyTreeItem extends vscode.TreeItem {
-    public readonly path: string;  // Store the full path here
+    public readonly path: string; // Store the full path here
     public readonly desc: string;
 
     constructor(
@@ -75,53 +92,65 @@ export class MyTreeItem extends vscode.TreeItem {
         public readonly type: string,
         public readonly permissions: string[],
         public readonly visType: string,
-        parentPath: string = ''  // Parent's path, empty for root items
+        parentPath: string = '', // Parent's path, empty for root items
     ) {
-        super(name, type === 'dir' ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
+        super(
+            name,
+            type === 'dir'
+                ? vscode.TreeItemCollapsibleState.Collapsed
+                : vscode.TreeItemCollapsibleState.None,
+        );
         const depth = parentPath.split('/').length - 1;
 
         this.path = `${parentPath}/${this.name}`;
         this.visType = visType;
 
-        const doctype = 'markdown'
-        this.desc = ``
+        const doctype = 'markdown';
+        this.desc = ``;
         // Set the icon and its color based on type and permissions
         if (type === 'file') {
             //this.iconPath = this.createColoredIcon('file', permissions);
-            this.desc = `[${this.permissionsToUnixStyle(this.permissions)}]`
+            this.desc = `[${this.permissionsToUnixStyle(this.permissions)}]`;
             this.command = {
                 command: 'novem.openFile',
                 title: 'Open File',
-                arguments: [`/${this.visType}${this.path}`, this.type, doctype]
+                arguments: [`/${this.visType}${this.path}`, this.type, doctype],
             };
         } else if (type === 'dir') {
             if (depth === 0 && this.visType === 'plots') {
-                this.iconPath = this.createColoredIcon('graph-line', permissions);
-                this.contextValue = 'plot-top';  // Add this line
+                this.iconPath = this.createColoredIcon(
+                    'graph-line',
+                    permissions,
+                );
+                this.contextValue = 'plot-top'; // Add this line
             }
             if (depth === 0 && this.visType === 'mails') {
                 this.iconPath = this.createColoredIcon('mail', permissions);
-                this.contextValue = 'mail-top';  // Add this line
+                this.contextValue = 'mail-top'; // Add this line
             }
             //this.iconPath = this.createColoredIcon('folder', permissions);
         }
 
-        this.description = this.desc
+        this.description = this.desc;
     }
 
     // This tooltip can be enhanced further
-    tooltip = `${this.name} (${this.type}) - Permissions: ${this.permissions.join(', ')}`;
+    tooltip = `${this.name} (${
+        this.type
+    }) - Permissions: ${this.permissions.join(', ')}`;
     //description = this.type;
 
-
-    private createColoredIcon(iconType: string, permissions: string[]): vscode.ThemeIcon {
+    private createColoredIcon(
+        iconType: string,
+        permissions: string[],
+    ): vscode.ThemeIcon {
         let color: vscode.ThemeColor | undefined;
 
-        if (permissions.includes("w")) {
+        if (permissions.includes('w')) {
             color = new vscode.ThemeColor('terminal.ansiGreen');
-        } else if (permissions.includes("r")) {
+        } else if (permissions.includes('r')) {
             color = new vscode.ThemeColor('terminal.ansiYellow');
-        } else if (permissions.includes("d")) {
+        } else if (permissions.includes('d')) {
             color = new vscode.ThemeColor('terminal.ansiRed');
         }
 

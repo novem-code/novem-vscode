@@ -26,8 +26,7 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
     }
 
-
-    const strippedConfig = {...config};
+    const strippedConfig = { ...config };
     delete strippedConfig.token;
 
     console.debug('Read config', strippedConfig);
@@ -37,46 +36,60 @@ export async function activate(context: vscode.ExtensionContext) {
     const apiRoot = config?.api_root;
 
     // Let's grab our profile information
-    const profile = (await axios
-        .get(`${apiRoot}admin/profile/overview`, {
+    const profile = (
+        await axios.get(`${apiRoot}admin/profile/overview`, {
             headers: {
                 Authorization: `Bearer ${token}`,
-                Accept: 'application/json'
-
+                Accept: 'application/json',
             },
-        }))?.data;
+        })
+    )?.data;
 
-    console.log(profile)
+    console.log(profile);
     // Store user information
     context.globalState.update('userConfig', config);
     context.globalState.update('userProfile', profile);
 
-    setupCommands(context)
+    setupCommands(context);
 
     const fsProvider = new NovemFSProvider(context);
-    const fsRegistration = vscode.workspace.registerFileSystemProvider('novem', fsProvider, { isCaseSensitive: true });
+    const fsRegistration = vscode.workspace.registerFileSystemProvider(
+        'novem',
+        fsProvider,
+        { isCaseSensitive: true },
+    );
 
     context.subscriptions.push(fsRegistration);
 
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.openFile',
+            async (path: string, type: string, languageId?: string) => {
+                const uri = vscode.Uri.parse(`novem:${path}`);
+                let doc = await vscode.workspace.openTextDocument(uri);
 
-    context.subscriptions.push(vscode.commands.registerCommand('novem.openFile', async (path: string, type: string, languageId?: string) => {
-        const uri = vscode.Uri.parse(`novem:${path}`);
-        let doc = await vscode.workspace.openTextDocument(uri);
+                // If a languageId is provided, set the language for the document
+                if (languageId) {
+                    doc = await vscode.languages.setTextDocumentLanguage(
+                        doc,
+                        languageId,
+                    );
+                }
 
-        // If a languageId is provided, set the language for the document
-        if (languageId) {
-            doc = await vscode.languages.setTextDocumentLanguage(doc, languageId);
-        }
+                vscode.window.showTextDocument(doc);
+            },
+        ),
+    );
 
-        vscode.window.showTextDocument(doc);
-    }));
-
-
-
-
-    vscode.window.registerTreeDataProvider('novem-plots', new NovemSideBarProvider(context, 'plots'));
-    vscode.window.registerTreeDataProvider('novem-mails', new NovemSideBarProvider(context, 'mails'));
+    vscode.window.registerTreeDataProvider(
+        'novem-plots',
+        new NovemSideBarProvider(context, 'plots'),
+    );
+    vscode.window.registerTreeDataProvider(
+        'novem-mails',
+        new NovemSideBarProvider(context, 'mails'),
+    );
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() { }
+export function deactivate() {}
