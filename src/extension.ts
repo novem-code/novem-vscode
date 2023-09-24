@@ -10,6 +10,10 @@ import { setupCommands } from './commands';
 
 import { NovemFSProvider } from './vfs';
 
+// At the top of your module
+let plotsProvider: NovemSideBarProvider;
+let mailsProvider: NovemSideBarProvider;
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
@@ -87,6 +91,13 @@ export async function activate(context: vscode.ExtensionContext) {
         ),
     );
 
+    plotsProvider = new NovemSideBarProvider(context, 'plots');
+    mailsProvider = new NovemSideBarProvider(context, 'mails');
+
+    vscode.window.registerTreeDataProvider('novem-plots', plotsProvider);
+    vscode.window.registerTreeDataProvider('novem-mails', mailsProvider);
+
+    /*
     vscode.window.registerTreeDataProvider(
         'novem-plots',
         new NovemSideBarProvider(context, 'plots'),
@@ -94,8 +105,11 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.window.registerTreeDataProvider(
         'novem-mails',
         new NovemSideBarProvider(context, 'mails'),
-    );
+    );*/
 }
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
+
+// Export them if needed
+export { plotsProvider, mailsProvider };

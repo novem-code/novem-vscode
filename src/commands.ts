@@ -56,6 +56,8 @@ import { NovemSideBarProvider, MyTreeItem } from './tree';
 import { UserConfig, UserProfile, VisInfo, typeToIcon } from './config';
 import { createNovemBrowser } from './browser';
 
+import { plotsProvider } from './extension';
+
 // Open a novem vis inside vscode
 const createViewFunction = (context: vscode.ExtensionContext, type: String) => {
     const profile = context.globalState.get('userProfile') as UserProfile;
@@ -153,7 +155,10 @@ export function setupCommands(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.createNovemPlot', async () => {
-            // Handle the context menu action for the item
+            const profile = context.globalState.get(
+                'userProfile',
+            ) as UserProfile;
+            const conf = context.globalState.get('userConfig') as UserConfig;
 
             let plotId = await vscode.window.showInputBox({
                 prompt: 'Please provide the plot id to create:',
@@ -166,9 +171,49 @@ export function setupCommands(context: vscode.ExtensionContext) {
                 },
             });
 
-            vscode.window.showInformationMessage(
-                `Trying to create new novem plot ${plotId}`,
-            );
+            if (!plotId) return;
+
+            let type = await vscode.window.showInputBox({
+                prompt: 'Please specify the type of plot to create:',
+                placeHolder: 'bar',
+                validateInput: (inputValue: string) => {
+                    if (!/^[a-z]+$/.test(inputValue)) {
+                        return 'Only lowercase ASCII characters are allowed!';
+                    }
+                    return undefined;
+                },
+            });
+
+            if (!type) type = 'bar';
+
+            let url = `${conf.api_root}vis/plots/${plotId}`;
+            console.log(`Create plot: "${url}"`);
+            try {
+                await axios.put(url, null, {
+                    headers: {
+                        Authorization: `Bearer ${conf.token}`,
+                    },
+                });
+            } catch (error) {
+                console.log('error', error);
+                vscode.window.showErrorMessage(
+                    `Failed to create new plot ${plotId}`,
+                );
+                return;
+            }
+
+            await axios.post(`${url}/config/type`, type, {
+                headers: {
+                    Authorization: `Bearer ${conf.token}`,
+                    'Content-Type': 'text/plain', // Set content type as text/plain
+                },
+            });
+            //item.parent.refresh();
+
+            plotsProvider.refresh();
+
+            vscode.window.showInformationMessage(`New plot ${plotId} created`);
+            // let's refresh our plot treeview
         }),
     );
 
