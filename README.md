@@ -15,13 +15,13 @@ ext install novemas.novem (TODO: Publish and update)
 ```
 
 ## Getting started
-You'll need a valid novem account and to have setup a novem configuration system on your system.
+You'll need a valid novem account and to have setup a novem configuration on your system.
 
 ```
 pip install novem
 novem --init
 ```
 ## Editing your visuals
-Navigate throug and open the relvant visuals using the novem bar and everything should work just like normal.
+Navigate through and open the relevant visuals using the novem bar and everything should work just like normal.
 
 ![email exampe](./img/mail_example.png)
