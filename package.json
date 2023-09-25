@@ -1,17 +1,43 @@
 {
     "name": "novem",
     "displayName": "novem",
-    "description": "Easy access to your novem graphs and data",
+    "description": "Access and work with novem visuals in your favourite tool.",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.82.0"
     },
     "categories": [
-        "Other"
+        "Data Science",
+        "Themes",
+        "Visualization",
+        "Notebooks"
     ],
+    "license": "SEE LICENSE IN LICENSE",
+    "pricing": "free",
     "activationEvents": [],
+    "publisher": "Novem AS",
+    "keywords": [
+        "novem",
+        "pandas",
+        "python",
+        "e-mail",
+        "dataviz"
+    ],
     "main": "./out/extension.js",
-    "icon": "icons/novem.svg",
+    "icon": "img/novem_icon_medium.png",
+    "galleryBanner": {
+        "color": "#C80000",
+        "theme": "dark"
+    },
+    "bugs": {
+        "url": "https://github.com/novem-no/novem-vscode/issues",
+        "email": "support@novem.no"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/novem-no/novem-vscode.git"
+    },
+    "homepage": "https://novem.no",
     "contributes": {
         "languages": [
             {
