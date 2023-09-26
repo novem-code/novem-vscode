@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { UserProfile } from './config';
 
 export default class NovemApi {
     private token: string;
@@ -19,9 +20,9 @@ export default class NovemApi {
         };
     }
 
-    private async get(url: string) {
+    private async get<T = any>(url: string) {
         return (
-            await axios.get(url, {
+            await axios.get<T>(url, {
                 headers: this.headers,
             })
         ).data;
@@ -52,7 +53,9 @@ export default class NovemApi {
     }
 
     async getProfile() {
-        return await this.get(`${this.apiRoot}/admin/profile/overview`);
+        return await this.get<UserProfile>(
+            `${this.apiRoot}/admin/profile/overview`,
+        );
     }
 
     async getVisualizationsForUser(user: string) {

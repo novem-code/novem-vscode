@@ -89,18 +89,18 @@ export async function activate(context: vscode.ExtensionContext) {
     plotsProvider = new NovemSideBarProvider(novemApi, context, 'plots');
     mailsProvider = new NovemSideBarProvider(novemApi, context, 'mails');
 
-    vscode.window.registerTreeDataProvider('novem-plots', plotsProvider);
-    vscode.window.registerTreeDataProvider('novem-mails', mailsProvider);
-
-    /*
-    vscode.window.registerTreeDataProvider(
-        'novem-plots',
-        new NovemSideBarProvider(context, 'plots'),
+    const sbi = vscode.window.createStatusBarItem(
+        vscode.StatusBarAlignment.Left,
+        50,
     );
-    vscode.window.registerTreeDataProvider(
-        'novem-mails',
-        new NovemSideBarProvider(context, 'mails'),
-    );*/
+
+    sbi.text = 'novem: ' + profile.user_info.email;
+    sbi.show();
+
+    context.subscriptions.push(
+        vscode.window.registerTreeDataProvider('novem-plots', plotsProvider),
+        vscode.window.registerTreeDataProvider('novem-mails', mailsProvider),
+    );
 }
 
 // This method is called when your extension is deactivated
