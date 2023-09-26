@@ -1,4 +1,3 @@
-import axios from 'axios';
 import * as vscode from 'vscode';
 import * as https from 'https';
 
@@ -9,6 +8,7 @@ import { NovemSideBarProvider, MyTreeItem } from './tree';
 import { setupCommands } from './commands';
 
 import { NovemFSProvider } from './vfs';
+import NovemApi from './novem-api';
 
 // At the top of your module
 let plotsProvider: NovemSideBarProvider;
@@ -38,21 +38,16 @@ export async function activate(context: vscode.ExtensionContext) {
         https.globalAgent.options.rejectUnauthorized = false;
     }
 
-    console.debug('Read config', strippedConfig);
+    // console.debug('Read config', strippedConfig);
 
-    const token = config?.token;
+    const token = config.token;
 
-    const apiRoot = config?.api_root;
+    const apiRoot = config.api_root;
+
+    const novemApi = new NovemApi(apiRoot!, token!);
 
     // Let's grab our profile information
-    const profile = (
-        await axios.get(`${apiRoot}admin/profile/overview`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                Accept: 'application/json',
-            },
-        })
-    )?.data;
+    const profile = await novemApi.getProfile();
 
     console.log(profile);
 
@@ -60,9 +55,9 @@ export async function activate(context: vscode.ExtensionContext) {
     context.globalState.update('userConfig', config);
     context.globalState.update('userProfile', profile);
 
-    setupCommands(context);
+    setupCommands(context, novemApi);
 
-    const fsProvider = new NovemFSProvider(context);
+    const fsProvider = new NovemFSProvider(novemApi);
     const fsRegistration = vscode.workspace.registerFileSystemProvider(
         'novem',
         fsProvider,
@@ -91,8 +86,8 @@ export async function activate(context: vscode.ExtensionContext) {
         ),
     );
 
-    plotsProvider = new NovemSideBarProvider(context, 'plots');
-    mailsProvider = new NovemSideBarProvider(context, 'mails');
+    plotsProvider = new NovemSideBarProvider(novemApi, context, 'plots');
+    mailsProvider = new NovemSideBarProvider(novemApi, context, 'mails');
 
     vscode.window.registerTreeDataProvider('novem-plots', plotsProvider);
     vscode.window.registerTreeDataProvider('novem-mails', mailsProvider);

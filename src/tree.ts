@@ -1,20 +1,25 @@
-import axios from 'axios';
 import * as vscode from 'vscode';
 
 import { UserConfig, UserProfile, typeToIcon } from './config';
+import NovemApi from './novem-api';
 
 export class NovemSideBarProvider
     implements vscode.TreeDataProvider<vscode.TreeItem>
 {
     private context: vscode.ExtensionContext;
-    private type: string;
+    private type: 'plots' | 'mails';
+    private api: NovemApi;
 
-    constructor(context: vscode.ExtensionContext, type: string) {
+    constructor(
+        api: NovemApi,
+        context: vscode.ExtensionContext,
+        type: 'plots' | 'mails',
+    ) {
+        this.api = api;
         this.context = context;
         this.type = type;
     }
 
-    // implement onDidChangeTreeData
     private _onDidChangeTreeData: vscode.EventEmitter<
         MyTreeItem | undefined | null | void
     > = new vscode.EventEmitter<MyTreeItem | undefined | null | void>();
@@ -31,40 +36,18 @@ export class NovemSideBarProvider
     }
 
     async getChildren(element?: MyTreeItem): Promise<vscode.TreeItem[]> {
-        const conf = this.context.globalState.get('userConfig') as UserConfig;
         const profile = this.context.globalState.get(
             'userProfile',
         ) as UserProfile;
-        const token = conf?.token;
-        const apiRoot = conf?.api_root;
-
-        if (!token) {
-            return [
-                new vscode.TreeItem(
-                    'Please setup novem by running `novem --init`',
-                ),
-            ];
-        }
 
         // Determine the URL to fetch from
-        let url = `${apiRoot}vis/${this.type}`;
-        if (element && element.type === 'dir') {
-            url += element.path; // Use the full path stored in the MyTreeItem
-        }
-
         if (!element) {
-            if (this.type == 'plots') {
-                url = `${apiRoot}u/${profile?.user_info?.username}/p/`;
-            } else if (this.type == 'mails') {
-                url = `${apiRoot}u/${profile?.user_info?.username}/m/`;
-            }
-
             try {
-                const response = await axios.get(url, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const response = await (this.type === 'plots'
+                    ? this.api.getPlotsForUser(profile.user_info.username!)
+                    : this.api.getMailsForUser(profile.user_info.username!));
 
-                return response.data
+                return response
                     .sort((a: any, b: any) => {
                         // If types are the same, sort alphabetically by name
                         return a.id.localeCompare(b.id);
@@ -86,12 +69,16 @@ export class NovemSideBarProvider
                 return [new vscode.TreeItem('Error loading plots')];
             }
         } else {
-            try {
-                const response = await axios.get(url, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+            const [_, visId, path] = element.path.split('/', 3);
+            if (element.type !== 'dir') throw new Error('Invalid type');
 
-                return response.data
+            try {
+                const response = await this.api.getDetailsForVis(
+                    this.type,
+                    visId,
+                    path,
+                );
+                return response
                     .filter((each: any) => ['file', 'dir'].includes(each.type))
                     .sort((a: any, b: any) => {
                         // Sort by type first (directories come first)

@@ -15,14 +15,14 @@ export interface UserConfig {
 
 export interface UserProfile {
     user_info: {
-        avatar?: String;
-        bio?: String;
-        chat?: String;
-        email?: String;
-        member_since?: String;
-        name?: String;
-        subscription?: String;
-        username?: String;
+        avatar?: string;
+        bio?: string;
+        chat?: string;
+        email?: string;
+        member_since?: string;
+        name?: string;
+        subscription?: string;
+        username?: string;
     };
     // ... add other properties as needed
 }
@@ -86,7 +86,7 @@ export function getCurrentConfig(kwargs?: {
         return null;
     }
 
-    console.debug('opening file', configPath);
+    // console.debug('opening file', configPath);
     const configContent = fs.readFileSync(configPath, 'utf-8');
     const config = ini.parse(configContent);
 
@@ -125,8 +125,8 @@ export function getCurrentConfig(kwargs?: {
 }
 
 // helpful icon lookup: https://microsoft.github.io/vscode-codicons/dist/codicon.html
-export function typeToIcon(visType: string, pt?: string) {
-    if (pt === 'm') return 'mail';
+export function typeToIcon(visType: string, type?: 'mails' | 'plots') {
+    if (type === 'mails') return 'mail';
 
     // Define a lookup object
     const chartIcons: Record<string, string> = {

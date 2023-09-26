@@ -49,7 +49,6 @@ Context menu Mail:
 
 */
 
-import axios from 'axios';
 import * as vscode from 'vscode';
 
 import { NovemSideBarProvider, MyTreeItem } from './tree';
@@ -57,30 +56,29 @@ import { UserConfig, UserProfile, VisInfo, typeToIcon } from './config';
 import { createNovemBrowser } from './browser';
 
 import { mailsProvider, plotsProvider } from './extension';
+import NovemApi from './novem-api';
 
 // Open a novem vis inside vscode
-const createViewFunction = (context: vscode.ExtensionContext, type: String) => {
+const createViewFunction = (
+    context: vscode.ExtensionContext,
+    api: NovemApi,
+    type: 'plots' | 'mails',
+) => {
     const profile = context.globalState.get('userProfile') as UserProfile;
     const conf = context.globalState.get('userConfig') as UserConfig;
     const token = conf?.token;
     const apiRoot = conf?.api_root;
 
     const uname = profile?.user_info?.username;
-    const pt = type[0];
 
     return async (item: MyTreeItem) => {
         // Let's grab our profile information
-        const visualisations = (
-            await axios.get(`${apiRoot}u/${uname}/${pt}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    Accept: 'application/json',
-                },
-            })
-        )?.data;
+        const visualisations = await (type === 'plots'
+            ? api.getPlotsForUser(uname!)
+            : api.getMailsForUser(uname!));
 
         const options = visualisations.map((item: VisInfo) => ({
-            label: `$(${typeToIcon(item.type, pt)}) ${item.name}`,
+            label: `$(${typeToIcon(item.type, type)}) ${item.name}`,
             description: item.id,
             detail: item.summary,
         }));
@@ -133,7 +131,8 @@ const createViewFunction = (context: vscode.ExtensionContext, type: String) => {
 // Open a novem vis inside vscode
 const createViewForUserFunction = (
     context: vscode.ExtensionContext,
-    type: String,
+    api: NovemApi,
+    type: 'plots' | 'mails',
 ) => {
     const profile = context.globalState.get('userProfile') as UserProfile;
     const conf = context.globalState.get('userConfig') as UserConfig;
@@ -141,7 +140,6 @@ const createViewForUserFunction = (
     const apiRoot = conf?.api_root;
 
     const uname = profile?.user_info?.username;
-    const pt = type[0];
 
     return async () => {
         // Let's grab our profile information
@@ -157,22 +155,17 @@ const createViewForUserFunction = (
             },
         });
 
-        let visualisations = []
+        let visualisations = [];
         try {
-            visualisations = (
-                await axios.get(`${apiRoot}u/${username?.slice(1)}/${pt}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        Accept: 'application/json',
-                    },
-                })
-            )?.data;
+            visualisations = await (type === 'plots'
+                ? api.getPlotsForUser(username!)
+                : api.getMailsForUser(username!));
         } catch (error) {
             return;
         }
 
         const options = visualisations.map((item: VisInfo) => ({
-            label: `$(${typeToIcon(item.type, pt)}) ${item.name}`,
+            label: `$(${typeToIcon(item.type, type)}) ${item.name}`,
             description: item.id,
             detail: item.summary,
         }));
@@ -216,33 +209,29 @@ const createViewForUserFunction = (
     };
 };
 
-const createPlot = (token: String, plotId: String) => {
-    console.log(`Creating new plot ${plotId}`);
-};
-
-export function setupCommands(context: vscode.ExtensionContext) {
+export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
     context.subscriptions.push(
         vscode.commands.registerCommand(
             'novem.viewNovemPlot',
-            createViewFunction(context, 'plots'),
+            createViewFunction(context, api, 'plots'),
         ),
     );
     context.subscriptions.push(
         vscode.commands.registerCommand(
             'novem.viewNovemMail',
-            createViewFunction(context, 'mails'),
+            createViewFunction(context, api, 'mails'),
         ),
     );
     context.subscriptions.push(
         vscode.commands.registerCommand(
             'novem.viewNovemPlotForUser',
-            createViewForUserFunction(context, 'plots'),
+            createViewForUserFunction(context, api, 'plots'),
         ),
     );
     context.subscriptions.push(
         vscode.commands.registerCommand(
             'novem.viewNovemMailForUser',
-            createViewForUserFunction(context, 'mails'),
+            createViewForUserFunction(context, api, 'mails'),
         ),
     );
 
@@ -271,18 +260,13 @@ export function setupCommands(context: vscode.ExtensionContext) {
 
             if (!plotId) return;
 
-            let url = `${conf.api_root}vis/mails/${plotId}`;
-            console.log(`Create plot: "${url}"`);
+            console.log(`Create mail: "${plotId}"`);
             try {
-                await axios.put(url, null, {
-                    headers: {
-                        Authorization: `Bearer ${conf.token}`,
-                    },
-                });
+                await api.createMail(plotId);
             } catch (error) {
                 console.log('error', error);
                 vscode.window.showErrorMessage(
-                    `Failed to create new plot ${plotId}`,
+                    `Failed to create new mail ${plotId}`,
                 );
                 return;
             }
@@ -290,7 +274,6 @@ export function setupCommands(context: vscode.ExtensionContext) {
             mailsProvider.refresh();
 
             vscode.window.showInformationMessage(`New mail ${plotId} created`);
-            // let's refresh our plot treeview
         }),
     );
 
@@ -328,13 +311,9 @@ export function setupCommands(context: vscode.ExtensionContext) {
             if (!type) type = 'bar';
 
             let url = `${conf.api_root}vis/plots/${plotId}`;
-            console.log(`Create plot: "${url}"`);
+            console.log(`Create plot: "${plotId}"`);
             try {
-                await axios.put(url, null, {
-                    headers: {
-                        Authorization: `Bearer ${conf.token}`,
-                    },
-                });
+                await api.createPlot(plotId);
             } catch (error) {
                 console.log('error', error);
                 vscode.window.showErrorMessage(
@@ -343,12 +322,7 @@ export function setupCommands(context: vscode.ExtensionContext) {
                 return;
             }
 
-            await axios.post(`${url}/config/type`, type, {
-                headers: {
-                    Authorization: `Bearer ${conf.token}`,
-                    'Content-Type': 'text/plain', // Set content type as text/plain
-                },
-            });
+            await api.modifyPlot(plotId, '/config/type', type);
             //item.parent.refresh();
 
             plotsProvider.refresh();
@@ -390,12 +364,7 @@ export function setupCommands(context: vscode.ExtensionContext) {
                     return;
                 }
 
-                await axios.delete(`${conf.api_root}vis/plots/${item.name}`, {
-                    headers: {
-                        Authorization: `Bearer ${conf.token}`,
-                        Accept: 'application/json',
-                    },
-                });
+                await api.deletePlot(item.name);
 
                 vscode.window.showWarningMessage(`Deleted "${item.name}"`);
                 item.parent.refresh();
