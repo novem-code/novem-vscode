@@ -156,14 +156,14 @@ const createViewForUserFunction = (
         });
 
         let visualisations = [];
-        username = username?.slice(1)
+        username = username?.slice(1);
 
         try {
             visualisations = await (type === 'plots'
                 ? api.getPlotsForUser(username!)
                 : api.getMailsForUser(username!));
         } catch (error) {
-            console.log('error',error)
+            console.log('error', error);
             return;
         }
 
