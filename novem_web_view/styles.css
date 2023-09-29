@@ -1,15 +1,106 @@
-/* Add any additional styles you need */
-body {
-  display: flex;
-  flex-direction: column;
-  height: 100vh; /* Use viewport height to set the body height */
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
 }
 
-iframe {
-  flex: 1; /* Allow iframe to take up all available space */
-  width: 100%;
-  border: none; /* Optional: remove border */
+/* Add any additional styles you need */
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Use viewport height to set the body height */
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+#root {
+    flex: 1; /* Allow iframe to take up all available space */
+    width: 100%;
+    margin: 20px;
+}
+
+.novem--vis--hold {
+    width: calc(100% - 40px);
+    height: 80%;
+    /*
+  border: 1px solid var(--vscode-checkbox-selectBorder);
+  border: 1px solid var(--vscode-editorHoverWidget-border);
+   */
+    border: 1px solid var(--vscode-pickerGroup-border);
+}
+
+.novem--vis--plot {
+    height: calc(100% - 110px);
+
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    overflow: hidden;
+
+    align-items: center;
+    justify-content: center;
+}
+.novem--vis--profile {
+    border-top: 1px solid var(--vscode-pickerGroup-border);
+    height: 110px;
+    padding: 20px;
+}
+.novem--vis--profile .img {
+    float: left;
+    width: 60px;
+    height: 60px;
+    margin: 0.25rem;
+    border-radius: 50%;
+    border: 1px solid var(--img-border);
+    background: #eee;
+    background-size: cover;
+    background-image: url(https://www.gravatar.com/avatar/7ce8d54…?d=robohash&r=g&s=120);
+}
+
+[data-dark-mode] .novem--vis--profile .img {
+    border: 1px solid var(--img-border-dark);
+    background: #404040;
+    background-size: cover;
+    background-image: url(https://www.gravatar.com/avatar/7ce8d54…?d=robohash&r=g&s=120);
+}
+
+.novem--vis--profile .details {
+    float: left;
+    height: 3.5rem;
+    margin: 0.25rem;
+    margin-left: 10px;
+    font-weight: 300;
+    font-size: 0.8rem;
+    padding-top: 0.6rem;
+    max-width: calc(100% - 85px);
+}
+.novem--vis--profile .name {
+    height: 1.2rem;
+    line-height: 1.2rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.novem--vis--profile .author {
+    height: 1.2rem;
+    line-height: 1.2rem;
+    font-weight: 400;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.novem--vis--profile .author .username {
+    color: #666;
+    font-weight: 400;
+}
+
+.novem--vis--innerhold {
+  width:100%;
+  height:100%;
+  text-align: center;
 }

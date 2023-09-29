@@ -31,6 +31,7 @@ export const ViewDataContext = createContext<{
 }>({});
 
 const MainContent = () => {
+  //  const [theme, setTheme] = useState<'light' | 'dark' | 'highContrast'>();
     const navigate = useNavigate();
     const [viewData, setViewData] = useState({
         visId: undefined,
@@ -74,6 +75,7 @@ const MainContent = () => {
         }
     }, [navigate, viewData.route]);
 
+    
     return (
         <ViewDataContext.Provider value={viewData}>
             <Routes>
@@ -82,7 +84,7 @@ const MainContent = () => {
                 <Route path="/profile" element={<NovemViewProfile />} />
                 <Route
                     path="/"
-                    element={<div>Hello World from Novem Web View!</div>}
+                    element={<NovemViewPlot />}
                 />
             </Routes>
         </ViewDataContext.Provider>

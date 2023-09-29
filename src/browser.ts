@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 function getWebviewContent(webview: vscode.Webview, extensionPath: string) {
-    console.log("GET HTML")
+    console.log('GET HTML');
     // Path to the compiled SPA
     const htmlPath = path.join(
         extensionPath,
@@ -38,7 +38,6 @@ export function createNovemBrowser(
     token?: string,
     apiRoot?: string,
 ) {
-    console.log('Create novem browser');
     const panel = vscode.window.createWebviewPanel(
         shortname,
         visId,
@@ -58,7 +57,6 @@ export function createNovemBrowser(
 
     // Function to send theme and color info to the webview
     const sendThemeInfo = () => {
-        console.log('Should send theme info');
         const currentThemeKind = vscode.window.activeColorTheme.kind;
         let theme: 'light' | 'dark' | 'highContrast' = 'dark'; // Default to dark
 
@@ -76,9 +74,6 @@ export function createNovemBrowser(
             // ... add more colors as needed
         };
 
-        console.log(colors)
-
-        console.log('got theme', theme);
         panel.webview.postMessage({
             command: 'setTheme',
             theme: theme,
@@ -100,5 +95,13 @@ export function createNovemBrowser(
     });
 
     // Navigate to the correct route
-    panel.webview.postMessage({ command: 'navigate', route: '/plot', visId:visId, uri:uri, shortName:shortname, token:token, apiRoot: apiRoot });
+    panel.webview.postMessage({
+        command: 'navigate',
+        route: '/plot',
+        visId: visId,
+        uri: uri,
+        shortName: shortname,
+        token: token,
+        apiRoot: apiRoot,
+    });
 }
