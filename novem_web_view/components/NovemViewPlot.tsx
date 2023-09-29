@@ -116,10 +116,10 @@ const NovemPlotRender: React.FC<NovemPlotRenderProps> = ({
             // let's add some headers
 
             // figure out if we are in darkmode
-            console.log(select('body').attr('class'));
+          
 
             if (select('body').classed('vscode-dark')) {
-                console.log('Make it darkmode');
+            
                 const iframes = document.getElementsByTagName('iframe');
                 for (const iframe of iframes) {
                     let cd = iframe.contentDocument;
@@ -128,7 +128,7 @@ const NovemPlotRender: React.FC<NovemPlotRenderProps> = ({
                     } catch (e) {}
                 }
             } else {
-                console.log('Make it lightmode');
+                
                 // iterate over iframes and tag them
                 const iframes = document.getElementsByTagName('iframe');
                 for (const iframe of iframes) {
