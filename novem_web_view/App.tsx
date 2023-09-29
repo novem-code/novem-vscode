@@ -31,8 +31,10 @@ const App = () => {
                         token: message.token,
                         apiRoot: message.apiRoot,
                     });
+                    window.removeEventListener('message', handleMessage);
                     break;
             }
+            
         };
 
         window.addEventListener('message', handleMessage);
@@ -43,7 +45,7 @@ const App = () => {
     }, []);
 
     const { visId, uri, shortname, route, token, apiRoot } = viewData;
-
+    
     console.log(shortname)
     if (!shortname) {
         return <div>WAITING</div>;

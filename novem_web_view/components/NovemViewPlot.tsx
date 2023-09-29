@@ -93,6 +93,12 @@ const NovemPlotRender: React.FC<NovemPlotRenderProps> = ({
     useEffect(() => {
         if (!shortname) return;
 
+        if (select('body').classed('vscode-dark')) {
+            localStorage.setItem('theme', 'dark');
+        } else {
+            localStorage.setItem('theme', 'light');
+        }
+
         // Check if the function exists on the window object before calling it
         if (window.ns?.setup && shortname && token) {
             window.ns.setup({
@@ -106,6 +112,32 @@ const NovemPlotRender: React.FC<NovemPlotRenderProps> = ({
                 shortname,
                 `novem--vis--target-${randomId}`,
             );
+
+            // let's add some headers
+
+            // figure out if we are in darkmode
+            console.log(select('body').attr('class'));
+
+            if (select('body').classed('vscode-dark')) {
+                console.log('Make it darkmode');
+                const iframes = document.getElementsByTagName('iframe');
+                for (const iframe of iframes) {
+                    let cd = iframe.contentDocument;
+                    try {
+                        cd?.documentElement.setAttribute('data-dark-mode', '');
+                    } catch (e) {}
+                }
+            } else {
+                console.log('Make it lightmode');
+                // iterate over iframes and tag them
+                const iframes = document.getElementsByTagName('iframe');
+                for (const iframe of iframes) {
+                    let cd = iframe.contentDocument;
+                    try {
+                        cd?.documentElement.removeAttribute('data-dark-mode');
+                    } catch (e) {}
+                }
+            }
         }
     }, []); // Added dependencies to useEffect
 
