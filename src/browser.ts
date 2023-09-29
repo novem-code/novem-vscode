@@ -54,46 +54,8 @@ export function createNovemBrowser(
     );
     panel.webview.html = content;
 
-    // Function to send theme and color info to the webview
-    const sendThemeInfo = () => {
-        const currentThemeKind = vscode.window.activeColorTheme.kind;
-        let theme: 'light' | 'dark' | 'highContrast' = 'dark'; // Default to dark
-
-        if (currentThemeKind === vscode.ColorThemeKind.Light) {
-            theme = 'light';
-        } else if (currentThemeKind === vscode.ColorThemeKind.Dark) {
-            theme = 'dark';
-        } else if (currentThemeKind === vscode.ColorThemeKind.HighContrast) {
-            theme = 'highContrast';
-        }
-
-        const colors = {
-            foreground: getThemeColor('editor.foreground'),
-            background: getThemeColor('editor.background'),
-            // ... add more colors as needed
-        };
-
-        panel.webview.postMessage({
-            command: 'setTheme',
-            theme: theme,
-            colors: colors,
-        });
-    };
-
-    // Send the initial theme info
-    sendThemeInfo();
-
-    // Set up an event listener for theme changes
-    let themeChangeListener = vscode.window.onDidChangeActiveColorTheme((e) => {
-        sendThemeInfo();
-    });
-
-    // Ensure the listener is disposed when the webview is disposed
-    panel.onDidDispose(() => {
-        themeChangeListener.dispose();
-    });
-
     // Navigate to the correct route
+    
     panel.webview.postMessage({
         command: 'navigate',
         route: '/plot',

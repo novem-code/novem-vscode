@@ -5,8 +5,7 @@ import NovemViewMail from './components/NovemViewMail';
 import NovemViewProfile from './components/NovemViewProfile';
 import NovemLoading from './components/NovemLoading';
 
-
-const MainContent = () => {
+const App = () => {
     const [viewData, setViewData] = useState({
         visId: undefined,
         uri: undefined,
@@ -22,6 +21,8 @@ const MainContent = () => {
 
             switch (message.command) {
                 case 'navigate':
+                    console.log('setting message')
+                    console.log(message)
                     setViewData({
                         route: message.route,
                         visId: message.visId,
@@ -41,13 +42,15 @@ const MainContent = () => {
         };
     }, []);
 
-    return (
-      <NovemViewPlot viewData={viewData}/>
-    );
-};
+    const { visId, uri, shortname, route, token, apiRoot } = viewData;
 
-const App = () => {
-    return <MainContent />;
+    console.log(shortname)
+    if (!shortname) {
+        return <div>WAITING</div>;
+    } else {
+   //     return <div>WTF</div>
+        return <NovemViewPlot viewData={viewData} />;
+    }
 };
 
 export default App;

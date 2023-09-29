@@ -1,12 +1,21 @@
-import React, { useEffect, createContext, useContext, useState } from 'react';
+import React, {
+    useEffect,
+    createContext,
+    useContext,
+    useState,
+    useRef,
+} from 'react';
 
 import { select } from 'd3-selection';
 
 function generateRandomIdString(length = 8) {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const characters =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
     for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
+        result += characters.charAt(
+            Math.floor(Math.random() * characters.length),
+        );
     }
     return result;
 }
@@ -75,14 +84,15 @@ const NovemPlotRender: React.FC<NovemPlotRenderProps> = ({
     visId,
     uri,
     shortname,
-    token
+    token,
 }) => {
     const randomId = generateRandomIdString();
+
+    const myRef = useRef(null);
 
     useEffect(() => {
         if (!shortname) return;
 
-        console.log('render', shortname, token);
         // Check if the function exists on the window object before calling it
         if (window.ns?.setup && shortname && token) {
             window.ns.setup({
@@ -90,19 +100,21 @@ const NovemPlotRender: React.FC<NovemPlotRenderProps> = ({
                 apiUrl: 'https://api.novem.no',
                 assetUrl: 'https://novem.no',
             });
-            window.ns.register('p', shortname + 'fail', `novem--vis--target-${randomId}`);
+
+            window.ns.register(
+                'p',
+                shortname,
+                `novem--vis--target-${randomId}`,
+            );
         }
-
-        return() => {
-            console.log('UNMOUNT')
-
-        }
-
     }, []); // Added dependencies to useEffect
 
-
     return (
-        <div className="novem--vis--innerhold" id={`novem--vis--target-${randomId}`}></div>
+        <div
+            className="novem--vis--innerhold"
+            id={`novem--vis--target-${randomId}`}
+            ref={myRef}
+        ></div>
     );
 };
 
@@ -119,7 +131,6 @@ const NovemPlot: React.FC<NovemPlotProps> = ({ viewData }) => {
         return <div className="novem--vis--plot">Waiting for data...</div>;
     }
 
-    console.log('we are about to add our chart, so shortname is good');
     return (
         <div className="novem--vis--plot">
             <MemoizedNovemPlotRender
@@ -226,8 +237,6 @@ const NovemViewPlot: React.FC<NovemViewPlotProps> = ({ viewData }) => {
             .then((response) => response.json())
             .then((data) => {
                 setFetchedData(data);
-
-                console.log(data);
             })
             .catch((error) => {
                 console.error('Error fetching data:', error);
