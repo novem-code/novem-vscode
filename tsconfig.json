@@ -4,13 +4,12 @@
 		"target": "ES2020",
 		"outDir": "out",
 		"lib": [
-			"ES2020"
+			"ES2020",
+      "dom", "es6", "dom.iterable", "scripthost"
 		],
+    "esModuleInterop": true,
 		"sourceMap": true,
-		"rootDir": "src",
-		"strict": true   
-	},
-  "exclude": [
-    "novem_web_view"
-  ]
+		"strict": true,
+    "jsx": "react"
+	}
 }

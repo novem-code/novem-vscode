@@ -1,7 +1,15 @@
+/* Add any additional styles you need */
 body {
-    font-family: Arial, sans-serif;
-    padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Use viewport height to set the body height */
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
-/* Add any additional styles you need */
-
+iframe {
+  flex: 1; /* Allow iframe to take up all available space */
+  width: 100%;
+  border: none; /* Optional: remove border */
+}
