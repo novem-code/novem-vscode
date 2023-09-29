@@ -22,12 +22,14 @@ body {
 
 .novem--vis--hold {
     width: calc(100% - 40px);
-    height: 80%;
+    height: calc(80vh - 40px);
     /*
   border: 1px solid var(--vscode-checkbox-selectBorder);
   border: 1px solid var(--vscode-editorHoverWidget-border);
-   */
     border: 1px solid var(--vscode-pickerGroup-border);
+   */
+    border: 1px solid var(--vscode-panel-border);
+    background: var(--vscode-panel-background);
 }
 
 .novem--vis--plot {
@@ -39,12 +41,13 @@ body {
     margin: 0;
     padding: 20px;
     overflow: hidden;
+    overflow-y: scroll;
 
     align-items: center;
     justify-content: center;
 }
 .novem--vis--profile {
-    border-top: 1px solid var(--vscode-pickerGroup-border);
+    border-top: 1px solid var(--vscode-panel-border);
     height: 110px;
     padding: 20px;
 }
@@ -54,14 +57,13 @@ body {
     height: 60px;
     margin: 0.25rem;
     border-radius: 50%;
-    border: 1px solid var(--img-border);
+    border: 1px solid var(--vscode-editorHoverWidget-border);
     background: #eee;
     background-size: cover;
     background-image: url(https://www.gravatar.com/avatar/7ce8d54…?d=robohash&r=g&s=120);
 }
 
 [data-dark-mode] .novem--vis--profile .img {
-    border: 1px solid var(--img-border-dark);
     background: #404040;
     background-size: cover;
     background-image: url(https://www.gravatar.com/avatar/7ce8d54…?d=robohash&r=g&s=120);
