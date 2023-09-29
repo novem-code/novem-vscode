@@ -3,7 +3,6 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 function getWebviewContent(webview: vscode.Webview, extensionPath: string) {
-    console.log('GET HTML');
     // Path to the compiled SPA
     const htmlPath = path.join(
         extensionPath,
