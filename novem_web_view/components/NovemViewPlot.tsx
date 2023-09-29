@@ -1,5 +1,15 @@
 import React, { useEffect, createContext, useContext, useState } from 'react';
-import { useTheme, ViewDataContext } from '../App'; // Adjust the import path accordingly
+
+import { select } from 'd3-selection';
+
+function generateRandomIdString(length = 8) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
+}
 
 interface Creator {
     username: string;
@@ -29,8 +39,15 @@ interface FetchedData {
     about: About;
 }
 
-const FetchedDataContext = createContext<FetchedData | null>(null);
+// Define the props type
+interface PlotProfile {
+    plotName?: string;
+    authorName?: string;
+    authorImg?: string;
+    authorUserName?: string;
+}
 
+// NS LIBRARY INTEGRATIONS
 interface NSFunctions {
     setup: (config: {
         bearerToken: string;
@@ -40,40 +57,100 @@ interface NSFunctions {
     register: (a: string, b: string, targetId: string) => void;
 }
 
-// Extend the window object to recognize the `ns` property
 declare global {
     interface Window {
         ns?: NSFunctions;
     }
 }
 
-const NovemPlotProfileImage: React.FC = () => {
-    // Accessing the fetched data from the global state
-    const fetchedData = useContext(FetchedDataContext);
+// Define the props type
+interface NovemPlotRenderProps {
+    visId?: string;
+    uri?: string;
+    shortname?: string;
+    token?: string;
+}
 
-    // Destructure the avatar URL from the fetched data
-    const avatarUrl = fetchedData?.creator?.avatar;
+const NovemPlotRender: React.FC<NovemPlotRenderProps> = ({
+    visId,
+    uri,
+    shortname,
+    token
+}) => {
+    const randomId = generateRandomIdString();
+
+    useEffect(() => {
+        if (!shortname) return;
+
+        console.log('render', shortname, token);
+        // Check if the function exists on the window object before calling it
+        if (window.ns?.setup && shortname && token) {
+            window.ns.setup({
+                bearerToken: token,
+                apiUrl: 'https://api.novem.no',
+                assetUrl: 'https://novem.no',
+            });
+            window.ns.register('p', shortname + 'fail', `novem--vis--target-${randomId}`);
+        }
+
+        return() => {
+            console.log('UNMOUNT')
+
+        }
+
+    }, []); // Added dependencies to useEffect
+
 
     return (
-        <div
-            className="img"
-            style={{ backgroundImage: `url(${avatarUrl})` }}
-        ></div>
+        <div className="novem--vis--innerhold" id={`novem--vis--target-${randomId}`}></div>
     );
 };
 
-const NovemPlotProfile: React.FC = () => {
-    // Accessing the fetched data from the global state
-    const fetchedData = useContext(FetchedDataContext);
+const MemoizedNovemPlotRender = React.memo(NovemPlotRender);
 
-    // Destructure the relevant fields from the fetched data
-    const visualizationName = fetchedData?.about?.name;
-    const authorName = fetchedData?.creator?.name;
-    const authorUsername = fetchedData?.creator?.username;
+type NovemPlotProps = {
+    viewData: ViewData;
+};
 
+const NovemPlot: React.FC<NovemPlotProps> = ({ viewData }) => {
+    const { visId, uri, shortname, token } = viewData;
+
+    if (!shortname) {
+        return <div className="novem--vis--plot">Waiting for data...</div>;
+    }
+
+    console.log('we are about to add our chart, so shortname is good');
+    return (
+        <div className="novem--vis--plot">
+            <MemoizedNovemPlotRender
+                visId={visId}
+                uri={uri}
+                shortname={shortname}
+                token={token}
+            />
+        </div>
+    );
+};
+
+type NovemPlotProfileProps = {
+    visualizationName: string | undefined;
+    authorName: string | undefined;
+    authorUsername: string | undefined;
+    avatarUrl: string | undefined;
+};
+
+const NovemPlotProfile: React.FC<NovemPlotProfileProps> = ({
+    visualizationName,
+    authorName,
+    authorUsername,
+    avatarUrl,
+}) => {
     return (
         <div className="novem--vis--profile">
-            <NovemPlotProfileImage />
+            <div
+                className="img"
+                style={{ backgroundImage: `url(${avatarUrl})` }}
+            ></div>
             <div className="details">
                 <div className="name">{visualizationName}</div>
                 <div className="author">
@@ -85,68 +162,79 @@ const NovemPlotProfile: React.FC = () => {
     );
 };
 
-const NovemPlot: React.FC = () => {
-    //const { theme, colors } = useTheme();
-    const { visId, uri, shortname, token } = useContext(ViewDataContext);
+type ViewData = {
+    visId?: string;
+    uri?: string;
+    shortname?: string;
+    route?: string;
+    token?: string;
+    apiRoot?: string;
+};
 
-    useEffect(() => {
-        // Check if the function exists on the window object before calling it
-        if (window.ns?.setup && shortname && token) {
-            window.ns.setup({
-                bearerToken: token,
-                apiUrl: 'https://api.novem.no',
-                assetUrl: 'https://novem.no',
-            });
-            window.ns.register('p', shortname, 'novem--vis--target');
-        }
-    }, []);
+type NovemWrapperProps = {
+    fetchedData: FetchedData | null;
+    viewData: ViewData;
+};
+
+const NovemWrapper: React.FC<NovemWrapperProps> = ({
+    fetchedData,
+    viewData,
+}) => {
+    const { visId, uri, shortname, token } = viewData;
+
+    // Destructure the relevant fields from the fetched data
+    const visualizationName = fetchedData?.about?.name;
+    const authorName = fetchedData?.creator?.name;
+    const authorUsername = fetchedData?.creator?.username;
+    const avatarUrl = fetchedData?.creator?.avatar;
+
+    // we're going to a rules based world here
+    if (!authorUsername) {
+        return <div className="novem--vis--hold">LOADING BABY</div>;
+    }
 
     return (
-        <div className="novem--vis--plot">
-            <div
-                className="novem--vis--innerhold"
-                id="novem--vis--target"
-            ></div>
+        <div className="novem--vis--hold">
+            <NovemPlot viewData={viewData} />
+            <NovemPlotProfile
+                visualizationName={visualizationName}
+                authorName={authorName}
+                authorUsername={authorUsername}
+                avatarUrl={avatarUrl}
+            />
         </div>
     );
 };
 
-const NovemViewPlot: React.FC = () => {
-    const { theme, colors } = useTheme();
-    const { visId, uri, shortname, token, apiRoot } =
-        useContext(ViewDataContext);
+type NovemViewPlotProps = {
+    viewData: ViewData;
+};
+
+const NovemViewPlot: React.FC<NovemViewPlotProps> = ({ viewData }) => {
+    const { visId, uri, shortname, route, token, apiRoot } = viewData;
 
     const [fetchedData, setFetchedData] = useState<FetchedData | null>(null);
 
     useEffect(() => {
-        if (token && apiRoot && shortname) {
-            fetch(`${apiRoot}i/${shortname}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+        if (!shortname) return;
+
+        fetch(`${apiRoot}i/${shortname}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                setFetchedData(data);
+
+                console.log(data);
             })
-                .then((response) => response.json())
-                .then((data) => {
-                    setFetchedData(data);
-                    console.log(data);
-                })
-                .catch((error) => {
-                    console.error('Error fetching data:', error);
-                });
-        }
+            .catch((error) => {
+                console.error('Error fetching data:', error);
+            });
     }, [token, apiRoot, shortname]);
 
-    return (
-        <FetchedDataContext.Provider value={fetchedData}>
-            <div
-                className="novem--vis--hold"
-                {...(theme === 'dark' ? { 'data-dark-mode': true } : {})}
-            >
-                <NovemPlot />
-                <NovemPlotProfile />
-            </div>
-        </FetchedDataContext.Provider>
-    );
+    return <NovemWrapper fetchedData={fetchedData} viewData={viewData} />;
 };
 
 export default NovemViewPlot;
