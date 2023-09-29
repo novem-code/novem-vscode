@@ -29,8 +29,6 @@ const App = () => {
                     mutation.type === 'attributes' &&
                     mutation.attributeName === 'class'
                 ) {
-                  
-
                     if (select('body').classed('vscode-dark')) {
                         localStorage.setItem('theme', 'dark');
                     } else {
@@ -38,7 +36,6 @@ const App = () => {
                     }
 
                     if (select('body').classed('vscode-dark')) {
-                       
                         const iframes = document.getElementsByTagName('iframe');
                         for (const iframe of iframes) {
                             let cd = iframe.contentDocument;
@@ -50,7 +47,6 @@ const App = () => {
                             } catch (e) {}
                         }
                     } else {
-                       
                         // iterate over iframes and tag them
                         const iframes = document.getElementsByTagName('iframe');
                         for (const iframe of iframes) {
