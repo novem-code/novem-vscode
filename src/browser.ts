@@ -1,40 +1,41 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
 
-function getWebviewContent(visId: string, shortname: string, uri: string) {
-    const isDarkMode =
-        vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark;
+function getWebviewContent(webview: vscode.Webview, extensionPath: string) {
+    // Path to the compiled SPA
+    const htmlPath = path.join(
+        extensionPath,
+        'dist',
+        'novem_web_view',
+        'index.html',
+    );
+    let htmlContent = fs.readFileSync(htmlPath, 'utf8');
 
-    return `
-        <html data-dark-mode>
-        <head>
-            <style>
-                body {
-                    display: flex;
-                    flex-direction: column;
-                    height: 100vh; /* Use viewport height to set the body height */
-                    margin: 0;
-                    padding: 0;
-                    overflow: hidden;
-                }
+    // Convert local resource paths to webview URIs
+    const scriptPathOnDisk = vscode.Uri.file(
+        path.join(extensionPath, 'dist', 'novem_web_view', 'bundle.js'),
+    );
+    const scriptUri = webview.asWebviewUri(scriptPathOnDisk);
 
-                iframe {
-                    flex: 1; /* Allow iframe to take up all available space */
-                    width: 100%;
-                    border: none; /* Optional: remove border */
-                }
-            </style>
-        </head>
-        <body>
-            <iframe src="${uri}"></iframe>
-        </body>
-        </html>
-    `;
+    // Inject the script URI into the HTML content
+    htmlContent = htmlContent.replace(/bundle.js/g, scriptUri.toString());
+
+    return htmlContent;
+}
+
+function getThemeColor(colorId: string): string | undefined {
+    return vscode.workspace
+        .getConfiguration('workbench')
+        .get(`colorCustomizations.${colorId}`);
 }
 
 export function createNovemBrowser(
     visId: string,
     shortname: string,
     uri: string,
+    token?: string,
+    apiRoot?: string,
 ) {
     const panel = vscode.window.createWebviewPanel(
         shortname,
@@ -45,6 +46,23 @@ export function createNovemBrowser(
             retainContextWhenHidden: true,
         },
     );
+
     // Set the HTML content of the WebView panel
-    panel.webview.html = getWebviewContent(visId, shortname, uri);
+    const content = getWebviewContent(
+        panel.webview,
+        vscode.extensions.getExtension('novemas.novem')!.extensionPath,
+    );
+    panel.webview.html = content;
+
+    // Navigate to the correct route
+    
+    panel.webview.postMessage({
+        command: 'navigate',
+        route: '/plot',
+        visId: visId,
+        uri: uri,
+        shortName: shortname,
+        token: token,
+        apiRoot: apiRoot,
+    });
 }

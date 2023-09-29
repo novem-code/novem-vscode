@@ -106,7 +106,7 @@ const createViewFunction = (
             {},
         );
 
-        let selectedItem = undefined;
+        let selectedItem: QuickPickItem | undefined = undefined;
 
         if (item) {
             selectedItem = options.find(
@@ -123,7 +123,7 @@ const createViewFunction = (
             let visId = selectedItem.description;
             let uri = uriMap[visId];
             let sn = snMap[visId];
-            createNovemBrowser(visId, sn, uri);
+            createNovemBrowser(visId, sn, uri, token, apiRoot);
         }
     };
 };
@@ -196,7 +196,7 @@ const createViewForUserFunction = (
             {},
         );
 
-        let selectedItem = undefined;
+        let selectedItem: QuickPickItem | undefined = undefined;
 
         // Present choices
         selectedItem = (await vscode.window.showQuickPick(options, {
@@ -207,7 +207,7 @@ const createViewForUserFunction = (
             let visId = selectedItem.description;
             let uri = uriMap[visId];
             let sn = snMap[visId];
-            createNovemBrowser(visId, sn, uri);
+            createNovemBrowser(visId, sn, uri, token, apiRoot);
         }
     };
 };
