@@ -69,7 +69,18 @@ export class NovemSideBarProvider
                 return [new vscode.TreeItem('Error loading plots')];
             }
         } else {
-            const [_, visId, path] = element.path.split('/', 3);
+            function splitWithLimit(
+                str: string,
+                delimiter: string,
+                limit: number,
+            ): string[] {
+                const parts = str.split(delimiter);
+                const selected = parts.slice(0, limit);
+                selected.push(parts.slice(limit).join(delimiter));
+                return selected;
+            }
+
+            const [_, visId, path] = splitWithLimit(element.path, '/', 2);
             if (element.type !== 'dir') throw new Error('Invalid type');
 
             try {
