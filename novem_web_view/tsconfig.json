@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "rootDir": "./",
+    "outDir": "../dist/novem_web_view",
+    "lib": ["dom", "es6", "dom.iterable", "scripthost"],
+    "jsx": "react"
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
+}
+

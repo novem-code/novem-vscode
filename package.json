@@ -15,7 +15,7 @@
     "license": "SEE LICENSE IN LICENSE",
     "pricing": "Free",
     "activationEvents": [],
-    "publisher": "Novem AS",
+    "publisher": "novemas",
     "keywords": [
         "novem",
         "pandas",
@@ -195,8 +195,12 @@
         }
     },
     "scripts": {
-        "vscode:prepublish": "yarn run compile",
+        "vscode:prepublish": "yarn build:spa && yarn run compile",
+        "build:spa:dev": "webpack --config novem_web_view/webpack.config.js --mode development",
+        "build:spa:prod": "webpack --config novem_web_view/webpack.config.js --mode production",
         "compile": "tsc -p ./",
+        "watch:spa:dev": "webpack --watch --config novem_web_view/webpack.config.js --mode development",
+        "watch:spa:prod": "webpack --watch --config novem_web_view/webpack.config.js --mode production",
         "watch": "tsc -watch -p ./",
         "pretest": "yarn run compile && yarn run lint",
         "lint": "eslint src --ext ts",
@@ -206,18 +210,28 @@
         "@types/ini": "^1.3.31",
         "@types/mocha": "^10.0.1",
         "@types/node": "16.x",
+        "@types/react": "^18.2.23",
+        "@types/react-dom": "^18.2.8",
         "@types/vscode": "^1.72.0",
         "@typescript-eslint/eslint-plugin": "^6.4.1",
         "@typescript-eslint/parser": "^6.4.1",
         "@vscode/test-electron": "^2.3.4",
+        "css-loader": "^6.8.1",
         "eslint": "^8.47.0",
         "glob": "^10.3.3",
+        "html-webpack-plugin": "^5.5.3",
         "mocha": "^10.2.0",
-        "typescript": "^5.1.6"
+        "prettier": "^3.0.3",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "style-loader": "^3.3.3",
+        "ts-loader": "^9.4.4",
+        "typescript": "^5.1.6",
+        "webpack": "^5.88.2",
+        "webpack-cli": "^5.1.4"
     },
     "dependencies": {
         "axios": "^1.5.0",
-        "ini": "^4.1.1",
-        "prettier": "^3.0.3"
+        "ini": "^4.1.1"
     }
 }

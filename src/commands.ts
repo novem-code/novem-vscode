@@ -106,7 +106,7 @@ const createViewFunction = (
             {},
         );
 
-        let selectedItem = undefined;
+        let selectedItem: QuickPickItem | undefined = undefined;
 
         if (item) {
             selectedItem = options.find(
@@ -195,8 +195,8 @@ const createViewForUserFunction = (
             },
             {},
         );
-
-        let selectedItem = undefined;
+ 
+        let selectedItem: QuickPickItem | undefined = undefined;
 
         // Present choices
         selectedItem = (await vscode.window.showQuickPick(options, {
