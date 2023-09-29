@@ -2,7 +2,7 @@ import React from 'react';
 import { useContext } from 'react';
 import { useTheme, ViewDataContext } from '../App'; // Adjust the import path accordingly
 
-const NovemPlotView: React.FC = () => {
+const NovemViewPlot: React.FC = () => {
     //const { theme, colors } = useTheme();
     const { visId, uri, shortname } = useContext(ViewDataContext);
 
@@ -15,4 +15,4 @@ const NovemPlotView: React.FC = () => {
     return <div>Hello from Novem Plot View for {visId}!</div>;
 };
 
-export default NovemPlotView;
+export default NovemViewPlot;

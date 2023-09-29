@@ -5,9 +5,9 @@ import {
     Routes,
     useNavigate,
 } from 'react-router-dom';
-import NovemPlotView from './components/NovemPlotView';
-import NovemMailView from './components/NovemMailView';
-import NovemProfileView from './components/NovemProfileView';
+import NovemViewPlot from './components/NovemViewPlot';
+import NovemViewMail from './components/NovemViewMail';
+import NovemViewProfile from './components/NovemViewProfile';
 
 // Step 1: Create a ThemeContext
 const ThemeContext = createContext<{
@@ -38,6 +38,7 @@ const MainContent = () => {
     useEffect(() => {
         window.addEventListener('message', (event) => {
             const message = event.data;
+            console.log(message);
             switch (message.command) {
                 case 'navigate':
                     navigate(message.route);
@@ -54,9 +55,9 @@ const MainContent = () => {
     return (
         <ViewDataContext.Provider value={viewData}>
             <Routes>
-                <Route path="/plot" element={<NovemPlotView />} />
-                <Route path="/mail" element={<NovemMailView />} />
-                <Route path="/profile" element={<NovemProfileView />} />
+                <Route path="/plot" element={<NovemViewPlot />} />
+                <Route path="/mail" element={<NovemViewMail />} />
+                <Route path="/profile" element={<NovemViewProfile />} />
                 <Route
                     path="/"
                     element={<div>Hello World from Novem Web View!</div>}
