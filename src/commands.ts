@@ -123,7 +123,7 @@ const createViewFunction = (
             let visId = selectedItem.description;
             let uri = uriMap[visId];
             let sn = snMap[visId];
-            createNovemBrowser(visId, sn, uri);
+            createNovemBrowser(visId, sn, uri, token, apiRoot);
         }
     };
 };
@@ -195,7 +195,7 @@ const createViewForUserFunction = (
             },
             {},
         );
- 
+
         let selectedItem: QuickPickItem | undefined = undefined;
 
         // Present choices
@@ -207,7 +207,7 @@ const createViewForUserFunction = (
             let visId = selectedItem.description;
             let uri = uriMap[visId];
             let sn = snMap[visId];
-            createNovemBrowser(visId, sn, uri);
+            createNovemBrowser(visId, sn, uri, token, apiRoot);
         }
     };
 };

@@ -35,6 +35,8 @@ export function createNovemBrowser(
     visId: string,
     shortname: string,
     uri: string,
+    token?: string,
+    apiRoot?: string,
 ) {
     console.log('Create novem browser');
     const panel = vscode.window.createWebviewPanel(
@@ -98,5 +100,5 @@ export function createNovemBrowser(
     });
 
     // Navigate to the correct route
-    panel.webview.postMessage({ command: 'navigate', route: '/plot', visId:visId, uri:uri, shortName:shortname });
+    panel.webview.postMessage({ command: 'navigate', route: '/plot', visId:visId, uri:uri, shortName:shortname, token:token, apiRoot: apiRoot });
 }

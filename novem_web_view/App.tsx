@@ -25,6 +25,9 @@ export const ViewDataContext = createContext<{
     visId?: string;
     uri?: string;
     shortname?: string;
+    route?: string;
+    token?: string;
+    apiRoot?: string;
 }>({});
 
 const MainContent = () => {
@@ -33,24 +36,43 @@ const MainContent = () => {
         visId: undefined,
         uri: undefined,
         shortname: undefined,
+        route: undefined,
+        token: undefined,
+        apiRoot: undefined,
     });
 
     useEffect(() => {
-        window.addEventListener('message', (event) => {
+        const handleMessage = (event: MessageEvent) => {
             const message = event.data;
-            console.log(message);
+
             switch (message.command) {
                 case 'navigate':
-                    navigate(message.route);
-                    setViewData({
-                        visId: message.visId,
-                        uri: message.uri,
-                        shortname: message.shortname,
-                    });
+                    {
+                        setViewData({
+                            route: message.route,
+                            visId: message.visId,
+                            uri: message.uri,
+                            shortname: message.shortName,
+                            token: message.token,
+                            apiRoot: message.apiRoot,
+                        });
+                    }
                     break;
             }
-        });
-    }, [navigate]);
+        };
+
+        window.addEventListener('message', handleMessage);
+
+        return () => {
+            window.removeEventListener('message', handleMessage);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (viewData.route) {
+            navigate(viewData.route);
+        }
+    }, [navigate, viewData.route]);
 
     return (
         <ViewDataContext.Provider value={viewData}>
@@ -78,15 +100,25 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const [colors, setColors] = useState<{ [key: string]: string }>({});
 
     useEffect(() => {
-        window.addEventListener('message', (event) => {
+        window.addEventListener('message', (event) => {});
+    }, []);
+
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
             const message = event.data;
             switch (message.command) {
                 case 'setTheme':
                     setTheme(message.theme);
-                    setColors(message.colors);
+                    //setColors(message.colors);
                     break;
             }
-        });
+        };
+
+        window.addEventListener('message', handleMessage);
+
+        return () => {
+            window.removeEventListener('message', handleMessage);
+        };
     }, []);
 
     return (
