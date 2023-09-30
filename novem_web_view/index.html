@@ -10,15 +10,15 @@
         />
         -->
         <title>Novem Web View</title>
-    </head>
-    <body>
-        <div id="root"></div>
-        <script rel="preload" src="https://novem.no/s/ns.js"></script>
         <script>
             const vscode = acquireVsCodeApi();
             window.addEventListener('DOMContentLoaded', (event) => {
                 vscode.postMessage({ command: 'contentReady' }, '*');
             });
         </script>
+    </head>
+    <body>
+        <div id="root"></div>
+        <script rel="preload" src="https://novem.no/s/ns.js"></script>
     </body>
 </html>
