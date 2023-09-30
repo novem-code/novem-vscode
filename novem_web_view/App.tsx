@@ -1,12 +1,67 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
+import {
+    BrowserRouter as Router,
+    Route,
+    Routes,
+    useNavigate,
+} from 'react-router-dom';
+
 import { select } from 'd3-selection';
 import NovemViewPlot from './components/NovemViewPlot';
 import NovemViewMail from './components/NovemViewMail';
 import NovemViewProfile from './components/NovemViewProfile';
-import NovemLoading from './components/NovemLoading';
 
-const App = () => {
+export const ViewDataContext = createContext<{
+    visId?: string;
+    uri?: string;
+    shortname?: string;
+    route?: string;
+    token?: string;
+    apiRoot?: string;
+    ignoreSslWarn?: boolean;
+}>({
+    visId: '',
+    uri: '',
+    shortname: '',
+    route: '',
+    token: '',
+    apiRoot: '',
+    ignoreSslWarn: false,
+});
+
+interface Creator {
+    username: string;
+    name: string;
+    avatar: string;
+}
+
+interface About {
+    shortname: string;
+    name: string;
+    created: string;
+    uri_vis: string;
+    uri_img: string;
+    uri_pdf: string;
+    vis_type: string;
+    description: string;
+    summary: string;
+}
+
+interface FetchedData {
+    data: any[];
+    metadata: Record<string, unknown>;
+    config: Record<string, unknown>;
+    creator: Creator;
+    references: any;
+    recipients: any;
+    about: About;
+}
+
+export const FetchedDataContext = createContext<FetchedData | null>(null);
+
+const MainContent = () => {
+    const navigate = useNavigate();
     const [viewData, setViewData] = useState({
         visId: undefined,
         uri: undefined,
@@ -14,7 +69,12 @@ const App = () => {
         route: undefined,
         token: undefined,
         apiRoot: undefined,
+        ignoreSslWarn: undefined,
     });
+
+    const { visId, uri, shortname, route, token, apiRoot, ignoreSslWarn } =
+        viewData;
+    const [fetchedData, setFetchedData] = useState<FetchedData | null>(null);
 
     useEffect(() => {
         // Define the callback for the observer
@@ -78,7 +138,6 @@ const App = () => {
 
             switch (message.command) {
                 case 'navigate':
-
                     setViewData({
                         route: message.route,
                         visId: message.visId,
@@ -86,7 +145,9 @@ const App = () => {
                         shortname: message.shortName,
                         token: message.token,
                         apiRoot: message.apiRoot,
+                        ignoreSslWarn: message.ignoreSslWarn,
                     });
+                    navigate(message.route);
                     break;
             }
         };
@@ -94,15 +155,67 @@ const App = () => {
         window.addEventListener('message', handleMessage);
     }, []);
 
-    const { visId, uri, shortname, route, token, apiRoot } = viewData;
+    useEffect(() => {
+        if (token && apiRoot && shortname) {
+            // IF ignoreSslWarn is true then don't fail on invalid certificate
 
-    console.log(shortname);
-    if (!shortname) {
-        return <div>WAITING</div>;
-    } else {
-        //     return <div>WTF</div>
-        return <NovemViewPlot viewData={viewData} />;
-    }
+            let reqApiRoot: string = apiRoot || '';
+
+            if (ignoreSslWarn && apiRoot) {
+                reqApiRoot =  (apiRoot as string).replace('https', 'http');
+            }
+
+            fetch(`${reqApiRoot}i/${shortname}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    setFetchedData(data);
+                    console.log(data);
+                })
+                .catch((error) => {
+                    console.error('Error fetching data:', error);
+                });
+        }
+    }, [token, apiRoot, shortname]);
+
+    return (
+        <ViewDataContext.Provider value={viewData}>
+            <Routes>
+                <Route
+                    path="/plot"
+                    element={
+                        <FetchedDataContext.Provider value={fetchedData}>
+                            <NovemViewPlot />
+                        </FetchedDataContext.Provider>
+                    }
+                />
+                <Route
+                    path="/mail"
+                    element={
+                        <FetchedDataContext.Provider value={fetchedData}>
+                            <NovemViewMail />
+                        </FetchedDataContext.Provider>
+                    }
+                />
+                <Route path="/profile" element={<NovemViewProfile />} />
+                <Route
+                    path="/"
+                    element={<div>Hello World from Novem Web View!</div>}
+                />
+            </Routes>
+        </ViewDataContext.Provider>
+    );
+};
+
+const App = () => {
+    return (
+        <Router>
+            <MainContent />
+        </Router>
+    );
 };
 
 export default App;

@@ -30,12 +30,12 @@
         "theme": "dark"
     },
     "bugs": {
-        "url": "https://github.com/novem-no/novem-vscode/issues",
+        "url": "https://github.com/novem-code/novem-vscode/issues",
         "email": "support@novem.no"
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/novem-no/novem-vscode.git"
+        "url": "https://github.com/novem-code/novem-vscode.git"
     },
     "homepage": "https://novem.no",
     "contributes": {
@@ -228,6 +228,7 @@
         "prettier": "^3.0.3",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
+        "react-router-dom": "^6.16.0",
         "style-loader": "^3.3.3",
         "ts-loader": "^9.4.4",
         "typescript": "^5.1.6",
