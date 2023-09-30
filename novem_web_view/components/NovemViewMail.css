@@ -87,6 +87,7 @@
 
 .novem--vis--profile--mail--text--content {
     width: calc(100% - 100px);
+    padding-bottom: 15px;
 }
 
 .novem--vis--profile--mail--text--content--top {
@@ -120,7 +121,10 @@
 .novem--vis--profile--mail .subject,
 .novem--vis--profile--mail .to,
 .novem--vis--profile--mail .cc {
+    width: calc(100% - 100px);
     margin-top: 5px; /* Spacing between rows */
+    float: left;
+    clear: both;
 }
 
 .novem--vis--profile--mail .addr_inst {
@@ -128,4 +132,28 @@
     width: 21px;
     display: block;
     float: left;
+}
+
+.novem--vis--profile--mail .rcpt {
+    margin-right: 3px;
+    /*
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-bottom: 2px;
+    padding-top:2px;
+    border-radius: 4px;
+    background: var(--vscode-foreground);
+    color:var(--vscode-panel-background);
+    */
+    white-space: pre;
+    display: inline;
+    margin-bottom: 3px;
+    float: left;
+}
+
+.novem--vis--profile--mail .rcpt:not(:last-child)::after {
+    content: ', ';
+}
+
+.vscode-dark .novem--vis--profile--mail .rcpt {
 }

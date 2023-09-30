@@ -48,14 +48,30 @@ interface About {
     summary: string;
 }
 
+interface Recipient {
+    id: string;
+    name: string;
+    path: string;
+}
+
+interface RecipientEntry {
+    recipient: Recipient;
+    type: string; // if there's a limited set of possible strings, use union type instead, e.g., type: "user" | "admin" | ...;
+}
+
+interface Recipients {
+    cc: RecipientEntry[] | null;
+    to: RecipientEntry[] | null;
+}
+
 interface FetchedData {
     data: any[];
     metadata: Record<string, unknown>;
     config: Record<string, unknown>;
     creator: Creator;
     references: any;
-    recipients: any;
     about: About;
+    recipients: Recipients;
 }
 
 export const enforceStyles = () => {

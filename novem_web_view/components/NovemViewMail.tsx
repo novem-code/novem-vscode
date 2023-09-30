@@ -44,12 +44,8 @@ const NovemMailRender: React.FC = () => {
             });
 
             window.ns.register('m', shortname, `novem--vis--target`);
+
             enforceStyles();
-            /*
-            setTimeout(() => {
-                console.log('STYLE IT FUCKER')
-                enforceStyles();
-            }, 1000); */
         }
     }, []); // Added dependencies to useEffect
 
@@ -124,6 +120,8 @@ const NovemMailProfile: React.FC = () => {
         fetchedData?.creator?.username ?? 'novem_placeholder';
     const avatarUrl = fetchedData?.creator?.avatar;
 
+    const recipients = fetchedData?.recipients;
+
     const pdate = formatDate(date);
     return (
         <div className="novem--vis--profile--mail">
@@ -140,11 +138,19 @@ const NovemMailProfile: React.FC = () => {
                     <div className="subject">{subject}</div>
                     <div className="to">
                         <span className="addr_inst">To:</span>
-                        <span className="rcpt">Sondov Engen</span>
+                        {recipients?.to?.map((entry, index) => (
+                            <span key={index} className="rcpt">
+                                {entry.recipient.name}
+                            </span>
+                        ))}
                     </div>
                     <div className="cc">
                         <span className="addr_inst">Cc:</span>
-                        <span className="rcpt">Sondov Engen</span>
+                        {recipients?.cc?.map((entry, index) => (
+                            <span key={index} className="rcpt">
+                                {entry.recipient.name}
+                            </span>
+                        ))}
                     </div>
                 </div>
             </div>

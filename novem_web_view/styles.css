@@ -25,14 +25,12 @@ body {
     align-items: center;
 
     overflow: auto;
-    /*
-    overflow: scroll;
-    */
 }
 
 .novem--vis--hold {
     min-width: calc(100% - 40px);
     min-height: calc(100vh - 40px);
+    max-height: calc(100vh - 40px);
     margin-top: 20px;
     /*
     border: 1px solid var(--vscode-checkbox-selectBorder);

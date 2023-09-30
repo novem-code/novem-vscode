@@ -1,5 +1,5 @@
 import React, { useEffect, useContext } from 'react';
-import { ViewDataContext, FetchedDataContext } from '../App'; // Adjust the import path accordingly
+import { ViewDataContext, FetchedDataContext, enforceStyles } from '../App'; // Adjust the import path accordingly
 
 // NS LIBRARY INTEGRATIONS
 interface NSFunctions {
@@ -42,6 +42,8 @@ const NovemPlotRender: React.FC = () => {
             });
 
             window.ns.register('p', shortname, `novem--vis--target`);
+
+            enforceStyles();
         }
     }, []); // Added dependencies to useEffect
 
