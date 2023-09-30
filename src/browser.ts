@@ -54,15 +54,18 @@ export function createNovemBrowser(
     );
     panel.webview.html = content;
 
-    // Navigate to the correct route
-    
-    panel.webview.postMessage({
-        command: 'navigate',
-        route: '/plot',
-        visId: visId,
-        uri: uri,
-        shortName: shortname,
-        token: token,
-        apiRoot: apiRoot,
+    panel.webview.onDidReceiveMessage((message) => {
+        if (message.command === 'contentReady') {
+            // Now that the content is ready, send the navigation message
+            panel.webview.postMessage({
+                command: 'navigate',
+                route: '/plot',
+                visId: visId,
+                uri: uri,
+                shortName: shortname,
+                token: token,
+                apiRoot: apiRoot,
+            });
+        }
     });
 }

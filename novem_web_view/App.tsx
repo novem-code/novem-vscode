@@ -78,8 +78,7 @@ const App = () => {
 
             switch (message.command) {
                 case 'navigate':
-                    console.log('setting message');
-                    console.log(message);
+
                     setViewData({
                         route: message.route,
                         visId: message.visId,
@@ -88,16 +87,11 @@ const App = () => {
                         token: message.token,
                         apiRoot: message.apiRoot,
                     });
-                    window.removeEventListener('message', handleMessage);
                     break;
             }
         };
 
         window.addEventListener('message', handleMessage);
-
-        return () => {
-            window.removeEventListener('message', handleMessage);
-        };
     }, []);
 
     const { visId, uri, shortname, route, token, apiRoot } = viewData;

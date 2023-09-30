@@ -15,7 +15,8 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './novem_web_view/index.html',
       filename: 'index.html',
-      inject: 'body'
+      inject: 'body',
+      scriptLoading: 'blocking'
     })
   ],
   module: {

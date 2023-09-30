@@ -13,7 +13,12 @@
     </head>
     <body>
         <div id="root"></div>
-        <script src="bundle.js"></script>
         <script rel="preload" src="https://novem.no/s/ns.js"></script>
+        <script>
+            const vscode = acquireVsCodeApi();
+            window.addEventListener('DOMContentLoaded', (event) => {
+                vscode.postMessage({ command: 'contentReady' }, '*');
+            });
+        </script>
     </body>
 </html>
