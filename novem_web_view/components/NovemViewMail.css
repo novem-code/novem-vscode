@@ -1,0 +1,131 @@
+:root {
+    --novem-mail-size-xs: 500px; /*  400 mail */
+    --novem-mail-size-small: 700px; /*  600 mail */
+    --novem-mail-size-medium: 900px; /*  800 mail */
+    --novem-mail-size-large: 1100px; /* 1000 mail */
+
+    --novem-mail-img-size: 80px;
+
+    --novem-mail-big-text: 16px;
+}
+
+.novem--vis--hold--mail {
+    width: var(--novem-mail-size-medium);
+
+    /*
+    border: 1px solid var(--vscode-checkbox-selectBorder);
+    border: 1px solid var(--vscode-editorHoverWidget-border);
+    border: 1px solid var(--vscode-pickerGroup-border);
+   */
+    border: 1px solid var(--vscode-panel-border);
+    background: var(--vscode-panel-background);
+
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.novem--vis--hold--mail.novem--mail--size--large {
+    width: var(--novem-mail-size-large);
+}
+.novem--vis--hold--mail.novem--mail--size--medium {
+    width: var(--novem-mail-size-medium);
+}
+.novem--vis--hold--mail.novem--mail--size--small {
+    width: var(--novem-mail-size-small);
+}
+.novem--vis--hold--mail.novem--mail--size--xs {
+    width: var(--novem-mail-size-xs);
+}
+
+.novem--vis--profile--mail {
+    width: 100%;
+    padding-left: 50px;
+    padding-right: 50px;
+
+    border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.novem--vis--hold--mail .novem--vis--innerhold {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.novem--vis--profile--mail .img {
+    height: var(--novem-mail-img-size);
+    width: var(--novem-mail-img-size);
+    float: left;
+    margin: 0px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    margin-right: 20px;
+    border-radius: 50%;
+    border: 1px solid var(--img-border);
+    background: #eee;
+
+    border: 1px solid var(--vscode-textBlockQuote-border);
+    border: 1px solid var(--vscode-editorHoverWidget-border);
+    border: 1px solid #9f9f9f;
+    background-size: cover;
+    background-image: url(https://www.gravatar.com/avatar/0ab3454…?d=robohash&r=g);
+}
+
+.vscode-dark .novem--vis--profile--mail .img {
+    background: #404040;
+    border: 1px solid #777;
+    background-size: cover;
+    background-image: url(https://www.gravatar.com/avatar/7ce8d54…?d=robohash&r=g&s=120);
+}
+
+.novem--vis--profile--mail .holder {
+    display: flex;
+    align-items: flex-start;
+}
+
+.novem--vis--profile--mail--text--content {
+    width: calc(100% - 100px);
+}
+
+.novem--vis--profile--mail--text--content--top {
+    display: flex;
+    justify-content: space-between; /* Makes maximum space between children */
+    width: 100%; /* Ensures the container takes up full width of parent */
+    margin-top: 20px; /* Space between top content and the rest */
+}
+
+.novem--vis--profile--mail--text--content--top .from,
+.novem--vis--profile--mail--text--content--top .date {
+    margin-right: 10px; /* Space between name and date */
+}
+
+.novem--vis--profile--mail--text--content--top .from {
+    font-size: var(--novem-mail-big-text);
+    font-weight: 400;
+}
+.novem--vis--profile--mail--text--content--top .date {
+    font-weight: 400;
+    padding-top: 5px;
+}
+.novem--vis--profile--mail .subject {
+    font-size: var(--novem-mail-big-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 600;
+}
+
+.novem--vis--profile--mail .subject,
+.novem--vis--profile--mail .to,
+.novem--vis--profile--mail .cc {
+    margin-top: 5px; /* Spacing between rows */
+}
+
+.novem--vis--profile--mail .addr_inst {
+    margin-right: 5px; /* Spacing between 'To:'/'Cc:' and the name */
+    width: 21px;
+    display: block;
+    float: left;
+}

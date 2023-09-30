@@ -124,7 +124,7 @@ const createViewFunction = (
             let visId = selectedItem.description;
             let uri = uriMap[visId];
             let sn = snMap[visId];
-            createNovemBrowser(visId, sn, uri, token, apiRoot, ignoreSslWarn);
+            createNovemBrowser(type, visId, sn, uri, token, apiRoot, ignoreSslWarn);
         }
     };
 };
@@ -209,7 +209,7 @@ const createViewForUserFunction = (
             let visId = selectedItem.description;
             let uri = uriMap[visId];
             let sn = snMap[visId];
-            createNovemBrowser(visId, sn, uri, token, apiRoot, ignoreSslWarn);
+            createNovemBrowser(type, visId, sn, uri, token, apiRoot, ignoreSslWarn);
         }
     };
 };

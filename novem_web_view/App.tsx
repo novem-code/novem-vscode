@@ -58,6 +58,33 @@ interface FetchedData {
     about: About;
 }
 
+export const enforceStyles = () => {
+    if (select('body').classed('vscode-dark')) {
+        localStorage.setItem('theme', 'dark');
+    } else {
+        localStorage.setItem('theme', 'light');
+    }
+
+    if (select('body').classed('vscode-dark')) {
+        const iframes = document.getElementsByTagName('iframe');
+        for (const iframe of iframes) {
+            let cd = iframe.contentDocument;
+            try {
+                cd?.documentElement.setAttribute('data-dark-mode', '');
+            } catch (e) {}
+        }
+    } else {
+        // iterate over iframes and tag them
+        const iframes = document.getElementsByTagName('iframe');
+        for (const iframe of iframes) {
+            let cd = iframe.contentDocument;
+            try {
+                cd?.documentElement.removeAttribute('data-dark-mode');
+            } catch (e) {}
+        }
+    }
+};
+
 export const FetchedDataContext = createContext<FetchedData | null>(null);
 
 const MainContent = () => {
@@ -89,35 +116,7 @@ const MainContent = () => {
                     mutation.type === 'attributes' &&
                     mutation.attributeName === 'class'
                 ) {
-                    if (select('body').classed('vscode-dark')) {
-                        localStorage.setItem('theme', 'dark');
-                    } else {
-                        localStorage.setItem('theme', 'light');
-                    }
-
-                    if (select('body').classed('vscode-dark')) {
-                        const iframes = document.getElementsByTagName('iframe');
-                        for (const iframe of iframes) {
-                            let cd = iframe.contentDocument;
-                            try {
-                                cd?.documentElement.setAttribute(
-                                    'data-dark-mode',
-                                    '',
-                                );
-                            } catch (e) {}
-                        }
-                    } else {
-                        // iterate over iframes and tag them
-                        const iframes = document.getElementsByTagName('iframe');
-                        for (const iframe of iframes) {
-                            let cd = iframe.contentDocument;
-                            try {
-                                cd?.documentElement.removeAttribute(
-                                    'data-dark-mode',
-                                );
-                            } catch (e) {}
-                        }
-                    }
+                    enforceStyles();
                 }
             }
         };
@@ -162,7 +161,7 @@ const MainContent = () => {
             let reqApiRoot: string = apiRoot || '';
 
             if (ignoreSslWarn && apiRoot) {
-                reqApiRoot =  (apiRoot as string).replace('https', 'http');
+                reqApiRoot = (apiRoot as string).replace('https', 'http');
             }
 
             fetch(`${reqApiRoot}i/${shortname}`, {
@@ -185,7 +184,7 @@ const MainContent = () => {
         <ViewDataContext.Provider value={viewData}>
             <Routes>
                 <Route
-                    path="/plot"
+                    path="/plots"
                     element={
                         <FetchedDataContext.Provider value={fetchedData}>
                             <NovemViewPlot />
@@ -193,7 +192,7 @@ const MainContent = () => {
                     }
                 />
                 <Route
-                    path="/mail"
+                    path="/mails"
                     element={
                         <FetchedDataContext.Provider value={fetchedData}>
                             <NovemViewMail />
