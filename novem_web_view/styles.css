@@ -24,7 +24,10 @@ body {
 
     align-items: center;
 
+    overflow: auto;
+    /*
     overflow: scroll;
+    */
 }
 
 .novem--vis--hold {
