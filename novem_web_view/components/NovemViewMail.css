@@ -93,7 +93,7 @@
     display: flex;
     justify-content: space-between; /* Makes maximum space between children */
     width: 100%; /* Ensures the container takes up full width of parent */
-    margin-top: 10px; /* Space between top content and the rest */
+    margin-top: 20px; /* Space between top content and the rest */
 }
 
 .novem--vis--profile--mail--text--content--top .from,
@@ -104,6 +104,10 @@
 .novem--vis--profile--mail--text--content--top .from {
     font-size: var(--novem-mail-big-text);
     font-weight: 400;
+}
+.novem--vis--profile--mail--text--content--top .date {
+    font-weight: 400;
+    padding-top: 5px;
 }
 .novem--vis--profile--mail .subject {
     font-size: var(--novem-mail-big-text);
@@ -121,4 +125,7 @@
 
 .novem--vis--profile--mail .addr_inst {
     margin-right: 5px; /* Spacing between 'To:'/'Cc:' and the name */
+    width: 21px;
+    display: block;
+    float: left;
 }
