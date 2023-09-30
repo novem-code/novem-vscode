@@ -31,6 +31,7 @@ function getThemeColor(colorId: string): string | undefined {
 }
 
 export function createNovemBrowser(
+    type: string,
     visId: string,
     shortname: string,
     uri: string,
@@ -60,7 +61,7 @@ export function createNovemBrowser(
             // Now that the content is ready, send the navigation message
             panel.webview.postMessage({
                 command: 'navigate',
-                route: '/plot',
+                route: `/${type}`,
                 visId: visId,
                 uri: uri,
                 shortName: shortname,
