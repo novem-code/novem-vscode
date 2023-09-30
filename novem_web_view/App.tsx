@@ -19,7 +19,16 @@ export const ViewDataContext = createContext<{
     route?: string;
     token?: string;
     apiRoot?: string;
-}>({});
+    ignoreSslWarn?: boolean;
+}>({
+    visId: '',
+    uri: '',
+    shortname: '',
+    route: '',
+    token: '',
+    apiRoot: '',
+    ignoreSslWarn: false,
+});
 
 interface Creator {
     username: string;
@@ -60,9 +69,11 @@ const MainContent = () => {
         route: undefined,
         token: undefined,
         apiRoot: undefined,
+        ignoreSslWarn: undefined,
     });
 
-    const { visId, uri, shortname, route, token, apiRoot } = viewData;
+    const { visId, uri, shortname, route, token, apiRoot, ignoreSslWarn } =
+        viewData;
     const [fetchedData, setFetchedData] = useState<FetchedData | null>(null);
 
     useEffect(() => {
@@ -134,6 +145,7 @@ const MainContent = () => {
                         shortname: message.shortName,
                         token: message.token,
                         apiRoot: message.apiRoot,
+                        ignoreSslWarn: message.ignoreSslWarn,
                     });
                     navigate(message.route);
                     break;
@@ -145,7 +157,15 @@ const MainContent = () => {
 
     useEffect(() => {
         if (token && apiRoot && shortname) {
-            fetch(`${apiRoot}i/${shortname}`, {
+            // IF ignoreSslWarn is true then don't fail on invalid certificate
+
+            let reqApiRoot: string = apiRoot || '';
+
+            if (ignoreSslWarn && apiRoot) {
+                reqApiRoot =  (apiRoot as string).replace('https', 'http');
+            }
+
+            fetch(`${reqApiRoot}i/${shortname}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },

@@ -30,12 +30,12 @@
         "theme": "dark"
     },
     "bugs": {
-        "url": "https://github.com/novem-no/novem-vscode/issues",
+        "url": "https://github.com/novem-code/novem-vscode/issues",
         "email": "support@novem.no"
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/novem-no/novem-vscode.git"
+        "url": "https://github.com/novem-code/novem-vscode.git"
     },
     "homepage": "https://novem.no",
     "contributes": {

@@ -1,13 +1,13 @@
 import React, { useEffect, useContext } from 'react';
-
 import { ViewDataContext, FetchedDataContext } from '../App'; // Adjust the import path accordingly
 
 // NS LIBRARY INTEGRATIONS
 interface NSFunctions {
     setup: (config: {
-        bearerToken: string;
-        apiUrl: string;
-        assetUrl: string;
+        bearerToken?: string;
+        apiUrl?: string;
+        assetUrl?: string;
+        ignoreSSLWarninig?: boolean;
     }) => void;
     register: (a: string, b: string, targetId: string) => void;
 }
@@ -19,7 +19,7 @@ declare global {
 }
 
 const NovemPlotRender: React.FC = () => {
-    const { visId, uri, shortname, token, apiRoot } =
+    const { visId, uri, shortname, token, apiRoot, ignoreSslWarn } =
         useContext(ViewDataContext);
 
     useEffect(() => {
@@ -27,10 +27,18 @@ const NovemPlotRender: React.FC = () => {
 
         // Check if the function exists on the window object before calling it
         if (window.ns?.setup && shortname && token) {
+            let apiUrl = 'https://api.novem.no';
+            let assetUrl = 'https://novem.no';
+
+            if (ignoreSslWarn) {
+                apiUrl = 'http://dev.api.novem.no';
+                assetUrl = 'http://dev.novem.no';
+            }
+
             window.ns.setup({
                 bearerToken: token,
-                apiUrl: 'https://api.novem.no',
-                assetUrl: 'https://novem.no',
+                apiUrl: apiUrl,
+                assetUrl: assetUrl,
             });
 
             window.ns.register('p', shortname, `novem--vis--target`);
@@ -48,9 +56,11 @@ const NovemPlotProfile: React.FC = () => {
     const fetchedData = useContext(FetchedDataContext);
 
     // Destructure the relevant fields from the fetched data
-    const visualizationName = fetchedData?.about?.name;
-    const authorName = fetchedData?.creator?.name;
-    const authorUsername = fetchedData?.creator?.username;
+    const visualizationName =
+        fetchedData?.about?.name ?? 'Your placeholder chart';
+    const authorName = fetchedData?.creator?.name ?? 'Novem Placeholder';
+    const authorUsername =
+        fetchedData?.creator?.username ?? 'novem_placeholder';
     const avatarUrl = fetchedData?.creator?.avatar;
 
     return (
