@@ -69,7 +69,7 @@ const NovemPlotProfile: React.FC = () => {
         <div className="novem--vis--profile">
             <div
                 className="img"
-                style={{ backgroundImage: `url(${avatarUrl})` }}
+                style={{ backgroundImage: `url(${avatarUrl}&s=160)` }}
             ></div>
             <div className="details">
                 <div className="name">{visualizationName}</div>

@@ -128,7 +128,7 @@ const NovemMailProfile: React.FC = () => {
             <div className="holder">
                 <div
                     className="img"
-                    style={{ backgroundImage: `url(${avatarUrl})` }}
+                    style={{ backgroundImage: `url(${avatarUrl}&s=160)` }}
                 ></div>
                 <div className="novem--vis--profile--mail--text--content">
                     <div className="novem--vis--profile--mail--text--content--top">
