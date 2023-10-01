@@ -1,21 +1,22 @@
 {
     "name": "novem",
     "displayName": "novem",
-    "description": "Access and work with novem visuals in your favourite tool.",
+    "description": "novem - access and work with novem visuals in your favourite tool",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.72.0"
     },
     "categories": [
         "Data Science",
-        "Themes",
         "Visualization",
         "Notebooks"
     ],
     "license": "SEE LICENSE IN LICENSE",
     "pricing": "Free",
     "activationEvents": [],
-    "publisher": "novemas",
+    "publisher": "novem",
+    "qna":false,
+    "preview": true,
     "keywords": [
         "novem",
         "pandas",
