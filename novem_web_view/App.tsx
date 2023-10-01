@@ -75,29 +75,20 @@ interface FetchedData {
 }
 
 export const enforceStyles = () => {
-    if (select('body').classed('vscode-dark')) {
-        localStorage.setItem('theme', 'dark');
-    } else {
-        localStorage.setItem('theme', 'light');
-    }
+    const isDark = select('body').classed('vscode-dark');
 
-    if (select('body').classed('vscode-dark')) {
-        const iframes = document.getElementsByTagName('iframe');
-        for (const iframe of iframes) {
-            let cd = iframe.contentDocument;
-            try {
-                cd?.documentElement.setAttribute('data-dark-mode', '');
-            } catch (e) {}
-        }
-    } else {
-        // iterate over iframes and tag them
-        const iframes = document.getElementsByTagName('iframe');
-        for (const iframe of iframes) {
-            let cd = iframe.contentDocument;
-            try {
-                cd?.documentElement.removeAttribute('data-dark-mode');
-            } catch (e) {}
-        }
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
+    const iframes = document.getElementsByTagName('iframe');
+    for (const iframe of iframes) {
+        let elem = iframe.contentDocument?.documentElement;
+        try {
+            if (isDark) {
+                elem?.setAttribute('data-dark-mode', '');
+            } else {
+                elem?.removeAttribute('data-dark-mode');
+            }
+        } catch (e) {}
     }
 };
 
