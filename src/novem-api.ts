@@ -103,7 +103,7 @@ export default class NovemApi {
     }
 
     async readFile(path: string) {
-        console.log('reading file', path);
+        //console.log('reading file', path);
         try {
             return await this.get(`${this.apiRoot}/vis/${path.slice(1)}`);
         } catch (e) {
@@ -112,7 +112,7 @@ export default class NovemApi {
     }
 
     async writeFile(path: string, content: string) {
-        console.log('writing file', path, content);
+        //console.log('writing file', path, content);
         try {
             return await this.post(
                 `${this.apiRoot}/vis/${path.slice(1)}`,

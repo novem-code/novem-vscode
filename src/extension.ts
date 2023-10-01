@@ -49,7 +49,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // Let's grab our profile information
     const profile = await novemApi.getProfile();
 
-    console.log(profile);
+    //console.log(profile);
 
     // Store user information
     context.globalState.update('userConfig', config);

@@ -6,12 +6,12 @@
 
 Install through VS Code extensions. Search for `novem`
 
-[Visual Studio Code Market Place: novem](https://novem.no)
+[Visual Studio Code Market Place: novem](https://marketplace.visualstudio.com/items?itemName=novem.novem-vscode)
 
 Can also be installed in VS Code: Launch VS Code Quick Open (Ctrl+P), paste the following command, and press enter.
 
 ```
-ext install novemas.novem (TODO: Publish and update)
+ext install novem.novem-vscode
 ```
 
 ## Getting started
@@ -24,4 +24,4 @@ novem --init
 ## Editing your visuals
 Navigate through and open the relevant visuals using the novem bar and everything should work just like normal.
 
-![email exampe](./img/mail_example.png)
+![email example](./img/mail_example.png)

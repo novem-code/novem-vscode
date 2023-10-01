@@ -265,7 +265,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
             if (!plotId) return;
 
-            console.log(`Create mail: "${plotId}"`);
+            //console.log(`Create mail: "${plotId}"`);
             try {
                 await api.createMail(plotId);
             } catch (error) {
@@ -316,7 +316,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             if (!type) type = 'bar';
 
             let url = `${conf.api_root}vis/plots/${plotId}`;
-            console.log(`Create plot: "${plotId}"`);
+            //console.log(`Create plot: "${plotId}"`);
             try {
                 await api.createPlot(plotId);
             } catch (error) {

@@ -48,40 +48,47 @@ interface About {
     summary: string;
 }
 
+interface Recipient {
+    id: string;
+    name: string;
+    path: string;
+}
+
+interface RecipientEntry {
+    recipient: Recipient;
+    type: string; // if there's a limited set of possible strings, use union type instead, e.g., type: "user" | "admin" | ...;
+}
+
+interface Recipients {
+    cc: RecipientEntry[] | null;
+    to: RecipientEntry[] | null;
+}
+
 interface FetchedData {
     data: any[];
     metadata: Record<string, unknown>;
     config: Record<string, unknown>;
     creator: Creator;
     references: any;
-    recipients: any;
     about: About;
+    recipients: Recipients;
 }
 
 export const enforceStyles = () => {
-    if (select('body').classed('vscode-dark')) {
-        localStorage.setItem('theme', 'dark');
-    } else {
-        localStorage.setItem('theme', 'light');
-    }
+    const isDark = select('body').classed('vscode-dark');
 
-    if (select('body').classed('vscode-dark')) {
-        const iframes = document.getElementsByTagName('iframe');
-        for (const iframe of iframes) {
-            let cd = iframe.contentDocument;
-            try {
-                cd?.documentElement.setAttribute('data-dark-mode', '');
-            } catch (e) {}
-        }
-    } else {
-        // iterate over iframes and tag them
-        const iframes = document.getElementsByTagName('iframe');
-        for (const iframe of iframes) {
-            let cd = iframe.contentDocument;
-            try {
-                cd?.documentElement.removeAttribute('data-dark-mode');
-            } catch (e) {}
-        }
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
+    const iframes = document.getElementsByTagName('iframe');
+    for (const iframe of iframes) {
+        let elem = iframe.contentDocument?.documentElement;
+        try {
+            if (isDark) {
+                elem?.setAttribute('data-dark-mode', '');
+            } else {
+                elem?.removeAttribute('data-dark-mode');
+            }
+        } catch (e) {}
     }
 };
 
