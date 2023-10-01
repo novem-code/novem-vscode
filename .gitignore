@@ -130,3 +130,5 @@ dist
 .pnp.*
 
 .DS_store
+
+.js.map
