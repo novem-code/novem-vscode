@@ -1,7 +1,7 @@
 {
-    "name": "novem",
+    "name": "novem-vscode",
     "displayName": "novem",
-    "description": "novem - access and work with novem visuals in your favourite tool",
+    "description": "Access and work with novem visuals in your favourite tool",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.72.0"
@@ -27,7 +27,7 @@
     "main": "./out/src/extension.js",
     "icon": "img/novem_icon_medium.png",
     "galleryBanner": {
-        "color": "#C80000",
+        "color": "#0184a7",
         "theme": "dark"
     },
     "bugs": {

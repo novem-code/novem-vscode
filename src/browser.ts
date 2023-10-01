@@ -52,7 +52,7 @@ export function createNovemBrowser(
     // Set the HTML content of the WebView panel
     const content = getWebviewContent(
         panel.webview,
-        vscode.extensions.getExtension('novemas.novem')!.extensionPath,
+        vscode.extensions.getExtension('novem.novem-vscode')!.extensionPath,
     );
     panel.webview.html = content;
 
