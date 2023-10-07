@@ -1,9 +1,7 @@
-import { select } from 'd3-selection';
-
 export const enforceStyles = () => {
-    const isDark = select('body').classed('vscode-dark');
+    const isDark = document.body.classList.contains('vscode-dark');
 
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    // localStorage.setItem('theme', isDark ? 'dark' : 'light');
 
     const iframes = document.getElementsByTagName('iframe');
     for (const iframe of iframes) {
