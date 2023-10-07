@@ -1,5 +1,7 @@
-import React, { useEffect, useContext } from 'react';
-import { ViewDataContext, FetchedDataContext, enforceStyles } from '../App'; // Adjust the import path accordingly
+import React, { useEffect } from 'react';
+
+import { FetchedData, ViewData } from '../types';
+import { enforceStyles } from '../utils';
 
 // NS LIBRARY INTEGRATIONS
 interface NSFunctions {
@@ -18,9 +20,9 @@ declare global {
     }
 }
 
-const NovemPlotRender: React.FC = () => {
+const NovemPlotRender = (props: { viewData: ViewData }) => {
     const { visId, uri, shortname, token, apiRoot, ignoreSslWarn } =
-        useContext(ViewDataContext);
+        props.viewData;
 
     useEffect(() => {
         if (!shortname) return;
@@ -45,25 +47,21 @@ const NovemPlotRender: React.FC = () => {
 
             enforceStyles();
         }
-    }, []); // Added dependencies to useEffect
+    }, []);
 
     return (
         <div className="novem--vis--innerhold" id={`novem--vis--target`}></div>
     );
 };
 
-const MemoizedNovemPlotRender = React.memo(NovemPlotRender);
+const NovemPlotProfile = (props: { fetchedData: FetchedData }) => {
+    const { fetchedData } = props;
 
-const NovemPlotProfile: React.FC = () => {
-    const fetchedData = useContext(FetchedDataContext);
-
-    // Destructure the relevant fields from the fetched data
     const visualizationName =
-        fetchedData?.about?.name ?? 'Your placeholder chart';
-    const authorName = fetchedData?.creator?.name ?? 'Novem Placeholder';
-    const authorUsername =
-        fetchedData?.creator?.username ?? 'novem_placeholder';
-    const avatarUrl = fetchedData?.creator?.avatar;
+        fetchedData.about?.name ?? 'Your placeholder chart';
+    const authorName = fetchedData.creator?.name ?? 'Novem Placeholder';
+    const authorUsername = fetchedData.creator?.username ?? 'novem_placeholder';
+    const avatarUrl = fetchedData.creator?.avatar;
 
     return (
         <div className="novem--vis--profile">
@@ -82,13 +80,18 @@ const NovemPlotProfile: React.FC = () => {
     );
 };
 
-const NovemViewPlot: React.FC = () => {
+const NovemViewPlot = (props: {
+    fetchedData: FetchedData;
+    viewData: ViewData;
+}) => {
+    const { fetchedData, viewData } = props;
+
     return (
         <div className="novem--vis--hold">
             <div className="novem--vis--plot">
-                <MemoizedNovemPlotRender />
+                <NovemPlotRender viewData={viewData} />
             </div>
-            <NovemPlotProfile />
+            <NovemPlotProfile fetchedData={fetchedData} />
         </div>
     );
 };
