@@ -1,0 +1,39 @@
+.form-row {
+    padding: 5px 0;
+}
+label {
+    margin-bottom: 3px;
+}
+input {
+    display: block;
+}
+
+/* center this div */
+.login-body {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.login-body button {
+    margin: 5px 0;
+}
+.login-success {
+    color: green;
+}
+.login-error {
+    color: red;
+}
+.login-progress {
+    color: orange;
+}
+
+.login-success,
+.login-error,
+.login-progress {
+    width: 100%;
+    border: 1px solid;
+    padding: 5px;
+}

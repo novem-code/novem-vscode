@@ -9,16 +9,16 @@ import {
 } from 'react-router-dom';
 
 import {
-    NovemLoading,
+    NovemLogin,
     NovemViewMail,
     NovemViewPlot,
     NovemViewProfile,
 } from './components';
 
 import { enforceStyles } from './utils';
-import { ViewData, FetchedData } from './types';
+import { ViewData, FetchedData, VscodeApi } from './types';
 
-const MainContent = () => {
+const MainContent = (props: { vsapi: VscodeApi }) => {
     const navigate = useNavigate();
 
     const [viewData, setViewData] = useState<ViewData>({
@@ -94,15 +94,14 @@ const MainContent = () => {
         })();
     }, [token, apiRoot, shortname]);
 
-    if (!fetchedData) return <NovemLoading />;
-
     return (
         <Routes>
+            <Route path="/login" element={<NovemLogin vsapi={props.vsapi} />} />
             <Route
                 path="/plots"
                 element={
                     <NovemViewPlot
-                        fetchedData={fetchedData}
+                        fetchedData={fetchedData || undefined}
                         viewData={viewData}
                     />
                 }
@@ -111,7 +110,7 @@ const MainContent = () => {
                 path="/mails"
                 element={
                     <NovemViewMail
-                        fetchedData={fetchedData}
+                        fetchedData={fetchedData || undefined}
                         viewData={viewData}
                     />
                 }
@@ -126,9 +125,18 @@ const MainContent = () => {
 };
 
 const App = () => {
+    const [vscodeApi, setVscodeApi] = useState<VscodeApi>();
+    useEffect(() => {
+        const vscode: VscodeApi = (global as any).acquireVsCodeApi();
+        setVscodeApi(vscode);
+        vscode.postMessage({ command: 'contentReady' }, '*');
+    }, []);
+
+    if (!vscodeApi) return null;
+
     return (
         <Router>
-            <MainContent />
+            <MainContent vsapi={vscodeApi} />
         </Router>
     );
 };

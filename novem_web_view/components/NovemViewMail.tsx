@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 
+import { NovemLoading } from '.';
+import './NovemViewMail.css';
+
 import { FetchedData, ViewData } from '../types';
 import { enforceStyles } from '../utils';
-
-import './NovemViewMail.css';
 
 // NS LIBRARY INTEGRATIONS
 interface NSFunctions {
@@ -158,10 +159,12 @@ const NovemMailProfile = (props: { fetchedData: FetchedData }) => {
 };
 
 const NovemViewMail = (props: {
-    fetchedData: FetchedData;
+    fetchedData?: FetchedData;
     viewData: ViewData;
 }) => {
     const { fetchedData, viewData } = props;
+
+    if (!fetchedData) return <NovemLoading />;
 
     const size = fetchedData.config?.size ?? 'small';
 

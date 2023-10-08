@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { log } from 'console';
 
 function getWebviewContent(webview: vscode.Webview, extensionPath: string) {
     // Path to the compiled SPA
@@ -56,6 +57,8 @@ export function createNovemBrowser(
     );
     panel.webview.html = content;
 
+    log('ready');
+
     panel.webview.onDidReceiveMessage((message) => {
         if (message.command === 'contentReady') {
             // Now that the content is ready, send the navigation message
@@ -70,9 +73,9 @@ export function createNovemBrowser(
                 ignoreSslWarn: ignoreSslWarn,
             });
         }
+
+        if (message.command === 'signinSuccessful') {
+            log('signinSuccessful', message);
+        }
     });
-
-
-
-
 }

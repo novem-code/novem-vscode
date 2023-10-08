@@ -46,3 +46,11 @@ export interface FetchedData {
     about: About;
     recipients: Recipients;
 }
+
+export interface VscodeApi {
+    postMessage(
+        message: any,
+        targetOrigin: string,
+        transfer?: Transferable[],
+    ): void;
+}

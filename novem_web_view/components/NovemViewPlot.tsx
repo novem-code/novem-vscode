@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 
+import { NovemLoading } from '.';
+
 import { FetchedData, ViewData } from '../types';
 import { enforceStyles } from '../utils';
 
@@ -81,10 +83,12 @@ const NovemPlotProfile = (props: { fetchedData: FetchedData }) => {
 };
 
 const NovemViewPlot = (props: {
-    fetchedData: FetchedData;
+    fetchedData?: FetchedData;
     viewData: ViewData;
 }) => {
     const { fetchedData, viewData } = props;
+
+    if (!fetchedData) return <NovemLoading />;
 
     return (
         <div className="novem--vis--hold">

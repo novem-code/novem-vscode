@@ -62,7 +62,7 @@ import NovemApi from './novem-api';
 const createViewFunction = (
     context: vscode.ExtensionContext,
     api: NovemApi,
-    type: 'plots' | 'mails',
+    type: 'plots' | 'mails' | 'login',
 ) => {
     const profile = context.globalState.get('userProfile') as UserProfile;
     const conf = context.globalState.get('userConfig') as UserConfig;
@@ -71,6 +71,19 @@ const createViewFunction = (
     const ignoreSslWarn = conf?.ignore_ssl_warn;
 
     const uname = profile?.user_info?.username;
+
+    if (type === 'login') {
+        return () =>
+            void createNovemBrowser(
+                type,
+                '',
+                '',
+                '/login',
+                '',
+                apiRoot,
+                ignoreSslWarn,
+            );
+    }
 
     return async (item: MyTreeItem) => {
         // Let's grab our profile information
@@ -124,7 +137,15 @@ const createViewFunction = (
             let visId = selectedItem.description;
             let uri = uriMap[visId];
             let sn = snMap[visId];
-            createNovemBrowser(type, visId, sn, uri, token, apiRoot, ignoreSslWarn);
+            createNovemBrowser(
+                type,
+                visId,
+                sn,
+                uri,
+                token,
+                apiRoot,
+                ignoreSslWarn,
+            );
         }
     };
 };
@@ -209,12 +230,26 @@ const createViewForUserFunction = (
             let visId = selectedItem.description;
             let uri = uriMap[visId];
             let sn = snMap[visId];
-            createNovemBrowser(type, visId, sn, uri, token, apiRoot, ignoreSslWarn);
+            createNovemBrowser(
+                type,
+                visId,
+                sn,
+                uri,
+                token,
+                apiRoot,
+                ignoreSslWarn,
+            );
         }
     };
 };
 
 export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.login',
+            createViewFunction(context, api, 'login'),
+        ),
+    );
     context.subscriptions.push(
         vscode.commands.registerCommand(
             'novem.viewNovemPlot',

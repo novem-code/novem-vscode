@@ -15,6 +15,14 @@
 				"kind": "build",
 				"isDefault": true
 			}
+		},
+		{
+			"type": "npm",
+			"script": "watch:spa:dev",
+			"group": "build",
+			"problemMatcher": [],
+			"label": "npm: watch:spa:dev",
+			"detail": "webpack --watch --config novem_web_view/webpack.config.js --mode development"
 		}
 	]
 }

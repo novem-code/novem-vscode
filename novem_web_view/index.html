@@ -10,12 +10,6 @@
         />
 
         <title>Novem Web View</title>
-        <script>
-            const vscode = acquireVsCodeApi();
-            window.addEventListener('DOMContentLoaded', (event) => {
-                vscode.postMessage({ command: 'contentReady' }, '*');
-            });
-        </script>
     </head>
     <body>
         <div id="root"></div>

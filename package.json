@@ -112,6 +112,10 @@
             {
                 "command": "novem.sendMail",
                 "title": "Send Mail"
+            },
+            {
+                "command": "novem.login",
+                "title": "novem: Login"
             }
         ],
         "viewsContainers": {
