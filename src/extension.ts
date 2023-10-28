@@ -2,55 +2,63 @@ import * as vscode from 'vscode';
 import * as https from 'https';
 
 // Import the functions from config.ts
-import { getCurrentConfig, UserConfig } from './config';
+import {
+    getCurrentConfig,
+    UserConfig,
+    UserProfile,
+    writeConfig,
+} from './config';
 import { NovemSideBarProvider, MyTreeItem } from './tree';
 
 import { setupCommands } from './commands';
 
 import { NovemFSProvider } from './vfs';
 import NovemApi from './novem-api';
+import { createNovemBrowser } from './browser';
 
-// At the top of your module
 let plotsProvider: NovemSideBarProvider;
 let mailsProvider: NovemSideBarProvider;
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-export async function activate(context: vscode.ExtensionContext) {
-    // Use the console to output diagnostic information (console.log) and errors (console.error)
-    // This line of code will only be executed once when your extension is activated
+function doLogin() {
+    createNovemBrowser(
+        'login',
+        '',
+        '',
+        '/login',
+        '',
+        'https://api.novem.no/v1/', // pull this from settings?
+        false,
+    );
+}
 
+export async function activate(context: vscode.ExtensionContext) {
     // Get our token from the user config
     const config = getCurrentConfig();
 
     if (!config) {
-        // make a warning dialog
-        vscode.window.showWarningMessage(
-            'Novem is not configured. Please configure it first.',
-        );
+        vscode.commands.executeCommand('setContext', 'novem.loggedIn', false);
+        doLogin();
         return;
     }
-
-    const strippedConfig = { ...config };
-    delete strippedConfig.token;
 
     if (config?.ignore_ssl_warn) {
         https.globalAgent.options.rejectUnauthorized = false;
     }
 
-    // console.debug('Read config', strippedConfig);
-
-    const token = config.token;
-
-    const apiRoot = config.api_root;
-
-    const novemApi = new NovemApi(apiRoot!, token!);
+    const novemApi = new NovemApi(config.api_root!, config.token!);
 
     // Let's grab our profile information
-    const profile = await novemApi.getProfile();
+    let profile: UserProfile;
+    try {
+        profile = await novemApi.getProfile();
+    } catch (e) {
+        // bad token probably
+        vscode.commands.executeCommand('setContext', 'novem.loggedIn', false);
+        doLogin();
+        return;
+    }
 
-    //console.log(profile);
-
+    vscode.commands.executeCommand('setContext', 'novem.loggedIn', true);
     // Store user information
     context.globalState.update('userConfig', config);
     context.globalState.update('userProfile', profile);

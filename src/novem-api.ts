@@ -52,6 +52,10 @@ export default class NovemApi {
         ).data;
     }
 
+    async logout() {
+        return await this.post(`${this.apiRoot}/logout`, null, {});
+    }
+
     async getProfile() {
         return await this.get<UserProfile>(
             `${this.apiRoot}/admin/profile/overview`,

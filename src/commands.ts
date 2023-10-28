@@ -246,6 +246,18 @@ const createViewForUserFunction = (
 export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
     context.subscriptions.push(
         vscode.commands.registerCommand(
+            'novem.logout',
+            () =>
+                void api.logout().then((d) => {
+                    console.log(d);
+                    vscode.commands.executeCommand(
+                        'workbench.action.reloadWindow',
+                    );
+                }),
+        ),
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
             'novem.login',
             createViewFunction(context, api, 'login'),
         ),
@@ -274,11 +286,6 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             createViewForUserFunction(context, api, 'mails'),
         ),
     );
-
-    let disposable = vscode.commands.registerCommand('novem.profile', () => {
-        vscode.window.showInformationMessage('Hello World from novem!');
-    });
-    context.subscriptions.push(disposable);
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.createNovemMail', async () => {

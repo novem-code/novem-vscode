@@ -1,6 +1,7 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as fsa from 'fs/promises';
 import * as ini from 'ini';
 
 const NOVEM_PATH = 'novem';
@@ -153,4 +154,38 @@ export function typeToIcon(visType: string, type?: 'mails' | 'plots') {
         //console.error('Error!', error);
         return 'blank';
     }
+}
+
+export async function writeConfig(data: {
+    username: string;
+    token: string;
+    token_name: string;
+}) {
+    const path = getConfigPath();
+
+    const exists =
+        fs.existsSync(path.config) && (await fsa.stat(path.config)).isFile();
+
+    const config = {
+        general: {
+            profile: data.username,
+            api_root: 'https://api.novem.no/v1/',
+        },
+        [`profile:${data.username}`]: {
+            username: data.username,
+            token_name: data.token_name,
+            token: data.token,
+        },
+    };
+
+    const serialized = ini.stringify(config);
+    console.log(serialized);
+
+    if (exists) {
+        // Config file already exists. Probably a bad token, lets overwrite it.
+        console.log('Config file already exists, overwriting');
+    }
+
+    await fsa.mkdir(path.dir, { recursive: true });
+    await fsa.writeFile(path.config, serialized);
 }

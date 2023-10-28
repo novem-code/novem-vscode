@@ -116,6 +116,10 @@
             {
                 "command": "novem.login",
                 "title": "novem: Login"
+            },
+            {
+                "command": "novem.logout",
+                "title": "novem: Logout"
             }
         ],
         "viewsContainers": {
@@ -180,6 +184,14 @@
                 {
                     "command": "novem.deleteNovemPlot",
                     "when": "false"
+                },
+                {
+                    "command": "novem.login",
+                    "when": "!novem.loggedIn"
+                },
+                {
+                    "command": "novem.logout",
+                    "when": "novem.loggedIn"
                 }
             ]
         },

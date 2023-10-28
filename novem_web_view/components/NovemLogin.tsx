@@ -40,6 +40,8 @@ export default function NovemLogin(props: { vsapi: VscodeApi }) {
                 command: 'signinSuccessful',
                 token: response.data.token,
                 token_id: response.data.token_id,
+                token_name: response.data.token_name,
+                username: username,
             },
             '*',
         );

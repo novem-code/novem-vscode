@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { log } from 'console';
+import { writeConfig } from './config';
 
 function getWebviewContent(webview: vscode.Webview, extensionPath: string) {
     // Path to the compiled SPA
@@ -57,7 +57,7 @@ export function createNovemBrowser(
     );
     panel.webview.html = content;
 
-    log('ready');
+    console.log('ready');
 
     panel.webview.onDidReceiveMessage((message) => {
         if (message.command === 'contentReady') {
@@ -75,7 +75,13 @@ export function createNovemBrowser(
         }
 
         if (message.command === 'signinSuccessful') {
-            log('signinSuccessful', message);
+            console.log('signinSuccessful', message);
+            writeConfig({
+                username: message.username,
+                token: message.token,
+                token_name: message.token_name,
+            });
+            vscode.commands.executeCommand('workbench.action.reloadWindow');
         }
     });
 }
