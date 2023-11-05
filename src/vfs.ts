@@ -3,21 +3,6 @@ import * as vscode from 'vscode';
 import { UserConfig } from './config';
 import NovemApi from './novem-api';
 
-export function activate(context: vscode.ExtensionContext) {
-    // Register FileSystemProvider
-    const conf = context.globalState.get('userConfig') as UserConfig;
-    const api = new NovemApi(conf.api_root!, conf.token!);
-
-    const fsProvider = new NovemFSProvider(api);
-    const fsRegistration = vscode.workspace.registerFileSystemProvider(
-        'novem',
-        fsProvider,
-        { isCaseSensitive: true },
-    );
-
-    context.subscriptions.push(fsRegistration);
-}
-
 export class NovemFSProvider implements vscode.FileSystemProvider {
     private readonly _onDidChangeFile: vscode.EventEmitter<
         vscode.FileChangeEvent[]
