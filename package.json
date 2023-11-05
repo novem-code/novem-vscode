@@ -178,6 +178,11 @@
                     "command": "novem.refreshNovemMails",
                     "when": "view == novem-mails",
                     "group": "navigation"
+                },
+                {
+                    "command": "novem.logout",
+                    "when" : "novem.loggedIn",
+                    "group": "commands"
                 }
             ],
             "commandPalette": [
@@ -202,11 +207,18 @@
                     "name": "Plots",
                     "commands": [
                         "novem.createNovemPlot"
-                    ]
+                    ],
+                    "when": "novem.loggedIn"
                 },
                 {
                     "id": "novem-mails",
-                    "name": "E-Mails"
+                    "name": "E-Mails",
+                    "when": "novem.loggedIn"
+                },
+                {
+                    "id": "novem-login",
+                    "name": "Log in",
+                    "when": "!novem.loggedIn"
                 }
             ]
         }

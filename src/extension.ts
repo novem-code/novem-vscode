@@ -2,13 +2,8 @@ import * as vscode from 'vscode';
 import * as https from 'https';
 
 // Import the functions from config.ts
-import {
-    getCurrentConfig,
-    UserConfig,
-    UserProfile,
-    writeConfig,
-} from './config';
-import { NovemSideBarProvider, MyTreeItem } from './tree';
+import { getCurrentConfig, UserProfile } from './config';
+import { NovemSideBarProvider, NovemDummyProvider } from './tree';
 
 import { setupCommands } from './commands';
 
@@ -55,6 +50,14 @@ export async function activate(context: vscode.ExtensionContext) {
         // bad token probably
         vscode.commands.executeCommand('setContext', 'novem.loggedIn', false);
         doLogin();
+
+        context.subscriptions.push(
+            vscode.window.registerTreeDataProvider(
+                'novem-login',
+                new NovemDummyProvider(context),
+            ),
+        );
+
         return;
     }
 
@@ -97,18 +100,19 @@ export async function activate(context: vscode.ExtensionContext) {
     plotsProvider = new NovemSideBarProvider(novemApi, context, 'plots');
     mailsProvider = new NovemSideBarProvider(novemApi, context, 'mails');
 
+    context.subscriptions.push(
+        vscode.window.registerTreeDataProvider('novem-plots', plotsProvider),
+        vscode.window.registerTreeDataProvider('novem-mails', mailsProvider),
+    );
+
     const sbi = vscode.window.createStatusBarItem(
         vscode.StatusBarAlignment.Left,
         50,
     );
 
     sbi.text = 'novem: ' + profile.user_info.email;
+    sbi.tooltip = 'Logged in as ' + profile.user_info.name;
     sbi.show();
-
-    context.subscriptions.push(
-        vscode.window.registerTreeDataProvider('novem-plots', plotsProvider),
-        vscode.window.registerTreeDataProvider('novem-mails', mailsProvider),
-    );
 }
 
 // This method is called when your extension is deactivated

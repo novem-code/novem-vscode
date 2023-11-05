@@ -119,6 +119,20 @@ export class NovemSideBarProvider
     }
 }
 
+export class NovemDummyProvider
+    implements vscode.TreeDataProvider<vscode.TreeItem>
+{
+    constructor(private readonly context: vscode.ExtensionContext) {}
+
+    async getTreeItem(element: vscode.TreeItem): Promise<vscode.TreeItem> {
+        return element;
+    }
+
+    async getChildren(element?: MyTreeItem): Promise<vscode.TreeItem[]> {
+        return [new vscode.TreeItem('Please log in')];
+    }
+}
+
 export class MyTreeItem extends vscode.TreeItem {
     public readonly path: string; // Store the full path here
     public readonly desc: string;

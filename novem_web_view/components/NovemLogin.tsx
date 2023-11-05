@@ -52,8 +52,7 @@ export default function NovemLogin(props: { vsapi: VscodeApi }) {
             case 'error':
                 return (
                     <p className="login-error">
-                        We could not log in. Please verify your username and
-                        password.
+                        Login failed. Please verify your username and password.
                     </p>
                 );
             case 'success':
@@ -66,35 +65,36 @@ export default function NovemLogin(props: { vsapi: VscodeApi }) {
     })();
 
     return (
-        <div className="login-body">
-            <form>
-                <h2>Login</h2>
-                <p>Please enter your login and password</p>
-                <div className="form-row">
-                    <label htmlFor="floatingInput">Username</label>
-                    <input
-                        type="text"
-                        id="floatingInput"
-                        placeholder="example"
-                        value={username}
-                        onChange={(e) => void setUsername(e.target.value)}
-                    />
-                </div>
-                <div className="form-row">
-                    <label htmlFor="floatingPassword">Password</label>
-                    <input
-                        type="password"
-                        id="floatingPassword"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => void setPassword(e.target.value)}
-                    />
-                </div>
-                <button type="submit" onClick={onclick}>
-                    Login
-                </button>
-                {notice}
-            </form>
+        <div className="gradient">
+            <div className="login-body">
+                <form>
+                    <h2>Login to novem</h2>
+                    <div className="form-row">
+                        <label htmlFor="floatingInput">Username</label>
+                        <input
+                            type="text"
+                            id="floatingInput"
+                            placeholder="example"
+                            value={username}
+                            onChange={(e) => void setUsername(e.target.value)}
+                        />
+                    </div>
+                    <div className="form-row">
+                        <label htmlFor="floatingPassword">Password</label>
+                        <input
+                            type="password"
+                            id="floatingPassword"
+                            placeholder="Password"
+                            value={password}
+                            onChange={(e) => void setPassword(e.target.value)}
+                        />
+                    </div>
+                    <button type="submit" onClick={onclick}>
+                        Login
+                    </button>
+                    {notice}
+                </form>
+            </div>
         </div>
     );
 }
