@@ -1,0 +1,271 @@
+{
+    "name": "novem-vscode",
+    "displayName": "novem",
+    "description": "Access and work with novem visuals in your favourite tool",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.72.0"
+    },
+    "categories": [
+        "Data Science",
+        "Visualization",
+        "Notebooks"
+    ],
+    "license": "SEE LICENSE IN LICENSE",
+    "pricing": "Free",
+    "activationEvents": [],
+    "publisher": "novem",
+    "qna": false,
+    "preview": true,
+    "keywords": [
+        "novem",
+        "pandas",
+        "python",
+        "e-mail",
+        "dataviz"
+    ],
+    "main": "./out/src/extension.js",
+    "icon": "img/novem_icon_medium.png",
+    "galleryBanner": {
+        "color": "#0184a7",
+        "theme": "dark"
+    },
+    "bugs": {
+        "url": "https://github.com/novem-code/novem-vscode/issues",
+        "email": "support@novem.no"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/novem-code/novem-vscode.git"
+    },
+    "homepage": "https://novem.no",
+    "contributes": {
+        "languages": [
+            {
+                "id": "nv_markdown",
+                "aliases": [
+                    "NV Markdown",
+                    "nv_markdown"
+                ],
+                "extensions": [
+                    ".nvm",
+                    ".nvmd"
+                ],
+                "filenames": [],
+                "mimetypes": [
+                    "text/nv_markdown"
+                ]
+            }
+        ],
+        "grammars": [
+            {
+                "language": "nv_markdown",
+                "scopeName": "source.nv_markdown",
+                "path": "./lang/nv-markdown.tmLanguage.json"
+            }
+        ],
+        "commands": [
+            {
+                "command": "novem.profile",
+                "title": "novem: Profile"
+            },
+            {
+                "command": "novem.viewNovemPlot",
+                "title": "View Plot"
+            },
+            {
+                "command": "novem.viewNovemPlotForUser",
+                "title": "View Plot for User"
+            },
+            {
+                "command": "novem.viewNovemMailForUser",
+                "title": "View Mail for User"
+            },
+            {
+                "command": "novem.viewNovemMail",
+                "title": "View Mail"
+            },
+            {
+                "command": "novem.createNovemPlot",
+                "title": "Create Plot",
+                "icon": "$(new-folder)"
+            },
+            {
+                "command": "novem.refreshNovemPlots",
+                "title": "Refresh Plots",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "novem.deleteNovemPlot",
+                "title": "Delete Plot"
+            },
+            {
+                "command": "novem.createNovemMail",
+                "title": "Create Mail",
+                "icon": "$(new-folder)"
+            },
+            {
+                "command": "novem.refreshNovemMails",
+                "title": "Refresh Mails",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "novem.sendMail",
+                "title": "Send Mail"
+            },
+            {
+                "command": "novem.login",
+                "title": "novem: Login"
+            },
+            {
+                "command": "novem.logout",
+                "title": "novem: Logout"
+            }
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "novem",
+                    "title": "novem",
+                    "icon": "icons/novem.svg"
+                }
+            ]
+        },
+        "menus": {
+            "view/item/context": [
+                {
+                    "command": "novem.viewNovemPlot",
+                    "when": "view == novem-plots && viewItem == plot-top",
+                    "title": "View Plot",
+                    "group": "1_show"
+                },
+                {
+                    "command": "novem.viewNovemMail",
+                    "when": "view == novem-mails && viewItem == mail-top",
+                    "title": "View Mail",
+                    "group": "1_show"
+                },
+                {
+                    "command": "novem.sendMail",
+                    "when": "view == novem-mails && viewItem == mail-top",
+                    "title": "Send Mail",
+                    "group": "1_show"
+                },
+                {
+                    "command": "novem.deleteNovemPlot",
+                    "when": "view == novem-plots && viewItem == plot-top",
+                    "title": "Delete Plot",
+                    "group": "4_mainpulate"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "novem.createNovemPlot",
+                    "when": "view == novem-plots",
+                    "group": "navigation"
+                },
+                {
+                    "command": "novem.refreshNovemPlots",
+                    "when": "view == novem-plots",
+                    "group": "navigation"
+                },
+                {
+                    "command": "novem.createNovemMail",
+                    "when": "view == novem-mails",
+                    "group": "navigation"
+                },
+                {
+                    "command": "novem.refreshNovemMails",
+                    "when": "view == novem-mails",
+                    "group": "navigation"
+                },
+                {
+                    "command": "novem.logout",
+                    "when" : "novem.loggedIn",
+                    "group": "commands"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "command": "novem.deleteNovemPlot",
+                    "when": "false"
+                },
+                {
+                    "command": "novem.login",
+                    "when": "!novem.loggedIn"
+                },
+                {
+                    "command": "novem.logout",
+                    "when": "novem.loggedIn"
+                }
+            ]
+        },
+        "views": {
+            "novem": [
+                {
+                    "id": "novem-plots",
+                    "name": "Plots",
+                    "commands": [
+                        "novem.createNovemPlot"
+                    ],
+                    "when": "novem.loggedIn"
+                },
+                {
+                    "id": "novem-mails",
+                    "name": "E-Mails",
+                    "when": "novem.loggedIn"
+                },
+                {
+                    "id": "novem-login",
+                    "name": "Log in",
+                    "when": "!novem.loggedIn"
+                }
+            ]
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "yarn build:spa:prod && yarn run compile",
+        "build:spa:dev": "webpack --config novem_web_view/webpack.config.js --mode development",
+        "build:spa:prod": "webpack --config novem_web_view/webpack.config.js --mode production",
+        "compile": "tsc -p ./",
+        "build": "yarn build:spa:prod && yarn compile",
+        "watch:spa:dev": "webpack --watch --config novem_web_view/webpack.config.js --mode development",
+        "watch:spa:prod": "webpack --watch --config novem_web_view/webpack.config.js --mode production",
+        "start:spa": "webpack-dev-server --config novem_web_view/webpack.config.js --mode development",
+        "watch": "tsc -watch -p ./",
+        "pretest": "yarn run compile && yarn run lint",
+        "lint": "eslint src --ext ts",
+        "test": "node ./out/test/runTest.js"
+    },
+    "devDependencies": {
+        "@types/d3-selection": "^3.0.7",
+        "@types/ini": "^1.3.31",
+        "@types/mocha": "^10.0.1",
+        "@types/node": "16.x",
+        "@types/react": "^18.2.23",
+        "@types/react-dom": "^18.2.8",
+        "@types/vscode": "^1.72.0",
+        "@typescript-eslint/eslint-plugin": "^6.4.1",
+        "@typescript-eslint/parser": "^6.4.1",
+        "@vscode/test-electron": "^2.3.4",
+        "css-loader": "^6.8.1",
+        "eslint": "^8.47.0",
+        "glob": "^10.3.3",
+        "html-webpack-plugin": "^5.5.3",
+        "mocha": "^10.2.0",
+        "prettier": "^3.0.3",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-router-dom": "^6.16.0",
+        "style-loader": "^3.3.3",
+        "ts-loader": "^9.4.4",
+        "typescript": "^5.1.6",
+        "webpack": "^5.88.2",
+        "webpack-cli": "^5.1.4",
+        "webpack-dev-server": "^4.15.1"
+    },
+    "dependencies": {
+        "axios": "^1.5.0",
+        "ini": "^4.1.1"
+    }
+}
