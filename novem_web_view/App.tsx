@@ -67,17 +67,10 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
     useEffect(() => {
         (async function () {
             if (token && apiRoot && shortname) {
-                // IF ignoreSslWarn is true then don't fail on invalid certificate
-
-                let reqApiRoot: string = apiRoot || '';
-
-                if (ignoreSslWarn && apiRoot) {
-                    reqApiRoot = (apiRoot as string).replace('https', 'http');
-                }
-
+                // TODO handle ignoreSslWarn better
                 try {
                     const response = await axios.get(
-                        `${reqApiRoot}i/${shortname}`,
+                        `${apiRoot || ''}i/${shortname}`,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`,
