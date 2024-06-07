@@ -2,7 +2,7 @@
     "name": "novem-vscode",
     "displayName": "novem",
     "description": "Access and work with novem visuals in your favourite tool",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "engines": {
         "vscode": "^1.72.0"
     },
@@ -127,7 +127,7 @@
                 {
                     "id": "novem",
                     "title": "novem",
-                    "icon": "icons/novem.svg"
+                    "icon": "icons/novem48.png"
                 }
             ]
         },
