@@ -8,7 +8,6 @@ export default function NovemLogin(props: { vsapi: VscodeApi }) {
     const [progress, setProgress] = useState<
         'idle' | 'loggingIn' | 'error' | 'success'
     >('idle');
-    const [loginSuccess, setLoginSuccess] = useState(false);
 
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -22,7 +21,9 @@ export default function NovemLogin(props: { vsapi: VscodeApi }) {
             response = await axios.post('https://api.novem.no/v1/token', {
                 username,
                 password,
-                token_name: 'novem_vscode_extension',
+                token_name:
+                    'novem_vscode_extension-' +
+                    Math.random().toString(36).substring(2, 7),
                 token_description:
                     'Novem VSCode Extension token created at ' +
                     new Date().toISOString(),

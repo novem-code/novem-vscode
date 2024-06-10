@@ -182,7 +182,15 @@ export async function writeConfig(data: {
     console.log(serialized);
 
     if (exists) {
-        // Config file already exists. Probably a bad token, lets overwrite it.
+        // Config file already exists. Probably a bad token. Do a backup for the old file and write new.
+        // TODO we should edit the existing file instead of overwriting it, in case the user has other profiles
+        const timestamp = new Date()
+            .toISOString()
+            .replace(/[-:.]/g, '')
+            .replace('T', '-')
+            .slice(0, -4);
+        const backupPath = path.config + '.bak_' + timestamp;
+        await fsa.rename(path.config, backupPath);
         console.log('Config file already exists, overwriting');
     }
 
