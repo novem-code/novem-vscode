@@ -29,9 +29,8 @@ const NovemPlotRender = (props: { viewData: ViewData }) => {
 
         // Check if the function exists on the window object before calling it
         if (window.ns?.setup && shortname && token) {
-            let apiUrl = 'https://api.novem.no';
-            let assetUrl = 'https://novem.no';
-
+            let apiUrl = new URL(apiRoot).origin;
+            let assetUrl = apiUrl.replace('://api.', '://');
 
             window.ns.setup({
                 bearerToken: token,
