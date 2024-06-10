@@ -224,16 +224,16 @@
         }
     },
     "scripts": {
-        "vscode:prepublish": "yarn build:spa:prod && yarn run compile",
+        "vscode:prepublish": "npm run build:spa:prod && npm run compile",
         "build:spa:dev": "webpack --config novem_web_view/webpack.config.js --mode development",
         "build:spa:prod": "webpack --config novem_web_view/webpack.config.js --mode production",
         "compile": "tsc -p ./",
-        "build": "yarn build:spa:prod && yarn compile",
+        "build": "npm run build:spa:prod && npm run compile",
         "watch:spa:dev": "webpack --watch --config novem_web_view/webpack.config.js --mode development",
         "watch:spa:prod": "webpack --watch --config novem_web_view/webpack.config.js --mode production",
         "start:spa": "webpack-dev-server --config novem_web_view/webpack.config.js --mode development",
         "watch": "tsc -watch -p ./",
-        "pretest": "yarn run compile && yarn run lint",
+        "pretest": "npm run compile && npm run lint",
         "lint": "eslint src --ext ts",
         "test": "node ./out/test/runTest.js"
     },
