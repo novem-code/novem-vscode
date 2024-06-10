@@ -74,7 +74,6 @@ export function getCurrentConfig(kwargs?: {
     const configPath = kwargs?.config_path || getConfigPath().config;
 
     const co: { [key: string]: any } = {};
-    co.ignore_ssl_warn = false;
 
     if (kwargs?.ignore_config) {
         if (kwargs.api_root) {
@@ -89,15 +88,23 @@ export function getCurrentConfig(kwargs?: {
 
     // console.debug('opening file', configPath);
     const configContent = fs.readFileSync(configPath, 'utf-8');
+    return parseConfig(configContent, kwargs);
+}
+
+export function parseConfig(
+    configContent: string,
+    kwargs?: { api_root?: string; profile?: string; token?: string },
+): UserConfig {
     const config = ini.parse(configContent);
 
+    const co: { [key: string]: any } = {};
     if (kwargs?.api_root) {
         co.api_root = kwargs.api_root;
     } else if (config.general && config.general.api_root) {
         co.api_root = config.general.api_root;
     }
 
-    let profile = config.general?.profile;
+    let profile = config['app:vscode']?.profile || config.general?.profile;
     if (kwargs?.profile) {
         profile = kwargs.profile;
     }
@@ -117,6 +124,7 @@ export function getCurrentConfig(kwargs?: {
     if (kwargs?.api_root) {
         co.api_root = kwargs.api_root;
     }
+
     if (kwargs?.token) {
         co.token = kwargs.token;
     }
