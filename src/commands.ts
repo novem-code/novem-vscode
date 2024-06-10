@@ -68,7 +68,6 @@ const createViewFunction = (
     const conf = context.globalState.get('userConfig') as UserConfig;
     const token = conf?.token;
     const apiRoot = conf?.api_root;
-    const ignoreSslWarn = conf?.ignore_ssl_warn;
 
     const uname = profile?.user_info?.username;
 
@@ -81,7 +80,6 @@ const createViewFunction = (
                 '/login',
                 '',
                 apiRoot,
-                ignoreSslWarn,
             );
     }
 
@@ -144,7 +142,6 @@ const createViewFunction = (
                 uri,
                 token,
                 apiRoot,
-                ignoreSslWarn,
             );
         }
     };
@@ -160,7 +157,6 @@ const createViewForUserFunction = (
     const conf = context.globalState.get('userConfig') as UserConfig;
     const token = conf?.token;
     const apiRoot = conf?.api_root;
-    const ignoreSslWarn = conf?.ignore_ssl_warn;
 
     const uname = profile?.user_info?.username;
 
@@ -237,7 +233,6 @@ const createViewForUserFunction = (
                 uri,
                 token,
                 apiRoot,
-                ignoreSslWarn,
             );
         }
     };

@@ -28,11 +28,9 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
         route: '',
         token: '',
         apiRoot: '',
-        ignoreSslWarn: false,
     });
 
-    const { visId, uri, shortname, route, token, apiRoot, ignoreSslWarn } =
-        viewData;
+    const { visId, uri, shortname, route, token, apiRoot } = viewData;
     const [fetchedData, setFetchedData] = useState<FetchedData | null>(null);
 
     useEffect(() => {
@@ -53,7 +51,6 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
                         shortname: message.shortName,
                         token: message.token,
                         apiRoot: message.apiRoot,
-                        ignoreSslWarn: message.ignoreSslWarn,
                     });
                     navigate(message.route);
                     break;
@@ -67,7 +64,6 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
     useEffect(() => {
         (async function () {
             if (token && apiRoot && shortname) {
-                // TODO handle ignoreSslWarn better
                 try {
                     const response = await axios.get(
                         `${apiRoot || ''}i/${shortname}`,
