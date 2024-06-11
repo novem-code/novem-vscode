@@ -11,7 +11,6 @@ interface NSFunctions {
         bearerToken?: string;
         apiUrl?: string;
         assetUrl?: string;
-        ignoreSSLWarninig?: boolean;
     }) => void;
     register: (a: string, b: string, targetId: string) => void;
 }
@@ -23,21 +22,15 @@ declare global {
 }
 
 const NovemPlotRender = (props: { viewData: ViewData }) => {
-    const { visId, uri, shortname, token, apiRoot, ignoreSslWarn } =
-        props.viewData;
+    const { visId, uri, shortname, token, apiRoot } = props.viewData;
 
     useEffect(() => {
         if (!shortname) return;
 
         // Check if the function exists on the window object before calling it
         if (window.ns?.setup && shortname && token) {
-            let apiUrl = 'https://api.novem.no';
-            let assetUrl = 'https://novem.no';
-
-            if (ignoreSslWarn) {
-                apiUrl = 'http://dev.api.novem.no';
-                assetUrl = 'http://dev.novem.no';
-            }
+            let apiUrl = new URL(apiRoot).origin;
+            let assetUrl = apiUrl.replace('://api.', '://');
 
             window.ns.setup({
                 bearerToken: token,

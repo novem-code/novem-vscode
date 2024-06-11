@@ -5,7 +5,6 @@ export interface ViewData {
     route: string;
     token: string;
     apiRoot: string;
-    ignoreSslWarn: boolean;
 }
 interface Creator {
     username: string;

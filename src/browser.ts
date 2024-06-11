@@ -38,7 +38,6 @@ export function createNovemBrowser(
     uri: string,
     token?: string,
     apiRoot?: string,
-    ignoreSslWarn?: boolean,
 ) {
     const panel = vscode.window.createWebviewPanel(
         shortname,
@@ -70,7 +69,6 @@ export function createNovemBrowser(
                 shortName: shortname,
                 token: token,
                 apiRoot: apiRoot,
-                ignoreSslWarn: ignoreSslWarn,
             });
         }
 

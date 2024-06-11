@@ -2,7 +2,7 @@
     "name": "novem-vscode",
     "displayName": "novem",
     "description": "Access and work with novem visuals in your favourite tool",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "engines": {
         "vscode": "^1.72.0"
     },
@@ -127,7 +127,7 @@
                 {
                     "id": "novem",
                     "title": "novem",
-                    "icon": "icons/novem.svg"
+                    "icon": "icons/novem48.png"
                 }
             ]
         },
@@ -224,18 +224,18 @@
         }
     },
     "scripts": {
-        "vscode:prepublish": "yarn build:spa:prod && yarn run compile",
+        "vscode:prepublish": "npm run build:spa:prod && npm run compile",
         "build:spa:dev": "webpack --config novem_web_view/webpack.config.js --mode development",
         "build:spa:prod": "webpack --config novem_web_view/webpack.config.js --mode production",
         "compile": "tsc -p ./",
-        "build": "yarn build:spa:prod && yarn compile",
+        "build": "npm run build:spa:prod && npm run compile",
         "watch:spa:dev": "webpack --watch --config novem_web_view/webpack.config.js --mode development",
         "watch:spa:prod": "webpack --watch --config novem_web_view/webpack.config.js --mode production",
         "start:spa": "webpack-dev-server --config novem_web_view/webpack.config.js --mode development",
         "watch": "tsc -watch -p ./",
-        "pretest": "yarn run compile && yarn run lint",
+        "pretest": "npm run compile && npm run lint",
         "lint": "eslint src --ext ts",
-        "test": "node ./out/test/runTest.js"
+        "test": "node ./out/src/test/runTest.js"
     },
     "devDependencies": {
         "@types/d3-selection": "^3.0.7",
