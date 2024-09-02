@@ -27,7 +27,7 @@
     "main": "./out/src/extension.js",
     "icon": "img/novem_icon_medium.png",
     "galleryBanner": {
-        "color": "#0184a7",
+        "color": "#D4FB38",
         "theme": "dark"
     },
     "bugs": {
