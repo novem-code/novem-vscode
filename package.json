@@ -28,7 +28,7 @@
     "icon": "img/novem_icon_medium.png",
     "galleryBanner": {
         "color": "#D4FB38",
-        "theme": "dark"
+        "theme": "light"
     },
     "bugs": {
         "url": "https://github.com/novem-code/novem-vscode/issues",
