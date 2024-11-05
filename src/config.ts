@@ -177,7 +177,7 @@ export async function writeConfig(data: {
     const config = {
         general: {
             profile: data.username,
-            api_root: 'https://api.novem.no/v1/',
+            api_root: 'https://api.novem.io/v1/',
         },
         [`profile:${data.username}`]: {
             username: data.username,

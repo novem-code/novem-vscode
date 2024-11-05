@@ -20,7 +20,7 @@ export function writeCSP() {
     const str =
         'connect-src https://www.gravatar.com ' +
         [
-            ['novem.no', true],
+            ['novem.io', true],
             ['neuf.run', false],
             ['neuf.cloud', true],
         ]

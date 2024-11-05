@@ -21,7 +21,7 @@ function doLogin() {
         '',
         '/login',
         '',
-        'https://api.novem.no/v1/', // pull this from settings?
+        'https://api.novem.io/v1/', // pull this from settings?
     );
 }
 

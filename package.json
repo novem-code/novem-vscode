@@ -32,13 +32,13 @@
     },
     "bugs": {
         "url": "https://github.com/novem-code/novem-vscode/issues",
-        "email": "support@novem.no"
+        "email": "support@novem.io"
     },
     "repository": {
         "type": "git",
         "url": "https://github.com/novem-code/novem-vscode.git"
     },
-    "homepage": "https://novem.no",
+    "homepage": "https://novem.io",
     "contributes": {
         "languages": [
             {
