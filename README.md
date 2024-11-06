@@ -1,5 +1,5 @@
 # novem - datavisualisation in your editor
-[novem](https://novem.no/) is a datavisualisation platform for coders, create charts, documents, emails and reports right from your code. With novem for vs code you can now edit and preview all your novem visuals with your favourite tool.
+[novem](https://novem.io/) is a datavisualisation platform for coders, create charts, documents, emails and reports right from your code. With novem for vs code you can now edit and preview all your novem visuals with your favourite tool.
 
 
 ## Installation

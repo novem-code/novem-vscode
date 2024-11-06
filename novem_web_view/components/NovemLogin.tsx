@@ -18,7 +18,7 @@ export default function NovemLogin(props: { vsapi: VscodeApi }) {
         setProgress('loggingIn');
         let response: AxiosResponse;
         try {
-            response = await axios.post('https://api.novem.no/v1/token', {
+            response = await axios.post('https://api.novem.io/v1/token', {
                 username,
                 password,
                 token_name:
