@@ -186,7 +186,7 @@ export async function writeConfig(data: {
         },
     };
 
-    const serialized = ini.stringify(config);
+    const serialized = ini.stringify(config, { whitespace: true });
     console.log(serialized);
 
     if (exists) {
