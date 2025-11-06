@@ -55,7 +55,7 @@ import { NovemSideBarProvider, MyTreeItem } from './tree';
 import { UserConfig, UserProfile, VisInfo, typeToIcon } from './config';
 import { createNovemBrowser } from './browser';
 
-import { mailsProvider, plotsProvider, jobsProvider } from './extension';
+import { mailsProvider, plotsProvider, jobsProvider, reposProvider } from './extension';
 import NovemApi from './novem-api';
 
 // Open a novem vis inside vscode
@@ -504,6 +504,87 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemJobs', async () => {
             jobsProvider?.refresh();
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.createNovemRepo', async () => {
+            const profile = context.globalState.get(
+                'userProfile',
+            ) as UserProfile;
+            const conf = context.globalState.get('userConfig') as UserConfig;
+
+            let repoId = await vscode.window.showInputBox({
+                prompt: 'Please provide the repo id to create:',
+                placeHolder: 'test_repo_1',
+                validateInput: (inputValue: string) => {
+                    if (!/^[a-z0-9_-]+$/.test(inputValue)) {
+                        return 'Only lowercase ASCII characters, underscores, and hyphens are allowed!';
+                    }
+                    return undefined;
+                },
+            });
+
+            if (!repoId) return;
+
+            try {
+                await api.createRepo(repoId);
+            } catch (error) {
+                console.log('error', error);
+                vscode.window.showErrorMessage(
+                    `Failed to create new repo ${repoId}`,
+                );
+                return;
+            }
+
+            reposProvider?.refresh();
+
+            vscode.window.showInformationMessage(`New repo ${repoId} created`);
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.deleteNovemRepo',
+            async (item: MyTreeItem) => {
+                const profile = context.globalState.get(
+                    'userProfile',
+                ) as UserProfile;
+                const conf = context.globalState.get(
+                    'userConfig',
+                ) as UserConfig;
+
+                let confirm = await vscode.window.showInputBox({
+                    prompt: `Please confirm that you want to delete "${item.name}" by typing DELETE`,
+                    placeHolder: 'type DELETE here',
+                    validateInput: (inputValue: string) => {
+                        if (!/^[DELETE]+$/.test(inputValue)) {
+                            return 'Only uppercase DELETE allowed, hit escape to ABORT';
+                        }
+                        return undefined;
+                    },
+                });
+
+                if (confirm !== 'DELETE') {
+                    if (confirm !== undefined) {
+                        vscode.window.showInformationMessage(
+                            `Action aborted, repo not deleted`,
+                        );
+                    }
+                    return;
+                }
+
+                await api.deleteRepo(item.name);
+
+                vscode.window.showWarningMessage(`Deleted "${item.name}"`);
+                item.parent.refresh();
+            },
+        ),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.refreshNovemRepos', async () => {
+            reposProvider?.refresh();
         }),
     );
 }

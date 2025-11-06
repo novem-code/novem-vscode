@@ -82,6 +82,10 @@ export default class NovemApi {
         return await this.get(`${this.apiRoot}/jobs`);
     }
 
+    async getReposForUser(user: string) {
+        return await this.get(`${this.apiRoot}/repos`);
+    }
+
     async createPlot(plotId: string) {
         return await this.put(`${this.apiRoot}/vis/plots/${plotId}`, null);
     }
@@ -90,6 +94,9 @@ export default class NovemApi {
     }
     async createJob(jobId: string) {
         return await this.put(`${this.apiRoot}/jobs/${jobId}`, null);
+    }
+    async createRepo(repoId: string) {
+        return await this.put(`${this.apiRoot}/repos/${repoId}`, null);
     }
     async modifyPlot(plotId: string, key: string, value: string) {
         return await this.post(
@@ -119,6 +126,12 @@ export default class NovemApi {
         else return await this.get(`${this.apiRoot}/jobs/${jobId}`);
     }
 
+    async getDetailsForRepo(repoId: string, path?: string) {
+        if (path)
+            return await this.get(`${this.apiRoot}/repos/${repoId}/${path}`);
+        else return await this.get(`${this.apiRoot}/repos/${repoId}`);
+    }
+
     async deletePlot(plotId: string) {
         return await this.delete(`${this.apiRoot}/vis/plots/${plotId}`);
     }
@@ -127,11 +140,15 @@ export default class NovemApi {
         return await this.delete(`${this.apiRoot}/jobs/${jobId}`);
     }
 
+    async deleteRepo(repoId: string) {
+        return await this.delete(`${this.apiRoot}/repos/${repoId}`);
+    }
+
     async readFile(path: string) {
         //console.log('reading file', path);
         try {
-            // Jobs are top-level, not under /vis/
-            if (path.startsWith('/jobs/')) {
+            // Jobs and repos are top-level, not under /vis/
+            if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
                 return await this.get(`${this.apiRoot}${path}`);
             }
             return await this.get(`${this.apiRoot}/vis/${path.slice(1)}`);
@@ -143,8 +160,8 @@ export default class NovemApi {
     async writeFile(path: string, content: string) {
         //console.log('writing file', path, content);
         try {
-            // Jobs are top-level, not under /vis/
-            if (path.startsWith('/jobs/')) {
+            // Jobs and repos are top-level, not under /vis/
+            if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
                 return await this.post(
                     `${this.apiRoot}${path}`,
                     content,

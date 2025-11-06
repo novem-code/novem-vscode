@@ -7,13 +7,13 @@ export class NovemSideBarProvider
     implements vscode.TreeDataProvider<vscode.TreeItem>
 {
     private context: vscode.ExtensionContext;
-    private type: 'plots' | 'mails' | 'jobs';
+    private type: 'plots' | 'mails' | 'jobs' | 'repos';
     private api: NovemApi;
 
     constructor(
         api: NovemApi,
         context: vscode.ExtensionContext,
-        type: 'plots' | 'mails' | 'jobs',
+        type: 'plots' | 'mails' | 'jobs' | 'repos',
     ) {
         this.api = api;
         this.context = context;
@@ -47,7 +47,9 @@ export class NovemSideBarProvider
                     ? this.api.getPlotsForUser(profile.user_info.username!)
                     : this.type === 'mails'
                       ? this.api.getMailsForUser(profile.user_info.username!)
-                      : this.api.getJobsForUser(profile.user_info.username!));
+                      : this.type === 'jobs'
+                        ? this.api.getJobsForUser(profile.user_info.username!)
+                        : this.api.getReposForUser(profile.user_info.username!));
 
                 return response
                     .sort((a: any, b: any) => {
@@ -65,7 +67,7 @@ export class NovemSideBarProvider
                                 ['r', 'd'],
                                 this.type,
                                 '',
-                                each.type || 'job',
+                                each.type || this.type === 'jobs' ? 'job' : 'repo',
                             ),
                     );
             } catch (error) {
@@ -91,11 +93,13 @@ export class NovemSideBarProvider
                 const response =
                     this.type === 'jobs'
                         ? await this.api.getDetailsForJob(visId, path)
-                        : await this.api.getDetailsForVis(
-                              this.type,
-                              visId,
-                              path,
-                          );
+                        : this.type === 'repos'
+                          ? await this.api.getDetailsForRepo(visId, path)
+                          : await this.api.getDetailsForVis(
+                                this.type,
+                                visId,
+                                path,
+                            );
                 return response
                     .filter((each: any) => ['file', 'dir'].includes(each.type))
                     .sort((a: any, b: any) => {
@@ -176,7 +180,9 @@ export class MyTreeItem extends vscode.TreeItem {
                 arguments: [
                     this.visType === 'jobs'
                         ? `/jobs${this.path}`
-                        : `/${this.visType}${this.path}`,
+                        : this.visType === 'repos'
+                          ? `/repos${this.path}`
+                          : `/${this.visType}${this.path}`,
                     this.type,
                     doctype,
                 ],
@@ -196,6 +202,10 @@ export class MyTreeItem extends vscode.TreeItem {
             if (depth === 0 && this.visType === 'jobs') {
                 this.iconPath = this.createColoredIcon('run', permissions);
                 this.contextValue = 'job-top'; // Add this line
+            }
+            if (depth === 0 && this.visType === 'repos') {
+                this.iconPath = this.createColoredIcon('repo', permissions);
+                this.contextValue = 'repo-top'; // Add this line
             }
             //this.iconPath = this.createColoredIcon('folder', permissions);
         }

@@ -128,6 +128,20 @@
                 "title": "Delete Job"
             },
             {
+                "command": "novem.createNovemRepo",
+                "title": "Create Repo",
+                "icon": "$(new-folder)"
+            },
+            {
+                "command": "novem.refreshNovemRepos",
+                "title": "Refresh Repos",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "novem.deleteNovemRepo",
+                "title": "Delete Repo"
+            },
+            {
                 "command": "novem.login",
                 "title": "novem: Login"
             },
@@ -176,6 +190,12 @@
                     "when": "view == novem-jobs && viewItem == job-top",
                     "title": "Delete Job",
                     "group": "4_mainpulate"
+                },
+                {
+                    "command": "novem.deleteNovemRepo",
+                    "when": "view == novem-repos && viewItem == repo-top",
+                    "title": "Delete Repo",
+                    "group": "4_mainpulate"
                 }
             ],
             "view/title": [
@@ -210,6 +230,16 @@
                     "group": "navigation"
                 },
                 {
+                    "command": "novem.createNovemRepo",
+                    "when": "view == novem-repos",
+                    "group": "navigation"
+                },
+                {
+                    "command": "novem.refreshNovemRepos",
+                    "when": "view == novem-repos",
+                    "group": "navigation"
+                },
+                {
                     "command": "novem.logout",
                     "when": "novem.loggedIn",
                     "group": "commands"
@@ -222,6 +252,10 @@
                 },
                 {
                     "command": "novem.deleteNovemJob",
+                    "when": "false"
+                },
+                {
+                    "command": "novem.deleteNovemRepo",
                     "when": "false"
                 },
                 {
@@ -253,6 +287,11 @@
                     "id": "novem-jobs",
                     "name": "Jobs",
                     "when": "novem.loggedIn && novem.hasJobs"
+                },
+                {
+                    "id": "novem-repos",
+                    "name": "Repos",
+                    "when": "novem.loggedIn && novem.hasRepos"
                 },
                 {
                     "id": "novem-login",

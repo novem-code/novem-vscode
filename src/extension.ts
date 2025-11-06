@@ -14,6 +14,7 @@ import { createNovemBrowser } from './browser';
 let plotsProvider: NovemSideBarProvider;
 let mailsProvider: NovemSideBarProvider;
 let jobsProvider: NovemSideBarProvider | null = null;
+let reposProvider: NovemSideBarProvider | null = null;
 
 function doLogin() {
     createNovemBrowser(
@@ -105,10 +106,11 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.window.registerTreeDataProvider('novem-mails', mailsProvider),
     );
 
-    // Check if jobs endpoint is available by querying the API root
+    // Check if jobs and repos endpoints are available by querying the API root
     try {
         const apiRoot = await novemApi.getApiRoot();
         const hasJobs = apiRoot.some((item: any) => item.name === 'jobs');
+        const hasRepos = apiRoot.some((item: any) => item.name === 'repos');
 
         if (hasJobs) {
             jobsProvider = new NovemSideBarProvider(novemApi, context, 'jobs');
@@ -119,9 +121,20 @@ export async function activate(context: vscode.ExtensionContext) {
         } else {
             vscode.commands.executeCommand('setContext', 'novem.hasJobs', false);
         }
+
+        if (hasRepos) {
+            reposProvider = new NovemSideBarProvider(novemApi, context, 'repos');
+            context.subscriptions.push(
+                vscode.window.registerTreeDataProvider('novem-repos', reposProvider),
+            );
+            vscode.commands.executeCommand('setContext', 'novem.hasRepos', true);
+        } else {
+            vscode.commands.executeCommand('setContext', 'novem.hasRepos', false);
+        }
     } catch (error) {
-        console.error('Error checking for jobs endpoint:', error);
+        console.error('Error checking for jobs/repos endpoints:', error);
         vscode.commands.executeCommand('setContext', 'novem.hasJobs', false);
+        vscode.commands.executeCommand('setContext', 'novem.hasRepos', false);
     }
 
     const sbi = vscode.window.createStatusBarItem(
@@ -138,4 +151,4 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() {}
 
 // Export them if needed
-export { plotsProvider, mailsProvider, jobsProvider };
+export { plotsProvider, mailsProvider, jobsProvider, reposProvider };
