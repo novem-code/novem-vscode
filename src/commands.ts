@@ -590,6 +590,101 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand(
+            'novem.cloneNovemRepo',
+            async (item: MyTreeItem) => {
+                if (!item || item.visType !== 'repos') {
+                    vscode.window.showErrorMessage(
+                        'This command can only be used on repos',
+                    );
+                    return;
+                }
+
+                try {
+                    // Fetch the clone URL from /repos/:repoId/url
+                    const cloneUrl = await api.readFile(`/repos/${item.name}/url`);
+
+                    if (!cloneUrl || typeof cloneUrl !== 'string') {
+                        vscode.window.showErrorMessage(
+                            `Failed to fetch clone URL for repo "${item.name}"`,
+                        );
+                        return;
+                    }
+
+                    // Prompt the user to select a directory to clone into
+                    const folderUri = await vscode.window.showOpenDialog({
+                        canSelectFiles: false,
+                        canSelectFolders: true,
+                        canSelectMany: false,
+                        openLabel: 'Select Clone Location',
+                        title: `Clone ${item.name}`,
+                    });
+
+                    if (!folderUri || folderUri.length === 0) {
+                        return;
+                    }
+
+                    const parentPath = folderUri[0].fsPath;
+
+                    // Extract repo name from URL (handle both .git and non-.git URLs)
+                    const urlParts = cloneUrl.trim().split('/');
+                    const repoNameWithGit = urlParts[urlParts.length - 1];
+                    const repoName = repoNameWithGit.replace(/\.git$/, '');
+                    const clonePath = `${parentPath}/${repoName}`;
+
+                    // Show progress notification
+                    await vscode.window.withProgress(
+                        {
+                            location: vscode.ProgressLocation.Notification,
+                            title: `Cloning ${item.name}...`,
+                            cancellable: false,
+                        },
+                        async (progress) => {
+                            progress.report({ message: 'Running git clone...' });
+
+                            // Use the built-in terminal to clone the repo
+                            const terminal = vscode.window.createTerminal({
+                                name: `Clone ${item.name}`,
+                                cwd: parentPath,
+                            });
+
+                            terminal.show();
+                            terminal.sendText(`git clone ${cloneUrl.trim()}`);
+                        },
+                    );
+
+                    // Prompt user to open the cloned repository
+                    const openChoice = await vscode.window.showInformationMessage(
+                        `Cloned ${item.name} into ${parentPath}`,
+                        'Open Repository',
+                        'Open in New Window',
+                        'Cancel',
+                    );
+
+                    if (openChoice === 'Open Repository') {
+                        await vscode.commands.executeCommand(
+                            'vscode.openFolder',
+                            vscode.Uri.file(clonePath),
+                            false,
+                        );
+                    } else if (openChoice === 'Open in New Window') {
+                        await vscode.commands.executeCommand(
+                            'vscode.openFolder',
+                            vscode.Uri.file(clonePath),
+                            true,
+                        );
+                    }
+                } catch (error) {
+                    console.error('Error cloning repo:', error);
+                    vscode.window.showErrorMessage(
+                        `Failed to clone repo "${item.name}": ${error}`,
+                    );
+                }
+            },
+        ),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
             'novem.createNodeInDirectory',
             async (item: MyTreeItem) => {
                 if (!item || item.type !== 'dir') {

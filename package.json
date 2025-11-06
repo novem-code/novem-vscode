@@ -124,6 +124,11 @@
                 "title": "Delete Repo"
             },
             {
+                "command": "novem.cloneNovemRepo",
+                "title": "Clone Repo",
+                "icon": "$(repo-clone)"
+            },
+            {
                 "command": "novem.login",
                 "title": "novem: Login"
             },
@@ -188,6 +193,18 @@
                     "when": "view == novem-repos && viewItem == repo-top",
                     "title": "Delete Repo",
                     "group": "4_manipulate"
+                },
+                {
+                    "command": "novem.cloneNovemRepo",
+                    "when": "view == novem-repos && viewItem == repo-top",
+                    "title": "Clone Repo",
+                    "group": "inline"
+                },
+                {
+                    "command": "novem.cloneNovemRepo",
+                    "when": "view == novem-repos && viewItem == repo-top",
+                    "title": "Clone Repo",
+                    "group": "1_show"
                 },
                 {
                     "command": "novem.createNodeInDirectory",
