@@ -20,10 +20,13 @@ export default class NovemApi {
         };
     }
 
-    private async get<T = any>(url: string) {
+    private async get<T = any>(url: string, acceptJson: boolean = true) {
+        const headers = acceptJson
+            ? this.headers
+            : { Authorization: this.headers.Authorization };
         return (
             await axios.get<T>(url, {
-                headers: this.headers,
+                headers: headers,
             })
         ).data;
     }
@@ -147,11 +150,12 @@ export default class NovemApi {
     async readFile(path: string) {
         //console.log('reading file', path);
         try {
+            // Don't use Accept: application/json for file content
             // Jobs and repos are top-level, not under /vis/
             if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
-                return await this.get(`${this.apiRoot}${path}`);
+                return await this.get(`${this.apiRoot}${path}`, false);
             }
-            return await this.get(`${this.apiRoot}/vis/${path.slice(1)}`);
+            return await this.get(`${this.apiRoot}/vis/${path.slice(1)}`, false);
         } catch (e) {
             console.error('Error fetching data', e);
         }
