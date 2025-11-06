@@ -304,6 +304,31 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             );
         }),
     );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.editConfig', async () => {
+            try {
+                const configPath = require('./config').getConfigPath();
+                const configUri = vscode.Uri.file(configPath.config);
+
+                // Open the config file in the editor
+                const document = await vscode.workspace.openTextDocument(configUri);
+                await vscode.window.showTextDocument(document);
+            } catch (error) {
+                vscode.window.showErrorMessage(
+                    `Failed to open config file: ${error}`,
+                );
+            }
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.reloadWindow', async () => {
+            vscode.window.showInformationMessage('Reloading Novem extension...');
+            await vscode.commands.executeCommand('workbench.action.reloadWindow');
+        }),
+    );
+
     context.subscriptions.push(
         vscode.commands.registerCommand(
             'novem.viewNovemPlot',

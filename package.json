@@ -147,6 +147,11 @@
                 "icon": "$(add)"
             },
             {
+                "command": "novem.editConfig",
+                "title": "novem: Edit Config File",
+                "icon": "$(edit)"
+            },
+            {
                 "command": "novem.createNodeInDirectory",
                 "title": "Create Node",
                 "icon": "$(add)"
@@ -324,6 +329,10 @@
                 },
                 {
                     "command": "novem.loginNewProfile",
+                    "when": "novem.loggedIn"
+                },
+                {
+                    "command": "novem.editConfig",
                     "when": "novem.loggedIn"
                 }
             ]
