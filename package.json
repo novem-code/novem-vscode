@@ -152,6 +152,11 @@
                 "icon": "$(edit)"
             },
             {
+                "command": "novem.reloadWindow",
+                "title": "novem: Reload Extension",
+                "icon": "$(refresh)"
+            },
+            {
                 "command": "novem.createNodeInDirectory",
                 "title": "Create Node",
                 "icon": "$(add)"
@@ -289,9 +294,19 @@
                     "group": "commands@2"
                 },
                 {
-                    "command": "novem.logout",
+                    "command": "novem.editConfig",
                     "when": "novem.loggedIn",
                     "group": "commands@3"
+                },
+                {
+                    "command": "novem.reloadWindow",
+                    "when": "novem.loggedIn",
+                    "group": "commands@4"
+                },
+                {
+                    "command": "novem.logout",
+                    "when": "novem.loggedIn",
+                    "group": "commands@5"
                 }
             ],
             "commandPalette": [
@@ -333,6 +348,10 @@
                 },
                 {
                     "command": "novem.editConfig",
+                    "when": "novem.loggedIn"
+                },
+                {
+                    "command": "novem.reloadWindow",
                     "when": "novem.loggedIn"
                 }
             ]
