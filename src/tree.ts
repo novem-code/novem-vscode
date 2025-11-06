@@ -101,13 +101,16 @@ export class NovemSideBarProvider
                                 path,
                             );
                 return response
-                    .filter((each: any) => ['file', 'dir'].includes(each.type))
+                    .filter((each: any) => ['file', 'dir', 'link'].includes(each.type))
                     .sort((a: any, b: any) => {
-                        // Sort by type first (directories come first)
-                        if (a.type !== b.type) {
-                            return a.type === 'dir' ? -1 : 1;
-                        }
-                        // If types are the same, sort alphabetically by name
+                        // Directories come first, then files and links together
+                        const aIsDir = a.type === 'dir';
+                        const bIsDir = b.type === 'dir';
+
+                        if (aIsDir && !bIsDir) return -1;
+                        if (!aIsDir && bIsDir) return 1;
+
+                        // Within the same group, sort alphabetically by name
                         return a.name.localeCompare(b.name);
                     })
                     .map(
@@ -189,6 +192,15 @@ export class MyTreeItem extends vscode.TreeItem {
             };
 
             // Set contextValue for deletable files
+            if (permissions.includes('d')) {
+                this.contextValue = 'file-deletable';
+            }
+        } else if (type === 'link') {
+            // Handle links (similar to files but with a link icon)
+            this.iconPath = new vscode.ThemeIcon('link');
+            this.desc = `[${this.permissionsToUnixStyle(this.permissions)}]`;
+
+            // Set contextValue for deletable links
             if (permissions.includes('d')) {
                 this.contextValue = 'file-deletable';
             }
