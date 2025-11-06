@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { UserConfig, UserProfile, typeToIcon } from './config';
+import { UserConfig, UserProfile, typeToIcon, getActiveProfile } from './config';
 import NovemApi from './novem-api';
 
 export class NovemSideBarProvider

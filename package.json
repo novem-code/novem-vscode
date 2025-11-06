@@ -137,6 +137,16 @@
                 "title": "novem: Logout"
             },
             {
+                "command": "novem.selectProfile",
+                "title": "novem: Select Profile",
+                "icon": "$(account)"
+            },
+            {
+                "command": "novem.loginNewProfile",
+                "title": "novem: Login New Profile",
+                "icon": "$(add)"
+            },
+            {
                 "command": "novem.createNodeInDirectory",
                 "title": "Create Node",
                 "icon": "$(add)"
@@ -264,9 +274,19 @@
                     "group": "navigation"
                 },
                 {
+                    "command": "novem.selectProfile",
+                    "when": "novem.loggedIn",
+                    "group": "commands@1"
+                },
+                {
+                    "command": "novem.loginNewProfile",
+                    "when": "novem.loggedIn",
+                    "group": "commands@2"
+                },
+                {
                     "command": "novem.logout",
                     "when": "novem.loggedIn",
-                    "group": "commands"
+                    "group": "commands@3"
                 }
             ],
             "commandPalette": [
@@ -296,6 +316,14 @@
                 },
                 {
                     "command": "novem.logout",
+                    "when": "novem.loggedIn"
+                },
+                {
+                    "command": "novem.selectProfile",
+                    "when": "novem.loggedIn"
+                },
+                {
+                    "command": "novem.loginNewProfile",
                     "when": "novem.loggedIn"
                 }
             ]

@@ -205,3 +205,78 @@ export async function writeConfig(data: {
     await fsa.mkdir(path.dir, { recursive: true });
     await fsa.writeFile(path.config, serialized);
 }
+
+/**
+ * Get all available profiles from the config file
+ */
+export function getAvailableProfiles(): string[] {
+    const configPath = getConfigPath().config;
+
+    if (!fs.existsSync(configPath)) {
+        return [];
+    }
+
+    const configContent = fs.readFileSync(configPath, 'utf-8');
+    const config = ini.parse(configContent);
+
+    const profiles: string[] = [];
+    for (const key in config) {
+        if (key.startsWith('profile:')) {
+            profiles.push(key.substring('profile:'.length));
+        }
+    }
+
+    return profiles;
+}
+
+/**
+ * Get the currently active profile for VS Code
+ * Falls back to the general profile if VS Code-specific profile is not set
+ */
+export function getActiveProfile(): string | null {
+    const configPath = getConfigPath().config;
+
+    if (!fs.existsSync(configPath)) {
+        return null;
+    }
+
+    const configContent = fs.readFileSync(configPath, 'utf-8');
+    const config = ini.parse(configContent);
+
+    // Check for VS Code-specific profile first
+    const vscodeProfile = config['app:vscode']?.profile;
+    if (vscodeProfile) {
+        return vscodeProfile;
+    }
+
+    // Fall back to general profile
+    return config.general?.profile || null;
+}
+
+/**
+ * Set the active profile for VS Code
+ */
+export async function setActiveProfile(profileName: string): Promise<void> {
+    const path = getConfigPath();
+
+    if (!fs.existsSync(path.config)) {
+        throw new Error('Config file does not exist');
+    }
+
+    const configContent = fs.readFileSync(path.config, 'utf-8');
+    const config = ini.parse(configContent);
+
+    // Verify the profile exists
+    if (!config[`profile:${profileName}`]) {
+        throw new Error(`Profile '${profileName}' does not exist`);
+    }
+
+    // Set or update the app:vscode section
+    if (!config['app:vscode']) {
+        config['app:vscode'] = {};
+    }
+    config['app:vscode'].profile = profileName;
+
+    const serialized = ini.stringify(config, { whitespace: true });
+    await fsa.writeFile(path.config, serialized);
+}

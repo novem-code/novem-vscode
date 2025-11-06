@@ -52,7 +52,7 @@ Context menu Mail:
 import * as vscode from 'vscode';
 
 import { NovemSideBarProvider, MyTreeItem } from './tree';
-import { UserConfig, UserProfile, VisInfo, typeToIcon } from './config';
+import { UserConfig, UserProfile, VisInfo, typeToIcon, getAvailableProfiles, setActiveProfile } from './config';
 import { createNovemBrowser } from './browser';
 
 import { mailsProvider, plotsProvider, jobsProvider, reposProvider } from './extension';
@@ -256,6 +256,53 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             'novem.login',
             createViewFunction(context, api, 'login'),
         ),
+    );
+
+    // Profile management commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.selectProfile', async () => {
+            const profiles = getAvailableProfiles();
+
+            if (profiles.length === 0) {
+                vscode.window.showWarningMessage('No profiles found in config file');
+                return;
+            }
+
+            const selectedProfile = await vscode.window.showQuickPick(profiles, {
+                placeHolder: 'Select a profile to switch to',
+                title: 'Novem Profile Selection',
+            });
+
+            if (!selectedProfile) {
+                return;
+            }
+
+            try {
+                await setActiveProfile(selectedProfile);
+                vscode.window.showInformationMessage(
+                    `Switched to profile: ${selectedProfile}. Reloading window...`,
+                );
+                // Reload the window to apply the new profile
+                await vscode.commands.executeCommand('workbench.action.reloadWindow');
+            } catch (error) {
+                vscode.window.showErrorMessage(
+                    `Failed to switch profile: ${error}`,
+                );
+            }
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.loginNewProfile', () => {
+            createNovemBrowser(
+                'login',
+                '',
+                '',
+                '/login',
+                '',
+                'https://api.novem.io/v1/', // pull this from settings?
+            );
+        }),
     );
     context.subscriptions.push(
         vscode.commands.registerCommand(
