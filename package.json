@@ -153,6 +153,11 @@
                 "command": "novem.createNodeInDirectory",
                 "title": "Create Node",
                 "icon": "$(add)"
+            },
+            {
+                "command": "novem.deleteNode",
+                "title": "Delete Node",
+                "icon": "$(trash)"
             }
         ],
         "viewsContainers": {
@@ -204,7 +209,17 @@
                 },
                 {
                     "command": "novem.createNodeInDirectory",
-                    "when": "viewItem == dir-writable",
+                    "when": "viewItem == dir-writable || viewItem == dir-writable-deletable",
+                    "group": "inline"
+                },
+                {
+                    "command": "novem.deleteNode",
+                    "when": "viewItem == file-deletable",
+                    "group": "inline"
+                },
+                {
+                    "command": "novem.deleteNode",
+                    "when": "viewItem == dir-deletable || viewItem == dir-writable-deletable",
                     "group": "inline"
                 }
             ],
@@ -270,6 +285,10 @@
                 },
                 {
                     "command": "novem.createNodeInDirectory",
+                    "when": "false"
+                },
+                {
+                    "command": "novem.deleteNode",
                     "when": "false"
                 },
                 {

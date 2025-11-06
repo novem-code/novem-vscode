@@ -642,4 +642,55 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             },
         ),
     );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.deleteNode',
+            async (item: MyTreeItem) => {
+                if (!item) {
+                    vscode.window.showErrorMessage('No item selected');
+                    return;
+                }
+
+                if (!item.permissions.includes('d')) {
+                    vscode.window.showErrorMessage(
+                        'This item does not have delete permissions',
+                    );
+                    return;
+                }
+
+                const itemType = item.type === 'dir' ? 'directory' : 'file';
+                const confirm = await vscode.window.showWarningMessage(
+                    `Are you sure you want to delete ${itemType} "${item.name}"?`,
+                    { modal: true },
+                    'Delete',
+                );
+
+                if (confirm !== 'Delete') {
+                    return;
+                }
+
+                // Construct the full path for the node to delete
+                const fullPath =
+                    item.visType === 'jobs'
+                        ? `/jobs${item.path}`
+                        : item.visType === 'repos'
+                          ? `/repos${item.path}`
+                          : `/${item.visType}${item.path}`;
+
+                try {
+                    await api.deleteNode(fullPath);
+                    vscode.window.showInformationMessage(
+                        `Deleted ${itemType} "${item.name}"`,
+                    );
+                    item.parent.refresh();
+                } catch (error) {
+                    console.error('Error deleting node:', error);
+                    vscode.window.showErrorMessage(
+                        `Failed to delete ${itemType} "${item.name}": ${error}`,
+                    );
+                }
+            },
+        ),
+    );
 }

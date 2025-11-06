@@ -198,4 +198,18 @@ export default class NovemApi {
             throw e;
         }
     }
+
+    async deleteNode(path: string) {
+        //console.log('deleting node', path);
+        try {
+            // Jobs and repos are top-level, not under /vis/
+            if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
+                return await this.delete(`${this.apiRoot}${path}`);
+            }
+            return await this.delete(`${this.apiRoot}/vis/${path.slice(1)}`);
+        } catch (e) {
+            console.error('Error deleting node', e);
+            throw e;
+        }
+    }
 }

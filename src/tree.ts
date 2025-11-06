@@ -187,6 +187,11 @@ export class MyTreeItem extends vscode.TreeItem {
                     doctype,
                 ],
             };
+
+            // Set contextValue for deletable files
+            if (permissions.includes('d')) {
+                this.contextValue = 'file-deletable';
+            }
         } else if (type === 'dir') {
             if (depth === 0 && this.visType === 'plots') {
                 this.iconPath = this.createColoredIcon(
@@ -208,9 +213,18 @@ export class MyTreeItem extends vscode.TreeItem {
                 this.contextValue = 'repo-top'; // Add this line
             }
 
-            // Set contextValue for writable directories (not top-level)
-            if (depth > 0 && permissions.includes('w')) {
-                this.contextValue = 'dir-writable';
+            // Set contextValue for writable/deletable directories (not top-level)
+            if (depth > 0) {
+                const isWritable = permissions.includes('w');
+                const isDeletable = permissions.includes('d');
+
+                if (isWritable && isDeletable) {
+                    this.contextValue = 'dir-writable-deletable';
+                } else if (isWritable) {
+                    this.contextValue = 'dir-writable';
+                } else if (isDeletable) {
+                    this.contextValue = 'dir-deletable';
+                }
             }
             //this.iconPath = this.createColoredIcon('folder', permissions);
         }
