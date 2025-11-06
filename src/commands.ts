@@ -606,12 +606,33 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
                     return;
                 }
 
+                // Determine validation rules based on parent directory
+                const isSharedFolder = item.name === 'shared';
+                const isTagsFolder = item.name === 'tags';
+
+                let validationPattern: RegExp;
+                let validationMessage: string;
+
+                if (isSharedFolder) {
+                    // shared entries can contain @, +, ~, -, _
+                    validationPattern = /^[a-z0-9@+~_-]+$/;
+                    validationMessage = 'Only lowercase ASCII characters, numbers, @, +, ~, _, and - are allowed in shared folder!';
+                } else if (isTagsFolder) {
+                    // tags may start with + and contain -, _
+                    validationPattern = /^\+?[a-z0-9_-]+$/;
+                    validationMessage = 'Tags may start with + and can contain lowercase ASCII characters, numbers, _, and -!';
+                } else {
+                    // default validation
+                    validationPattern = /^[a-z0-9_.-]+$/;
+                    validationMessage = 'Only lowercase ASCII characters, numbers, underscores, dots, and hyphens are allowed!';
+                }
+
                 let nodeName = await vscode.window.showInputBox({
                     prompt: `Enter the name of the node to create in ${item.name}:`,
-                    placeHolder: 'node_name',
+                    placeHolder: isTagsFolder ? '+tag_name' : 'node_name',
                     validateInput: (inputValue: string) => {
-                        if (!/^[a-z0-9_.-]+$/.test(inputValue)) {
-                            return 'Only lowercase ASCII characters, numbers, underscores, dots, and hyphens are allowed!';
+                        if (!validationPattern.test(inputValue)) {
+                            return validationMessage;
                         }
                         return undefined;
                     },
