@@ -148,6 +148,11 @@
             {
                 "command": "novem.logout",
                 "title": "novem: Logout"
+            },
+            {
+                "command": "novem.createNodeInDirectory",
+                "title": "Create Node",
+                "icon": "$(add)"
             }
         ],
         "viewsContainers": {
@@ -196,6 +201,11 @@
                     "when": "view == novem-repos && viewItem == repo-top",
                     "title": "Delete Repo",
                     "group": "4_mainpulate"
+                },
+                {
+                    "command": "novem.createNodeInDirectory",
+                    "when": "viewItem == dir-writable",
+                    "group": "inline"
                 }
             ],
             "view/title": [
@@ -256,6 +266,10 @@
                 },
                 {
                     "command": "novem.deleteNovemRepo",
+                    "when": "false"
+                },
+                {
+                    "command": "novem.createNodeInDirectory",
                     "when": "false"
                 },
                 {

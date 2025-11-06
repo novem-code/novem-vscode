@@ -181,4 +181,21 @@ export default class NovemApi {
             console.error('Error posting data', e);
         }
     }
+
+    async createNodeInDirectory(path: string) {
+        //console.log('creating node in directory', path);
+        try {
+            // Jobs and repos are top-level, not under /vis/
+            if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
+                return await this.put(`${this.apiRoot}${path}`, null);
+            }
+            return await this.put(
+                `${this.apiRoot}/vis/${path.slice(1)}`,
+                null,
+            );
+        } catch (e) {
+            console.error('Error creating node', e);
+            throw e;
+        }
+    }
 }

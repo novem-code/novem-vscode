@@ -587,4 +587,59 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             reposProvider?.refresh();
         }),
     );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.createNodeInDirectory',
+            async (item: MyTreeItem) => {
+                if (!item || item.type !== 'dir') {
+                    vscode.window.showErrorMessage(
+                        'This command can only be used on directories',
+                    );
+                    return;
+                }
+
+                if (!item.permissions.includes('w')) {
+                    vscode.window.showErrorMessage(
+                        'This directory does not have write permissions',
+                    );
+                    return;
+                }
+
+                let nodeName = await vscode.window.showInputBox({
+                    prompt: `Enter the name of the node to create in ${item.name}:`,
+                    placeHolder: 'node_name',
+                    validateInput: (inputValue: string) => {
+                        if (!/^[a-z0-9_.-]+$/.test(inputValue)) {
+                            return 'Only lowercase ASCII characters, numbers, underscores, dots, and hyphens are allowed!';
+                        }
+                        return undefined;
+                    },
+                });
+
+                if (!nodeName) return;
+
+                // Construct the full path for the new node
+                const fullPath =
+                    item.visType === 'jobs'
+                        ? `/jobs${item.path}/${nodeName}`
+                        : item.visType === 'repos'
+                          ? `/repos${item.path}/${nodeName}`
+                          : `/${item.visType}${item.path}/${nodeName}`;
+
+                try {
+                    await api.createNodeInDirectory(fullPath);
+                    vscode.window.showInformationMessage(
+                        `Created node "${nodeName}" in ${item.name}`,
+                    );
+                    item.parent.refresh();
+                } catch (error) {
+                    console.error('Error creating node:', error);
+                    vscode.window.showErrorMessage(
+                        `Failed to create node "${nodeName}": ${error}`,
+                    );
+                }
+            },
+        ),
+    );
 }

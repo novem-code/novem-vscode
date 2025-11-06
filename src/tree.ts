@@ -207,6 +207,11 @@ export class MyTreeItem extends vscode.TreeItem {
                 this.iconPath = this.createColoredIcon('repo', permissions);
                 this.contextValue = 'repo-top'; // Add this line
             }
+
+            // Set contextValue for writable directories (not top-level)
+            if (depth > 0 && permissions.includes('w')) {
+                this.contextValue = 'dir-writable';
+            }
             //this.iconPath = this.createColoredIcon('folder', permissions);
         }
 
