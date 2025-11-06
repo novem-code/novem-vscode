@@ -193,19 +193,19 @@
                     "command": "novem.deleteNovemPlot",
                     "when": "view == novem-plots && viewItem == plot-top",
                     "title": "Delete Plot",
-                    "group": "4_mainpulate"
+                    "group": "4_manipulate"
                 },
                 {
                     "command": "novem.deleteNovemJob",
                     "when": "view == novem-jobs && viewItem == job-top",
                     "title": "Delete Job",
-                    "group": "4_mainpulate"
+                    "group": "4_manipulate"
                 },
                 {
                     "command": "novem.deleteNovemRepo",
                     "when": "view == novem-repos && viewItem == repo-top",
                     "title": "Delete Repo",
-                    "group": "4_mainpulate"
+                    "group": "4_manipulate"
                 },
                 {
                     "command": "novem.createNodeInDirectory",
