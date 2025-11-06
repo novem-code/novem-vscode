@@ -164,13 +164,21 @@ export default class NovemApi {
     async writeFile(path: string, content: string) {
         //console.log('writing file', path, content);
         try {
+            // Determine content type based on path
+            let contentType = 'text/plain';
+
+            // Job data files should be sent as application/json
+            if (path.match(/^\/jobs\/[^/]+\/data$/)) {
+                contentType = 'application/json';
+            }
+
             // Jobs and repos are top-level, not under /vis/
             if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
                 return await this.post(
                     `${this.apiRoot}${path}`,
                     content,
                     {
-                        'Content-Type': 'text/plain',
+                        'Content-Type': contentType,
                     },
                 );
             }

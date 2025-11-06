@@ -171,7 +171,14 @@ export class MyTreeItem extends vscode.TreeItem {
         this.path = `${parentPath}/${this.name}`;
         this.visType = visType;
 
-        const doctype = 'nv_markdown';
+        // Determine the document type based on path and name
+        let doctype = 'nv_markdown';
+
+        // Check if this is a job data file
+        if (this.visType === 'jobs' && this.name === 'data') {
+            doctype = 'json';
+        }
+
         this.desc = ``;
         // Set the icon and its color based on type and permissions
         if (type === 'file') {
