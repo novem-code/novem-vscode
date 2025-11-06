@@ -6,24 +6,14 @@
     "engines": {
         "vscode": "^1.72.0"
     },
-    "categories": [
-        "Data Science",
-        "Visualization",
-        "Notebooks"
-    ],
+    "categories": ["Data Science", "Visualization", "Notebooks"],
     "license": "SEE LICENSE IN LICENSE",
     "pricing": "Free",
     "activationEvents": [],
     "publisher": "novem",
     "qna": false,
     "preview": true,
-    "keywords": [
-        "novem",
-        "pandas",
-        "python",
-        "e-mail",
-        "dataviz"
-    ],
+    "keywords": ["novem", "pandas", "python", "e-mail", "dataviz"],
     "main": "./out/src/extension.js",
     "icon": "img/novem_icon_medium.png",
     "galleryBanner": {
@@ -43,18 +33,10 @@
         "languages": [
             {
                 "id": "nv_markdown",
-                "aliases": [
-                    "NV Markdown",
-                    "nv_markdown"
-                ],
-                "extensions": [
-                    ".nvm",
-                    ".nvmd"
-                ],
+                "aliases": ["NV Markdown", "nv_markdown"],
+                "extensions": [".nvm", ".nvmd"],
                 "filenames": [],
-                "mimetypes": [
-                    "text/nv_markdown"
-                ]
+                "mimetypes": ["text/nv_markdown"]
             }
         ],
         "grammars": [
@@ -306,9 +288,7 @@
                 {
                     "id": "novem-plots",
                     "name": "Plots",
-                    "commands": [
-                        "novem.createNovemPlot"
-                    ],
+                    "commands": ["novem.createNovemPlot"],
                     "when": "novem.loggedIn"
                 },
                 {
