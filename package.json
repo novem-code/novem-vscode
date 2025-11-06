@@ -114,6 +114,20 @@
                 "title": "Send Mail"
             },
             {
+                "command": "novem.createNovemJob",
+                "title": "Create Job",
+                "icon": "$(new-folder)"
+            },
+            {
+                "command": "novem.refreshNovemJobs",
+                "title": "Refresh Jobs",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "novem.deleteNovemJob",
+                "title": "Delete Job"
+            },
+            {
                 "command": "novem.login",
                 "title": "novem: Login"
             },
@@ -156,6 +170,12 @@
                     "when": "view == novem-plots && viewItem == plot-top",
                     "title": "Delete Plot",
                     "group": "4_mainpulate"
+                },
+                {
+                    "command": "novem.deleteNovemJob",
+                    "when": "view == novem-jobs && viewItem == job-top",
+                    "title": "Delete Job",
+                    "group": "4_mainpulate"
                 }
             ],
             "view/title": [
@@ -180,6 +200,16 @@
                     "group": "navigation"
                 },
                 {
+                    "command": "novem.createNovemJob",
+                    "when": "view == novem-jobs",
+                    "group": "navigation"
+                },
+                {
+                    "command": "novem.refreshNovemJobs",
+                    "when": "view == novem-jobs",
+                    "group": "navigation"
+                },
+                {
                     "command": "novem.logout",
                     "when": "novem.loggedIn",
                     "group": "commands"
@@ -188,6 +218,10 @@
             "commandPalette": [
                 {
                     "command": "novem.deleteNovemPlot",
+                    "when": "false"
+                },
+                {
+                    "command": "novem.deleteNovemJob",
                     "when": "false"
                 },
                 {
@@ -214,6 +248,11 @@
                     "id": "novem-mails",
                     "name": "E-Mails",
                     "when": "novem.loggedIn"
+                },
+                {
+                    "id": "novem-jobs",
+                    "name": "Jobs",
+                    "when": "novem.loggedIn && novem.hasJobs"
                 },
                 {
                     "id": "novem-login",

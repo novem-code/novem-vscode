@@ -7,13 +7,13 @@ export class NovemSideBarProvider
     implements vscode.TreeDataProvider<vscode.TreeItem>
 {
     private context: vscode.ExtensionContext;
-    private type: 'plots' | 'mails';
+    private type: 'plots' | 'mails' | 'jobs';
     private api: NovemApi;
 
     constructor(
         api: NovemApi,
         context: vscode.ExtensionContext,
-        type: 'plots' | 'mails',
+        type: 'plots' | 'mails' | 'jobs',
     ) {
         this.api = api;
         this.context = context;
@@ -45,28 +45,32 @@ export class NovemSideBarProvider
             try {
                 const response = await (this.type === 'plots'
                     ? this.api.getPlotsForUser(profile.user_info.username!)
-                    : this.api.getMailsForUser(profile.user_info.username!));
+                    : this.type === 'mails'
+                      ? this.api.getMailsForUser(profile.user_info.username!)
+                      : this.api.getJobsForUser(profile.user_info.username!));
 
                 return response
                     .sort((a: any, b: any) => {
                         // If types are the same, sort alphabetically by name
-                        return a.id.localeCompare(b.id);
+                        const aId = a.id || a.name;
+                        const bId = b.id || b.name;
+                        return aId.localeCompare(bId);
                     })
                     .map(
                         (each: any) =>
                             new MyTreeItem(
                                 this,
-                                each.id,
+                                each.id || each.name,
                                 'dir',
                                 ['r', 'd'],
                                 this.type,
                                 '',
-                                each.type,
+                                each.type || 'job',
                             ),
                     );
             } catch (error) {
                 console.error('Error!', error);
-                return [new vscode.TreeItem('Error loading plots')];
+                return [new vscode.TreeItem(`Error loading ${this.type}`)];
             }
         } else {
             function splitWithLimit(
@@ -84,11 +88,14 @@ export class NovemSideBarProvider
             if (element.type !== 'dir') throw new Error('Invalid type');
 
             try {
-                const response = await this.api.getDetailsForVis(
-                    this.type,
-                    visId,
-                    path,
-                );
+                const response =
+                    this.type === 'jobs'
+                        ? await this.api.getDetailsForJob(visId, path)
+                        : await this.api.getDetailsForVis(
+                              this.type,
+                              visId,
+                              path,
+                          );
                 return response
                     .filter((each: any) => ['file', 'dir'].includes(each.type))
                     .sort((a: any, b: any) => {
@@ -113,7 +120,7 @@ export class NovemSideBarProvider
                     );
             } catch (error) {
                 console.error('Error!', error);
-                return [new vscode.TreeItem('Error loading plots')];
+                return [new vscode.TreeItem(`Error loading ${this.type}`)];
             }
         }
     }
@@ -166,7 +173,13 @@ export class MyTreeItem extends vscode.TreeItem {
             this.command = {
                 command: 'novem.openFile',
                 title: 'Open File',
-                arguments: [`/${this.visType}${this.path}`, this.type, doctype],
+                arguments: [
+                    this.visType === 'jobs'
+                        ? `/jobs${this.path}`
+                        : `/${this.visType}${this.path}`,
+                    this.type,
+                    doctype,
+                ],
             };
         } else if (type === 'dir') {
             if (depth === 0 && this.visType === 'plots') {
@@ -179,6 +192,10 @@ export class MyTreeItem extends vscode.TreeItem {
             if (depth === 0 && this.visType === 'mails') {
                 this.iconPath = this.createColoredIcon('mail', permissions);
                 this.contextValue = 'mail-top'; // Add this line
+            }
+            if (depth === 0 && this.visType === 'jobs') {
+                this.iconPath = this.createColoredIcon('run', permissions);
+                this.contextValue = 'job-top'; // Add this line
             }
             //this.iconPath = this.createColoredIcon('folder', permissions);
         }

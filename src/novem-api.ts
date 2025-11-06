@@ -62,6 +62,10 @@ export default class NovemApi {
         );
     }
 
+    async getApiRoot() {
+        return await this.get(`${this.apiRoot}/`);
+    }
+
     async getVisualizationsForUser(user: string) {
         return await this.get(`${this.apiRoot}/u/${user}/v`);
     }
@@ -74,11 +78,18 @@ export default class NovemApi {
         return await this.get(`${this.apiRoot}/u/${user}/p`);
     }
 
+    async getJobsForUser(user: string) {
+        return await this.get(`${this.apiRoot}/jobs`);
+    }
+
     async createPlot(plotId: string) {
         return await this.put(`${this.apiRoot}/vis/plots/${plotId}`, null);
     }
     async createMail(mailId: string) {
         return await this.put(`${this.apiRoot}/vis/mails/${mailId}`, null);
+    }
+    async createJob(jobId: string) {
+        return await this.put(`${this.apiRoot}/jobs/${jobId}`, null);
     }
     async modifyPlot(plotId: string, key: string, value: string) {
         return await this.post(
@@ -102,13 +113,27 @@ export default class NovemApi {
         else return await this.get(`${this.apiRoot}/vis/${type}/${visId}`);
     }
 
+    async getDetailsForJob(jobId: string, path?: string) {
+        if (path)
+            return await this.get(`${this.apiRoot}/jobs/${jobId}/${path}`);
+        else return await this.get(`${this.apiRoot}/jobs/${jobId}`);
+    }
+
     async deletePlot(plotId: string) {
         return await this.delete(`${this.apiRoot}/vis/plots/${plotId}`);
+    }
+
+    async deleteJob(jobId: string) {
+        return await this.delete(`${this.apiRoot}/jobs/${jobId}`);
     }
 
     async readFile(path: string) {
         //console.log('reading file', path);
         try {
+            // Jobs are top-level, not under /vis/
+            if (path.startsWith('/jobs/')) {
+                return await this.get(`${this.apiRoot}${path}`);
+            }
             return await this.get(`${this.apiRoot}/vis/${path.slice(1)}`);
         } catch (e) {
             console.error('Error fetching data', e);
@@ -118,6 +143,16 @@ export default class NovemApi {
     async writeFile(path: string, content: string) {
         //console.log('writing file', path, content);
         try {
+            // Jobs are top-level, not under /vis/
+            if (path.startsWith('/jobs/')) {
+                return await this.post(
+                    `${this.apiRoot}${path}`,
+                    content,
+                    {
+                        'Content-Type': 'text/plain',
+                    },
+                );
+            }
             return await this.post(
                 `${this.apiRoot}/vis/${path.slice(1)}`,
                 content,
