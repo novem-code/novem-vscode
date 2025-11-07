@@ -137,6 +137,26 @@
                 "title": "novem: Logout"
             },
             {
+                "command": "novem.selectProfile",
+                "title": "novem: Select Profile",
+                "icon": "$(account)"
+            },
+            {
+                "command": "novem.loginNewProfile",
+                "title": "novem: Login New Profile",
+                "icon": "$(add)"
+            },
+            {
+                "command": "novem.editConfig",
+                "title": "novem: Edit Config File",
+                "icon": "$(edit)"
+            },
+            {
+                "command": "novem.reloadWindow",
+                "title": "novem: Reload Extension",
+                "icon": "$(refresh)"
+            },
+            {
                 "command": "novem.createNodeInDirectory",
                 "title": "Create Node",
                 "icon": "$(add)"
@@ -264,9 +284,29 @@
                     "group": "navigation"
                 },
                 {
+                    "command": "novem.selectProfile",
+                    "when": "novem.loggedIn",
+                    "group": "commands@1"
+                },
+                {
+                    "command": "novem.loginNewProfile",
+                    "when": "novem.loggedIn",
+                    "group": "commands@2"
+                },
+                {
+                    "command": "novem.editConfig",
+                    "when": "novem.loggedIn",
+                    "group": "commands@3"
+                },
+                {
+                    "command": "novem.reloadWindow",
+                    "when": "novem.loggedIn",
+                    "group": "commands@4"
+                },
+                {
                     "command": "novem.logout",
                     "when": "novem.loggedIn",
-                    "group": "commands"
+                    "group": "commands@5"
                 }
             ],
             "commandPalette": [
@@ -296,6 +336,22 @@
                 },
                 {
                     "command": "novem.logout",
+                    "when": "novem.loggedIn"
+                },
+                {
+                    "command": "novem.selectProfile",
+                    "when": "novem.loggedIn"
+                },
+                {
+                    "command": "novem.loginNewProfile",
+                    "when": "novem.loggedIn"
+                },
+                {
+                    "command": "novem.editConfig",
+                    "when": "novem.loggedIn"
+                },
+                {
+                    "command": "novem.reloadWindow",
                     "when": "novem.loggedIn"
                 }
             ]

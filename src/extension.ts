@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as https from 'https';
 
 // Import the functions from config.ts
-import { getCurrentConfig, UserProfile } from './config';
+import { getCurrentConfig, UserProfile, getActiveProfile } from './config';
 import { NovemSideBarProvider, NovemDummyProvider } from './tree';
 
 import { setupCommands } from './commands';
@@ -142,8 +142,12 @@ export async function activate(context: vscode.ExtensionContext) {
         50,
     );
 
-    sbi.text = 'novem: ' + profile.user_info.email;
-    sbi.tooltip = 'Logged in as ' + profile.user_info.name;
+    const activeProfile = getActiveProfile();
+    const profileText = activeProfile ? ` [${activeProfile}]` : '';
+
+    sbi.text = 'novem: ' + profile.user_info.email + profileText;
+    sbi.tooltip = `Logged in as ${profile.user_info.name}${activeProfile ? ` (Profile: ${activeProfile})` : ''}`;
+    sbi.command = 'novem.selectProfile';
     sbi.show();
 }
 
