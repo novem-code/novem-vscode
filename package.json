@@ -6,24 +6,14 @@
     "engines": {
         "vscode": "^1.72.0"
     },
-    "categories": [
-        "Data Science",
-        "Visualization",
-        "Notebooks"
-    ],
+    "categories": ["Data Science", "Visualization", "Notebooks"],
     "license": "SEE LICENSE IN LICENSE",
     "pricing": "Free",
     "activationEvents": [],
     "publisher": "novem",
     "qna": false,
     "preview": true,
-    "keywords": [
-        "novem",
-        "pandas",
-        "python",
-        "e-mail",
-        "dataviz"
-    ],
+    "keywords": ["novem", "pandas", "python", "e-mail", "dataviz"],
     "main": "./out/src/extension.js",
     "icon": "img/novem_icon_medium.png",
     "galleryBanner": {
@@ -43,18 +33,10 @@
         "languages": [
             {
                 "id": "nv_markdown",
-                "aliases": [
-                    "NV Markdown",
-                    "nv_markdown"
-                ],
-                "extensions": [
-                    ".nvm",
-                    ".nvmd"
-                ],
+                "aliases": ["NV Markdown", "nv_markdown"],
+                "extensions": [".nvm", ".nvmd"],
                 "filenames": [],
-                "mimetypes": [
-                    "text/nv_markdown"
-                ]
+                "mimetypes": ["text/nv_markdown"]
             }
         ],
         "grammars": [
@@ -114,12 +96,55 @@
                 "title": "Send Mail"
             },
             {
+                "command": "novem.createNovemJob",
+                "title": "Create Job",
+                "icon": "$(new-folder)"
+            },
+            {
+                "command": "novem.refreshNovemJobs",
+                "title": "Refresh Jobs",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "novem.deleteNovemJob",
+                "title": "Delete Job"
+            },
+            {
+                "command": "novem.createNovemRepo",
+                "title": "Create Repo",
+                "icon": "$(new-folder)"
+            },
+            {
+                "command": "novem.refreshNovemRepos",
+                "title": "Refresh Repos",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "novem.deleteNovemRepo",
+                "title": "Delete Repo"
+            },
+            {
+                "command": "novem.cloneNovemRepo",
+                "title": "Clone Repo",
+                "icon": "$(repo-clone)"
+            },
+            {
                 "command": "novem.login",
                 "title": "novem: Login"
             },
             {
                 "command": "novem.logout",
                 "title": "novem: Logout"
+            },
+            {
+                "command": "novem.createNodeInDirectory",
+                "title": "Create Node",
+                "icon": "$(add)"
+            },
+            {
+                "command": "novem.deleteNode",
+                "title": "Delete Node",
+                "icon": "$(trash)"
             }
         ],
         "viewsContainers": {
@@ -155,7 +180,46 @@
                     "command": "novem.deleteNovemPlot",
                     "when": "view == novem-plots && viewItem == plot-top",
                     "title": "Delete Plot",
-                    "group": "4_mainpulate"
+                    "group": "4_manipulate"
+                },
+                {
+                    "command": "novem.deleteNovemJob",
+                    "when": "view == novem-jobs && viewItem == job-top",
+                    "title": "Delete Job",
+                    "group": "4_manipulate"
+                },
+                {
+                    "command": "novem.deleteNovemRepo",
+                    "when": "view == novem-repos && viewItem == repo-top",
+                    "title": "Delete Repo",
+                    "group": "4_manipulate"
+                },
+                {
+                    "command": "novem.cloneNovemRepo",
+                    "when": "view == novem-repos && viewItem == repo-top",
+                    "title": "Clone Repo",
+                    "group": "inline"
+                },
+                {
+                    "command": "novem.cloneNovemRepo",
+                    "when": "view == novem-repos && viewItem == repo-top",
+                    "title": "Clone Repo",
+                    "group": "1_show"
+                },
+                {
+                    "command": "novem.createNodeInDirectory",
+                    "when": "viewItem == dir-writable || viewItem == dir-writable-deletable",
+                    "group": "inline"
+                },
+                {
+                    "command": "novem.deleteNode",
+                    "when": "viewItem == file-deletable",
+                    "group": "inline"
+                },
+                {
+                    "command": "novem.deleteNode",
+                    "when": "viewItem == dir-deletable || viewItem == dir-writable-deletable",
+                    "group": "inline"
                 }
             ],
             "view/title": [
@@ -180,6 +244,26 @@
                     "group": "navigation"
                 },
                 {
+                    "command": "novem.createNovemJob",
+                    "when": "view == novem-jobs",
+                    "group": "navigation"
+                },
+                {
+                    "command": "novem.refreshNovemJobs",
+                    "when": "view == novem-jobs",
+                    "group": "navigation"
+                },
+                {
+                    "command": "novem.createNovemRepo",
+                    "when": "view == novem-repos",
+                    "group": "navigation"
+                },
+                {
+                    "command": "novem.refreshNovemRepos",
+                    "when": "view == novem-repos",
+                    "group": "navigation"
+                },
+                {
                     "command": "novem.logout",
                     "when": "novem.loggedIn",
                     "group": "commands"
@@ -188,6 +272,22 @@
             "commandPalette": [
                 {
                     "command": "novem.deleteNovemPlot",
+                    "when": "false"
+                },
+                {
+                    "command": "novem.deleteNovemJob",
+                    "when": "false"
+                },
+                {
+                    "command": "novem.deleteNovemRepo",
+                    "when": "false"
+                },
+                {
+                    "command": "novem.createNodeInDirectory",
+                    "when": "false"
+                },
+                {
+                    "command": "novem.deleteNode",
                     "when": "false"
                 },
                 {
@@ -205,15 +305,23 @@
                 {
                     "id": "novem-plots",
                     "name": "Plots",
-                    "commands": [
-                        "novem.createNovemPlot"
-                    ],
+                    "commands": ["novem.createNovemPlot"],
                     "when": "novem.loggedIn"
                 },
                 {
                     "id": "novem-mails",
                     "name": "E-Mails",
                     "when": "novem.loggedIn"
+                },
+                {
+                    "id": "novem-jobs",
+                    "name": "Jobs",
+                    "when": "novem.loggedIn && novem.hasJobs"
+                },
+                {
+                    "id": "novem-repos",
+                    "name": "Repos",
+                    "when": "novem.loggedIn && novem.hasRepos"
                 },
                 {
                     "id": "novem-login",

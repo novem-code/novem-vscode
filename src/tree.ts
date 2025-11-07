@@ -7,13 +7,13 @@ export class NovemSideBarProvider
     implements vscode.TreeDataProvider<vscode.TreeItem>
 {
     private context: vscode.ExtensionContext;
-    private type: 'plots' | 'mails';
+    private type: 'plots' | 'mails' | 'jobs' | 'repos';
     private api: NovemApi;
 
     constructor(
         api: NovemApi,
         context: vscode.ExtensionContext,
-        type: 'plots' | 'mails',
+        type: 'plots' | 'mails' | 'jobs' | 'repos',
     ) {
         this.api = api;
         this.context = context;
@@ -45,28 +45,34 @@ export class NovemSideBarProvider
             try {
                 const response = await (this.type === 'plots'
                     ? this.api.getPlotsForUser(profile.user_info.username!)
-                    : this.api.getMailsForUser(profile.user_info.username!));
+                    : this.type === 'mails'
+                      ? this.api.getMailsForUser(profile.user_info.username!)
+                      : this.type === 'jobs'
+                        ? this.api.getJobsForUser(profile.user_info.username!)
+                        : this.api.getReposForUser(profile.user_info.username!));
 
                 return response
                     .sort((a: any, b: any) => {
                         // If types are the same, sort alphabetically by name
-                        return a.id.localeCompare(b.id);
+                        const aId = a.id || a.name;
+                        const bId = b.id || b.name;
+                        return aId.localeCompare(bId);
                     })
                     .map(
                         (each: any) =>
                             new MyTreeItem(
                                 this,
-                                each.id,
+                                each.id || each.name,
                                 'dir',
                                 ['r', 'd'],
                                 this.type,
                                 '',
-                                each.type,
+                                each.type || this.type === 'jobs' ? 'job' : 'repo',
                             ),
                     );
             } catch (error) {
                 console.error('Error!', error);
-                return [new vscode.TreeItem('Error loading plots')];
+                return [new vscode.TreeItem(`Error loading ${this.type}`)];
             }
         } else {
             function splitWithLimit(
@@ -84,19 +90,27 @@ export class NovemSideBarProvider
             if (element.type !== 'dir') throw new Error('Invalid type');
 
             try {
-                const response = await this.api.getDetailsForVis(
-                    this.type,
-                    visId,
-                    path,
-                );
+                const response =
+                    this.type === 'jobs'
+                        ? await this.api.getDetailsForJob(visId, path)
+                        : this.type === 'repos'
+                          ? await this.api.getDetailsForRepo(visId, path)
+                          : await this.api.getDetailsForVis(
+                                this.type,
+                                visId,
+                                path,
+                            );
                 return response
-                    .filter((each: any) => ['file', 'dir'].includes(each.type))
+                    .filter((each: any) => ['file', 'dir', 'link'].includes(each.type))
                     .sort((a: any, b: any) => {
-                        // Sort by type first (directories come first)
-                        if (a.type !== b.type) {
-                            return a.type === 'dir' ? -1 : 1;
-                        }
-                        // If types are the same, sort alphabetically by name
+                        // Directories come first, then files and links together
+                        const aIsDir = a.type === 'dir';
+                        const bIsDir = b.type === 'dir';
+
+                        if (aIsDir && !bIsDir) return -1;
+                        if (!aIsDir && bIsDir) return 1;
+
+                        // Within the same group, sort alphabetically by name
                         return a.name.localeCompare(b.name);
                     })
                     .map(
@@ -113,7 +127,7 @@ export class NovemSideBarProvider
                     );
             } catch (error) {
                 console.error('Error!', error);
-                return [new vscode.TreeItem('Error loading plots')];
+                return [new vscode.TreeItem(`Error loading ${this.type}`)];
             }
         }
     }
@@ -157,7 +171,14 @@ export class MyTreeItem extends vscode.TreeItem {
         this.path = `${parentPath}/${this.name}`;
         this.visType = visType;
 
-        const doctype = 'nv_markdown';
+        // Determine the document type based on path and name
+        let doctype = 'nv_markdown';
+
+        // Check if this is a job data file
+        if (this.visType === 'jobs' && this.name === 'data') {
+            doctype = 'json';
+        }
+
         this.desc = ``;
         // Set the icon and its color based on type and permissions
         if (type === 'file') {
@@ -166,8 +187,30 @@ export class MyTreeItem extends vscode.TreeItem {
             this.command = {
                 command: 'novem.openFile',
                 title: 'Open File',
-                arguments: [`/${this.visType}${this.path}`, this.type, doctype],
+                arguments: [
+                    this.visType === 'jobs'
+                        ? `/jobs${this.path}`
+                        : this.visType === 'repos'
+                          ? `/repos${this.path}`
+                          : `/${this.visType}${this.path}`,
+                    this.type,
+                    doctype,
+                ],
             };
+
+            // Set contextValue for deletable files
+            if (permissions.includes('d')) {
+                this.contextValue = 'file-deletable';
+            }
+        } else if (type === 'link') {
+            // Handle links (similar to files but with a link icon)
+            this.iconPath = new vscode.ThemeIcon('link');
+            this.desc = `[${this.permissionsToUnixStyle(this.permissions)}]`;
+
+            // Set contextValue for deletable links
+            if (permissions.includes('d')) {
+                this.contextValue = 'file-deletable';
+            }
         } else if (type === 'dir') {
             if (depth === 0 && this.visType === 'plots') {
                 this.iconPath = this.createColoredIcon(
@@ -179,6 +222,28 @@ export class MyTreeItem extends vscode.TreeItem {
             if (depth === 0 && this.visType === 'mails') {
                 this.iconPath = this.createColoredIcon('mail', permissions);
                 this.contextValue = 'mail-top'; // Add this line
+            }
+            if (depth === 0 && this.visType === 'jobs') {
+                this.iconPath = this.createColoredIcon('run', permissions);
+                this.contextValue = 'job-top'; // Add this line
+            }
+            if (depth === 0 && this.visType === 'repos') {
+                this.iconPath = this.createColoredIcon('repo', permissions);
+                this.contextValue = 'repo-top'; // Add this line
+            }
+
+            // Set contextValue for writable/deletable directories (not top-level)
+            if (depth > 0) {
+                const isWritable = permissions.includes('w');
+                const isDeletable = permissions.includes('d');
+
+                if (isWritable && isDeletable) {
+                    this.contextValue = 'dir-writable-deletable';
+                } else if (isWritable) {
+                    this.contextValue = 'dir-writable';
+                } else if (isDeletable) {
+                    this.contextValue = 'dir-deletable';
+                }
             }
             //this.iconPath = this.createColoredIcon('folder', permissions);
         }

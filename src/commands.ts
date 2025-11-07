@@ -55,7 +55,7 @@ import { NovemSideBarProvider, MyTreeItem } from './tree';
 import { UserConfig, UserProfile, VisInfo, typeToIcon } from './config';
 import { createNovemBrowser } from './browser';
 
-import { mailsProvider, plotsProvider } from './extension';
+import { mailsProvider, plotsProvider, jobsProvider, reposProvider } from './extension';
 import NovemApi from './novem-api';
 
 // Open a novem vis inside vscode
@@ -424,5 +424,389 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
         vscode.commands.registerCommand('novem.refreshNovemMails', async () => {
             mailsProvider.refresh();
         }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.createNovemJob', async () => {
+            const profile = context.globalState.get(
+                'userProfile',
+            ) as UserProfile;
+            const conf = context.globalState.get('userConfig') as UserConfig;
+
+            let jobId = await vscode.window.showInputBox({
+                prompt: 'Please provide the job id to create:',
+                placeHolder: 'test_job_1',
+                validateInput: (inputValue: string) => {
+                    if (!/^[a-z0-9_-]+$/.test(inputValue)) {
+                        return 'Only lowercase ASCII characters, underscores, and hyphens are allowed!';
+                    }
+                    return undefined;
+                },
+            });
+
+            if (!jobId) return;
+
+            try {
+                await api.createJob(jobId);
+            } catch (error) {
+                console.log('error', error);
+                vscode.window.showErrorMessage(
+                    `Failed to create new job ${jobId}`,
+                );
+                return;
+            }
+
+            jobsProvider?.refresh();
+
+            vscode.window.showInformationMessage(`New job ${jobId} created`);
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.deleteNovemJob',
+            async (item: MyTreeItem) => {
+                const profile = context.globalState.get(
+                    'userProfile',
+                ) as UserProfile;
+                const conf = context.globalState.get(
+                    'userConfig',
+                ) as UserConfig;
+
+                let confirm = await vscode.window.showInputBox({
+                    prompt: `Please confirm that you want to delete "${item.name}" by typing DELETE`,
+                    placeHolder: 'type DELETE here',
+                    validateInput: (inputValue: string) => {
+                        if (!/^[DELETE]+$/.test(inputValue)) {
+                            return 'Only uppercase DELETE allowed, hit escape to ABORT';
+                        }
+                        return undefined;
+                    },
+                });
+
+                if (confirm !== 'DELETE') {
+                    if (confirm !== undefined) {
+                        vscode.window.showInformationMessage(
+                            `Action aborted, job not deleted`,
+                        );
+                    }
+                    return;
+                }
+
+                await api.deleteJob(item.name);
+
+                vscode.window.showWarningMessage(`Deleted "${item.name}"`);
+                item.parent.refresh();
+            },
+        ),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.refreshNovemJobs', async () => {
+            jobsProvider?.refresh();
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.createNovemRepo', async () => {
+            const profile = context.globalState.get(
+                'userProfile',
+            ) as UserProfile;
+            const conf = context.globalState.get('userConfig') as UserConfig;
+
+            let repoId = await vscode.window.showInputBox({
+                prompt: 'Please provide the repo id to create:',
+                placeHolder: 'test_repo_1',
+                validateInput: (inputValue: string) => {
+                    if (!/^[a-z0-9_-]+$/.test(inputValue)) {
+                        return 'Only lowercase ASCII characters, underscores, and hyphens are allowed!';
+                    }
+                    return undefined;
+                },
+            });
+
+            if (!repoId) return;
+
+            try {
+                await api.createRepo(repoId);
+            } catch (error) {
+                console.log('error', error);
+                vscode.window.showErrorMessage(
+                    `Failed to create new repo ${repoId}`,
+                );
+                return;
+            }
+
+            reposProvider?.refresh();
+
+            vscode.window.showInformationMessage(`New repo ${repoId} created`);
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.deleteNovemRepo',
+            async (item: MyTreeItem) => {
+                const profile = context.globalState.get(
+                    'userProfile',
+                ) as UserProfile;
+                const conf = context.globalState.get(
+                    'userConfig',
+                ) as UserConfig;
+
+                let confirm = await vscode.window.showInputBox({
+                    prompt: `Please confirm that you want to delete "${item.name}" by typing DELETE`,
+                    placeHolder: 'type DELETE here',
+                    validateInput: (inputValue: string) => {
+                        if (!/^[DELETE]+$/.test(inputValue)) {
+                            return 'Only uppercase DELETE allowed, hit escape to ABORT';
+                        }
+                        return undefined;
+                    },
+                });
+
+                if (confirm !== 'DELETE') {
+                    if (confirm !== undefined) {
+                        vscode.window.showInformationMessage(
+                            `Action aborted, repo not deleted`,
+                        );
+                    }
+                    return;
+                }
+
+                await api.deleteRepo(item.name);
+
+                vscode.window.showWarningMessage(`Deleted "${item.name}"`);
+                item.parent.refresh();
+            },
+        ),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.refreshNovemRepos', async () => {
+            reposProvider?.refresh();
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.cloneNovemRepo',
+            async (item: MyTreeItem) => {
+                if (!item || item.visType !== 'repos') {
+                    vscode.window.showErrorMessage(
+                        'This command can only be used on repos',
+                    );
+                    return;
+                }
+
+                try {
+                    // Fetch the clone URL from /repos/:repoId/url
+                    const cloneUrl = await api.readFile(`/repos/${item.name}/url`);
+
+                    if (!cloneUrl || typeof cloneUrl !== 'string') {
+                        vscode.window.showErrorMessage(
+                            `Failed to fetch clone URL for repo "${item.name}"`,
+                        );
+                        return;
+                    }
+
+                    // Prompt the user to select a directory to clone into
+                    const folderUri = await vscode.window.showOpenDialog({
+                        canSelectFiles: false,
+                        canSelectFolders: true,
+                        canSelectMany: false,
+                        openLabel: 'Select Clone Location',
+                        title: `Clone ${item.name}`,
+                    });
+
+                    if (!folderUri || folderUri.length === 0) {
+                        return;
+                    }
+
+                    const parentPath = folderUri[0].fsPath;
+
+                    // Extract repo name from URL (handle both .git and non-.git URLs)
+                    const urlParts = cloneUrl.trim().split('/');
+                    const repoNameWithGit = urlParts[urlParts.length - 1];
+                    const repoName = repoNameWithGit.replace(/\.git$/, '');
+                    const clonePath = `${parentPath}/${repoName}`;
+
+                    // Show progress notification
+                    await vscode.window.withProgress(
+                        {
+                            location: vscode.ProgressLocation.Notification,
+                            title: `Cloning ${item.name}...`,
+                            cancellable: false,
+                        },
+                        async (progress) => {
+                            progress.report({ message: 'Running git clone...' });
+
+                            // Use the built-in terminal to clone the repo
+                            const terminal = vscode.window.createTerminal({
+                                name: `Clone ${item.name}`,
+                                cwd: parentPath,
+                            });
+
+                            terminal.show();
+                            terminal.sendText(`git clone ${cloneUrl.trim()}`);
+                        },
+                    );
+
+                    // Prompt user to open the cloned repository
+                    const openChoice = await vscode.window.showInformationMessage(
+                        `Cloned ${item.name} into ${parentPath}`,
+                        'Open Repository',
+                        'Open in New Window',
+                        'Cancel',
+                    );
+
+                    if (openChoice === 'Open Repository') {
+                        await vscode.commands.executeCommand(
+                            'vscode.openFolder',
+                            vscode.Uri.file(clonePath),
+                            false,
+                        );
+                    } else if (openChoice === 'Open in New Window') {
+                        await vscode.commands.executeCommand(
+                            'vscode.openFolder',
+                            vscode.Uri.file(clonePath),
+                            true,
+                        );
+                    }
+                } catch (error) {
+                    console.error('Error cloning repo:', error);
+                    vscode.window.showErrorMessage(
+                        `Failed to clone repo "${item.name}": ${error}`,
+                    );
+                }
+            },
+        ),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.createNodeInDirectory',
+            async (item: MyTreeItem) => {
+                if (!item || item.type !== 'dir') {
+                    vscode.window.showErrorMessage(
+                        'This command can only be used on directories',
+                    );
+                    return;
+                }
+
+                if (!item.permissions.includes('w')) {
+                    vscode.window.showErrorMessage(
+                        'This directory does not have write permissions',
+                    );
+                    return;
+                }
+
+                // Determine validation rules based on parent directory
+                const isSharedFolder = item.name === 'shared';
+                const isTagsFolder = item.name === 'tags';
+
+                let validationPattern: RegExp;
+                let validationMessage: string;
+
+                if (isSharedFolder) {
+                    // shared entries can contain @, +, ~, -, _
+                    validationPattern = /^[a-z0-9@+~_-]+$/;
+                    validationMessage = 'Only lowercase ASCII characters, numbers, @, +, ~, _, and - are allowed in shared folder!';
+                } else if (isTagsFolder) {
+                    // tags may start with + and contain -, _
+                    validationPattern = /^\+?[a-z0-9_-]+$/;
+                    validationMessage = 'Tags may start with + and can contain lowercase ASCII characters, numbers, _, and -!';
+                } else {
+                    // default validation
+                    validationPattern = /^[a-z0-9_.-]+$/;
+                    validationMessage = 'Only lowercase ASCII characters, numbers, underscores, dots, and hyphens are allowed!';
+                }
+
+                let nodeName = await vscode.window.showInputBox({
+                    prompt: `Enter the name of the node to create in ${item.name}:`,
+                    placeHolder: isTagsFolder ? '+tag_name' : 'node_name',
+                    validateInput: (inputValue: string) => {
+                        if (!validationPattern.test(inputValue)) {
+                            return validationMessage;
+                        }
+                        return undefined;
+                    },
+                });
+
+                if (!nodeName) return;
+
+                // Construct the full path for the new node
+                const fullPath =
+                    item.visType === 'jobs'
+                        ? `/jobs${item.path}/${nodeName}`
+                        : item.visType === 'repos'
+                          ? `/repos${item.path}/${nodeName}`
+                          : `/${item.visType}${item.path}/${nodeName}`;
+
+                try {
+                    await api.createNodeInDirectory(fullPath);
+                    vscode.window.showInformationMessage(
+                        `Created node "${nodeName}" in ${item.name}`,
+                    );
+                    item.parent.refresh();
+                } catch (error) {
+                    console.error('Error creating node:', error);
+                    vscode.window.showErrorMessage(
+                        `Failed to create node "${nodeName}": ${error}`,
+                    );
+                }
+            },
+        ),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.deleteNode',
+            async (item: MyTreeItem) => {
+                if (!item) {
+                    vscode.window.showErrorMessage('No item selected');
+                    return;
+                }
+
+                if (!item.permissions.includes('d')) {
+                    vscode.window.showErrorMessage(
+                        'This item does not have delete permissions',
+                    );
+                    return;
+                }
+
+                const itemType = item.type === 'dir' ? 'directory' : 'file';
+                const confirm = await vscode.window.showWarningMessage(
+                    `Are you sure you want to delete ${itemType} "${item.name}"?`,
+                    { modal: true },
+                    'Delete',
+                );
+
+                if (confirm !== 'Delete') {
+                    return;
+                }
+
+                // Construct the full path for the node to delete
+                const fullPath =
+                    item.visType === 'jobs'
+                        ? `/jobs${item.path}`
+                        : item.visType === 'repos'
+                          ? `/repos${item.path}`
+                          : `/${item.visType}${item.path}`;
+
+                try {
+                    await api.deleteNode(fullPath);
+                    vscode.window.showInformationMessage(
+                        `Deleted ${itemType} "${item.name}"`,
+                    );
+                    item.parent.refresh();
+                } catch (error) {
+                    console.error('Error deleting node:', error);
+                    vscode.window.showErrorMessage(
+                        `Failed to delete ${itemType} "${item.name}": ${error}`,
+                    );
+                }
+            },
+        ),
     );
 }
