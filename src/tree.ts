@@ -174,9 +174,15 @@ export class MyTreeItem extends vscode.TreeItem {
         // Determine the document type based on path and name
         let doctype = 'nv_markdown';
 
-        // Check if this is a job data file
+        // doctype overrides for certain files
         if (this.visType === 'jobs' && this.name === 'data') {
             doctype = 'json';
+        } else if (this.name === 'custom.js') {
+            doctype = 'javascript';
+        } else if (this.name === 'custom.css') {
+            doctype = 'css';
+        } else if (this.name === 'custom.deps') {
+            doctype = 'plaintext';
         }
 
         this.desc = ``;
