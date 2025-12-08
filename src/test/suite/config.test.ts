@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { parseConfig } from '../../config';
+import { parseConfig, typeToIcon } from '../../config';
 
 const miniConfig = `
 [general]
@@ -61,5 +61,22 @@ suite('config', () => {
         const config = parseConfig(fullConfig);
         assert.strictEqual(config.token, 'nbt-p2');
         assert.strictEqual(config.api_root, 'https://api.example.com/v1/');
+    });
+});
+
+suite('typeToIcon', () => {
+    test('returns "mail" for mails type', () => {
+        assert.strictEqual(typeToIcon('any', 'mails'), 'mail');
+    });
+
+    test('returns "graph" for all plot types', () => {
+        // Test various chart types - all should return 'graph'
+        assert.strictEqual(typeToIcon('bar'), 'graph');
+        assert.strictEqual(typeToIcon('line'), 'graph');
+        assert.strictEqual(typeToIcon('pie'), 'graph');
+        assert.strictEqual(typeToIcon('table'), 'graph');
+        assert.strictEqual(typeToIcon('scatter'), 'graph');
+        assert.strictEqual(typeToIcon('text'), 'graph');
+        assert.strictEqual(typeToIcon('unknown'), 'graph');
     });
 });
