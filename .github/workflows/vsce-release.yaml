@@ -2,28 +2,85 @@ name: Release Extension
 
 on:
   release:
-    types: 
-      - created
+    types:
+      - published
   workflow_dispatch:
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
-      
+        with:
+          fetch-depth: 0
+
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '22'
-      
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          # expecting tags like v1.2.3
+          VERSION="${TAG_NAME#v}"
+          if [ -z "$VERSION" ]; then
+            echo "Could not extract version from tag: $TAG_NAME" >&2
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Install dependencies
         run: npm install
-      
+
+      - name: Bump package.json version
+        run: npm version "$VERSION" --no-git-tag-version
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git status
+          git add package.json package-lock.json
+
+          if ! git diff --cached --quiet; then
+            git commit -m "Release v$VERSION"
+            git push origin HEAD:main
+          else
+            echo "No changes to commit"
+          fi
+
       - name: Install vsce
-        run: npm install -g vsce
+        run: npm install -g @vscode/vsce
 
       - name: Publish Extension
         env:
           VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
         run: vsce publish
+
+      - name: Send release notification to Discord
+        if: success()
+        env:
+          RELEASE_NAME: ${{ github.event.release.name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_URL: ${{ github.event.release.html_url }}
+          REPO_FULL_NAME: ${{ github.repository }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          REPO_NAME=$(echo $REPO_FULL_NAME | cut -d'/' -f2)
+          MESSAGE=$(jq -n \
+            --arg repo "$REPO_NAME" \
+            --arg tag "$RELEASE_TAG" \
+            --arg name "$RELEASE_NAME" \
+            --arg url "$RELEASE_URL" \
+            --arg icon "🚀" \
+            '{content: "\($icon) \($repo) > [\($tag): \($name)](\($url)) has been released!"}')
+          curl -H "Content-Type: application/json" \
+            -X POST \
+            -d "$MESSAGE" \
+            "$DISCORD_WEBHOOK"
