@@ -4,7 +4,7 @@
     "description": "Access and work with novem visuals in your favourite tool",
     "version": "0.1.6",
     "engines": {
-        "vscode": "^1.72.0"
+        "vscode": "^1.90.0"
     },
     "categories": [
         "Data Science",
