@@ -4,9 +4,8 @@ import { UserConfig } from './config';
 import NovemApi from './novem-api';
 
 export class NovemFSProvider implements vscode.FileSystemProvider {
-    private readonly _onDidChangeFile: vscode.EventEmitter<
-        vscode.FileChangeEvent[]
-    > = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
+    private readonly _onDidChangeFile: vscode.EventEmitter<vscode.FileChangeEvent[]> =
+        new vscode.EventEmitter<vscode.FileChangeEvent[]>();
     public readonly onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> =
         this._onDidChangeFile.event;
 
@@ -31,10 +30,7 @@ export class NovemFSProvider implements vscode.FileSystemProvider {
     }
 
     // Stub implementations for other required methods
-    watch(
-        uri: vscode.Uri,
-        options: { recursive: boolean; excludes: string[] },
-    ): vscode.Disposable {
+    watch(uri: vscode.Uri, options: { recursive: boolean; excludes: string[] }): vscode.Disposable {
         // For simplicity, we're not handling file watching in this example.
         // This method is required by the FileSystemProvider interface.
         return new vscode.Disposable(() => {});
@@ -63,19 +59,12 @@ export class NovemFSProvider implements vscode.FileSystemProvider {
         throw new vscode.FileSystemError('Method not implemented: delete.');
     }
 
-    rename(
-        oldUri: vscode.Uri,
-        newUri: vscode.Uri,
-        options: { overwrite: boolean },
-    ): void {
+    rename(oldUri: vscode.Uri, newUri: vscode.Uri, options: { overwrite: boolean }): void {
         throw new vscode.FileSystemError('Method not implemented: rename.');
     }
 
     // Use this method to notify VS Code about file changes
-    private notifyFileChange(
-        uri: vscode.Uri,
-        type: vscode.FileChangeType,
-    ): void {
+    private notifyFileChange(uri: vscode.Uri, type: vscode.FileChangeType): void {
         this._onDidChangeFile.fire([{ uri, type }]);
     }
 }

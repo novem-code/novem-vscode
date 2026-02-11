@@ -7,11 +7,7 @@ import { enforceStyles } from '../utils';
 
 // NS LIBRARY INTEGRATIONS
 interface NSFunctions {
-    setup: (config: {
-        bearerToken?: string;
-        apiUrl?: string;
-        assetUrl?: string;
-    }) => void;
+    setup: (config: { bearerToken?: string; apiUrl?: string; assetUrl?: string }) => void;
     register: (a: string, b: string, targetId: string) => void;
 }
 
@@ -44,26 +40,20 @@ const NovemPlotRender = (props: { viewData: ViewData }) => {
         }
     }, []);
 
-    return (
-        <div className="novem--vis--innerhold" id={`novem--vis--target`}></div>
-    );
+    return <div className="novem--vis--innerhold" id={`novem--vis--target`}></div>;
 };
 
 const NovemPlotProfile = (props: { fetchedData: FetchedData }) => {
     const { fetchedData } = props;
 
-    const visualizationName =
-        fetchedData.about?.name ?? 'Your placeholder chart';
+    const visualizationName = fetchedData.about?.name ?? 'Your placeholder chart';
     const authorName = fetchedData.creator?.name ?? 'Novem Placeholder';
     const authorUsername = fetchedData.creator?.username ?? 'novem_placeholder';
     const avatarUrl = fetchedData.creator?.avatar;
 
     return (
         <div className="novem--vis--profile">
-            <div
-                className="img"
-                style={{ backgroundImage: `url(${avatarUrl}&s=160)` }}
-            ></div>
+            <div className="img" style={{ backgroundImage: `url(${avatarUrl}&s=160)` }}></div>
             <div className="details">
                 <div className="name">{visualizationName}</div>
                 <div className="author">
@@ -75,10 +65,7 @@ const NovemPlotProfile = (props: { fetchedData: FetchedData }) => {
     );
 };
 
-const NovemViewPlot = (props: {
-    fetchedData?: FetchedData;
-    viewData: ViewData;
-}) => {
+const NovemViewPlot = (props: { fetchedData?: FetchedData; viewData: ViewData }) => {
     const { fetchedData, viewData } = props;
 
     if (!fetchedData) return <NovemLoading />;

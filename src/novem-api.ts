@@ -52,16 +52,9 @@ export default class NovemApi {
         }
 
         if (!response.ok) {
-            const errorText = await response
-                .text()
-                .catch(() => 'Unknown error');
-            console.error(
-                `HTTP ${response.status} error ${method} ${url}:`,
-                errorText,
-            );
-            throw new Error(
-                `HTTP ${response.status}: ${response.statusText} - ${errorText}`,
-            );
+            const errorText = await response.text().catch(() => 'Unknown error');
+            console.error(`HTTP ${response.status} error ${method} ${url}:`, errorText);
+            throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
         }
 
         if (!expectJson) {
@@ -78,9 +71,7 @@ export default class NovemApi {
         try {
             return (await response.json()) as T;
         } catch (error) {
-            const text = await response
-                .text()
-                .catch(() => '[Unable to read response]');
+            const text = await response.text().catch(() => '[Unable to read response]');
             console.error(
                 `JSON parsing error for ${url}:`,
                 error,
@@ -117,9 +108,7 @@ export default class NovemApi {
     }
 
     async getProfile() {
-        return await this.get<UserProfile>(
-            `${this.apiRoot}/admin/profile/overview`,
-        );
+        return await this.get<UserProfile>(`${this.apiRoot}/admin/profile/overview`);
     }
 
     async getApiRoot() {
@@ -155,36 +144,23 @@ export default class NovemApi {
         return await this.put(`${this.apiRoot}/repos/${repoId}`, null);
     }
     async modifyPlot(plotId: string, key: string, value: string) {
-        return await this.post(
-            `${`${this.apiRoot}/vis/plots/${plotId}`}/${key}`,
-            value,
-            {
-                'Content-Type': 'text/plain', // Set content type as text/plain
-            },
-        );
+        return await this.post(`${`${this.apiRoot}/vis/plots/${plotId}`}/${key}`, value, {
+            'Content-Type': 'text/plain', // Set content type as text/plain
+        });
     }
 
-    async getDetailsForVis(
-        type: 'mails' | 'plots',
-        visId: string,
-        path?: string,
-    ) {
-        if (path)
-            return await this.get(
-                `${this.apiRoot}/vis/${type}/${visId}/${path}`,
-            );
+    async getDetailsForVis(type: 'mails' | 'plots', visId: string, path?: string) {
+        if (path) return await this.get(`${this.apiRoot}/vis/${type}/${visId}/${path}`);
         else return await this.get(`${this.apiRoot}/vis/${type}/${visId}`);
     }
 
     async getDetailsForJob(jobId: string, path?: string) {
-        if (path)
-            return await this.get(`${this.apiRoot}/jobs/${jobId}/${path}`);
+        if (path) return await this.get(`${this.apiRoot}/jobs/${jobId}/${path}`);
         else return await this.get(`${this.apiRoot}/jobs/${jobId}`);
     }
 
     async getDetailsForRepo(repoId: string, path?: string) {
-        if (path)
-            return await this.get(`${this.apiRoot}/repos/${repoId}/${path}`);
+        if (path) return await this.get(`${this.apiRoot}/repos/${repoId}/${path}`);
         else return await this.get(`${this.apiRoot}/repos/${repoId}`);
     }
 
@@ -208,10 +184,7 @@ export default class NovemApi {
             if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
                 return await this.get(`${this.apiRoot}${path}`, false);
             }
-            return await this.get(
-                `${this.apiRoot}/vis/${path.slice(1)}`,
-                false,
-            );
+            return await this.get(`${this.apiRoot}/vis/${path.slice(1)}`, false);
         } catch (e) {
             console.error('Error fetching data', e);
         }
@@ -234,13 +207,9 @@ export default class NovemApi {
                     'Content-Type': contentType,
                 });
             }
-            return await this.post(
-                `${this.apiRoot}/vis/${path.slice(1)}`,
-                content,
-                {
-                    'Content-Type': 'text/plain', // Set content type as text/plain
-                },
-            );
+            return await this.post(`${this.apiRoot}/vis/${path.slice(1)}`, content, {
+                'Content-Type': 'text/plain', // Set content type as text/plain
+            });
         } catch (e) {
             console.error('Error posting data', e);
         }

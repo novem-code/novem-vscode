@@ -47,9 +47,5 @@ export interface FetchedData {
 }
 
 export interface VscodeApi {
-    postMessage(
-        message: any,
-        targetOrigin: string,
-        transfer?: Transferable[],
-    ): void;
+    postMessage(message: any, targetOrigin: string, transfer?: Transferable[]): void;
 }

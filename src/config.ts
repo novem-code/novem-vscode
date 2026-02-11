@@ -57,8 +57,7 @@ export function getUserConfigDirectory(): string {
 
 export function getConfigPath(): { dir: string; config: string } {
     const configPath = getUserConfigDirectory();
-    if (!configPath)
-        throw new Error('Unable to find a suitable configuration directory.');
+    if (!configPath) throw new Error('Unable to find a suitable configuration directory.');
     const novemDir = path.join(configPath, NOVEM_PATH);
     const novemConfig = path.join(configPath, NOVEM_PATH, NOVEM_NAME);
     return { dir: novemDir, config: novemConfig };
@@ -141,15 +140,10 @@ export function typeToIcon(visType: string, type?: 'mails' | 'plots') {
     return 'graph';
 }
 
-export async function writeConfig(data: {
-    username: string;
-    token: string;
-    token_name: string;
-}) {
+export async function writeConfig(data: { username: string; token: string; token_name: string }) {
     const path = getConfigPath();
 
-    const exists =
-        fs.existsSync(path.config) && (await fsa.stat(path.config)).isFile();
+    const exists = fs.existsSync(path.config) && (await fsa.stat(path.config)).isFile();
 
     const config = {
         general: {

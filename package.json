@@ -413,8 +413,10 @@
         "build:spa:prod": "node novem_web_view/esbuild.config.js --production",
         "compile": "tsc -p ./",
         "build": "npm run build:spa:prod && npm run compile",
+        "format": "prettier --write \"src/**/*.ts\" \"novem_web_view/**/*.{ts,tsx,css}\"",
+        "format:check": "prettier --check \"src/**/*.ts\" \"novem_web_view/**/*.{ts,tsx,css}\"",
         "pretest": "npm run compile && npm run lint",
-        "lint": "eslint src --ext ts",
+        "lint": "eslint src --ext ts && npm run format:check",
         "test": "node ./out/src/test/runTest.js"
     },
     "devDependencies": {

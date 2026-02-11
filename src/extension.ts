@@ -59,10 +59,7 @@ export async function activate(context: vscode.ExtensionContext) {
         doLogin();
 
         context.subscriptions.push(
-            vscode.window.registerTreeDataProvider(
-                'novem-login',
-                new NovemDummyProvider(context),
-            ),
+            vscode.window.registerTreeDataProvider('novem-login', new NovemDummyProvider(context)),
         );
 
         return;
@@ -76,11 +73,9 @@ export async function activate(context: vscode.ExtensionContext) {
     setupCommands(context, novemApi);
 
     const fsProvider = new NovemFSProvider(novemApi);
-    const fsRegistration = vscode.workspace.registerFileSystemProvider(
-        'novem',
-        fsProvider,
-        { isCaseSensitive: true },
-    );
+    const fsRegistration = vscode.workspace.registerFileSystemProvider('novem', fsProvider, {
+        isCaseSensitive: true,
+    });
 
     context.subscriptions.push(fsRegistration);
 
@@ -93,10 +88,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
                 // If a languageId is provided, set the language for the document
                 if (languageId) {
-                    doc = await vscode.languages.setTextDocumentLanguage(
-                        doc,
-                        languageId,
-                    );
+                    doc = await vscode.languages.setTextDocumentLanguage(doc, languageId);
                 }
 
                 vscode.window.showTextDocument(doc);
@@ -121,39 +113,21 @@ export async function activate(context: vscode.ExtensionContext) {
         if (hasJobs) {
             jobsProvider = new JobsProvider(novemApi, context);
             context.subscriptions.push(
-                vscode.window.registerTreeDataProvider(
-                    'novem-jobs',
-                    jobsProvider,
-                ),
+                vscode.window.registerTreeDataProvider('novem-jobs', jobsProvider),
             );
             vscode.commands.executeCommand('setContext', 'novem.hasJobs', true);
         } else {
-            vscode.commands.executeCommand(
-                'setContext',
-                'novem.hasJobs',
-                false,
-            );
+            vscode.commands.executeCommand('setContext', 'novem.hasJobs', false);
         }
 
         if (hasRepos) {
             reposProvider = new ReposProvider(novemApi, context);
             context.subscriptions.push(
-                vscode.window.registerTreeDataProvider(
-                    'novem-repos',
-                    reposProvider,
-                ),
+                vscode.window.registerTreeDataProvider('novem-repos', reposProvider),
             );
-            vscode.commands.executeCommand(
-                'setContext',
-                'novem.hasRepos',
-                true,
-            );
+            vscode.commands.executeCommand('setContext', 'novem.hasRepos', true);
         } else {
-            vscode.commands.executeCommand(
-                'setContext',
-                'novem.hasRepos',
-                false,
-            );
+            vscode.commands.executeCommand('setContext', 'novem.hasRepos', false);
         }
     } catch (error) {
         console.error('Error checking for jobs/repos endpoints:', error);
@@ -161,10 +135,7 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.executeCommand('setContext', 'novem.hasRepos', false);
     }
 
-    const sbi = vscode.window.createStatusBarItem(
-        vscode.StatusBarAlignment.Left,
-        50,
-    );
+    const sbi = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
 
     const activeProfile = getActiveProfile();
     const profileText = activeProfile ? ` [${activeProfile}]` : '';
