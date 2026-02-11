@@ -65,7 +65,7 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
             if (token && apiRoot && shortname) {
                 try {
                     const response = await fetch(
-                        `${apiRoot || ''}i/${shortname}`,
+                        `${apiRoot || ''}/i/${shortname}`,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`,
