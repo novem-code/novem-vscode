@@ -11,6 +11,8 @@ export interface UserConfig {
     token?: string;
     api_root?: string;
     ignore_ssl_warn?: boolean;
+    username?: string;
+    profile?: string;
     // ... add other properties as needed
 }
 
@@ -97,19 +99,29 @@ export function parseConfig(
     const config = ini.parse(configContent);
 
     const co: { [key: string]: any } = {};
-    if (kwargs?.api_root) {
-        co.api_root = kwargs.api_root;
-    } else if (config.general && config.general.api_root) {
+
+    // Start with general section defaults
+    if (config.general && config.general.api_root) {
         co.api_root = config.general.api_root;
     }
 
-    let profile = config['app:vscode']?.profile || config.general?.profile;
+    // Override with kwargs if provided
+    if (kwargs?.api_root) {
+        co.api_root = kwargs.api_root;
+    }
+
+    // Profile selection: app:vscode overrides general, kwargs overrides both
+    let profile = config.general?.profile;
+    if (config['app:vscode']?.profile) {
+        profile = config['app:vscode'].profile;
+    }
     if (kwargs?.profile) {
         profile = kwargs.profile;
     }
 
     const userProfile = config[`profile:${profile}`];
     if (userProfile) {
+        // Profile-specific api_root overrides general/vscode settings
         if (userProfile.api_root) {
             co.api_root = userProfile.api_root;
         }
@@ -120,6 +132,7 @@ export function parseConfig(
         return co;
     }
 
+    // Final override from kwargs
     if (kwargs?.api_root) {
         co.api_root = kwargs.api_root;
     }
@@ -140,38 +153,103 @@ export function typeToIcon(visType: string, type?: 'mails' | 'plots') {
     return 'graph';
 }
 
-export async function writeConfig(data: { username: string; token: string; token_name: string }) {
+/**
+ * Pure business logic for updating config with a new profile.
+ * Takes existing config content (or null), returns updated config content.
+ */
+export function updateConfigForProfile(
+    existingConfigContent: string | null,
+    data: {
+        username: string;
+        token: string;
+        token_name: string;
+        api_root?: string;
+        profile?: string;
+    },
+): string {
+    let config: any = {};
+
+    if (existingConfigContent) {
+        // Parse existing config to preserve other profiles and settings
+        config = ini.parse(existingConfigContent);
+    } else {
+        // Initialize new config with basic structure
+        config = {
+            general: {
+                api_root: data.api_root || 'https://api.novem.io/v1/',
+                profile: data.username,
+            },
+            'app:vscode': {
+                // Empty for discoverability
+            },
+        };
+    }
+
+    // Ensure general section exists and has api_root
+    if (!config.general) {
+        config.general = {
+            api_root: data.api_root || 'https://api.novem.io/v1/',
+            profile: data.username,
+        };
+    } else {
+        // Preserve existing general section, but ensure api_root is set
+        if (!config.general.api_root) {
+            config.general.api_root = data.api_root || 'https://api.novem.io/v1/';
+        }
+        // Only set profile if none exists
+        if (!config.general.profile) {
+            config.general.profile = data.username;
+        }
+    }
+
+    // Always ensure app:vscode section exists for discoverability
+    if (!config['app:vscode']) {
+        config['app:vscode'] = {};
+    }
+
+    // Update the specific profile being logged in
+    // Use provided profile name, or fall back to username
+    const profileKey = `profile:${data.profile || data.username}`;
+    config[profileKey] = {
+        username: data.username,
+        token_name: data.token_name,
+        token: data.token,
+    };
+
+    // If an api_root is specified, add it to the profile
+    if (data.api_root) {
+        config[profileKey].api_root = data.api_root;
+    }
+
+    // Set this as the active profile if no profile is currently set for VS Code
+    if (!config['app:vscode'].profile) {
+        config['app:vscode'].profile = data.profile || data.username;
+    }
+
+    return ini.stringify(config, { whitespace: true });
+}
+
+export async function writeConfig(data: {
+    username: string;
+    token: string;
+    token_name: string;
+    api_root?: string;
+    profile?: string;
+}) {
     const path = getConfigPath();
 
     const exists = fs.existsSync(path.config) && (await fsa.stat(path.config)).isFile();
 
-    const config = {
-        general: {
-            profile: data.username,
-            api_root: 'https://api.novem.io/v1/',
-        },
-        [`profile:${data.username}`]: {
-            username: data.username,
-            token_name: data.token_name,
-            token: data.token,
-        },
-    };
-
-    const serialized = ini.stringify(config, { whitespace: true });
-    console.log(serialized);
-
+    let existingContent: string | null = null;
     if (exists) {
-        // Config file already exists. Probably a bad token. Do a backup for the old file and write new.
-        // TODO we should edit the existing file instead of overwriting it, in case the user has other profiles
-        const timestamp = new Date()
-            .toISOString()
-            .replace(/[-:.]/g, '')
-            .replace('T', '-')
-            .slice(0, -4);
-        const backupPath = path.config + '.bak_' + timestamp;
-        await fsa.rename(path.config, backupPath);
-        console.log('Config file already exists, overwriting');
+        existingContent = fs.readFileSync(path.config, 'utf-8');
+        console.log('Updating existing config file');
+    } else {
+        console.log('Creating new config file');
     }
+
+    const profileKey = `profile:${data.profile || data.username}`;
+    const serialized = updateConfigForProfile(existingContent, data);
 
     await fsa.mkdir(path.dir, { recursive: true });
     await fsa.writeFile(path.config, serialized);

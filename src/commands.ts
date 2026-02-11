@@ -59,6 +59,7 @@ import {
     typeToIcon,
     getAvailableProfiles,
     setActiveProfile,
+    getCurrentConfig,
 } from './config';
 import { createNovemBrowser } from './browser';
 
@@ -79,7 +80,8 @@ const createViewFunction = (
     const uname = profile?.user_info?.username;
 
     if (type === 'login') {
-        return () => void createNovemBrowser(type, '', '', '/login', '', apiRoot);
+        return () =>
+            void createNovemBrowser(type, '', '', '/login', '', apiRoot, undefined, undefined);
     }
 
     return async (item: MyTreeItem) => {
@@ -134,7 +136,7 @@ const createViewFunction = (
             let visId = selectedItem.description;
             let uri = uriMap[visId];
             let sn = snMap[visId];
-            createNovemBrowser(type, visId, sn, uri, token, apiRoot);
+            createNovemBrowser(type, visId, sn, uri, token, apiRoot, undefined, undefined);
         }
     };
 };
@@ -218,7 +220,7 @@ const createViewForUserFunction = (
             let visId = selectedItem.description;
             let uri = uriMap[visId];
             let sn = snMap[visId];
-            createNovemBrowser(type, visId, sn, uri, token, apiRoot);
+            createNovemBrowser(type, visId, sn, uri, token, apiRoot, undefined, undefined);
         }
     };
 };
@@ -272,13 +274,19 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.loginNewProfile', () => {
+            // Get current profile settings to respect api_root, but don't pre-fill username for new profile
+            const currentConfig = getCurrentConfig();
+            const apiRoot = currentConfig?.api_root || 'https://api.novem.io/v1/';
+
             createNovemBrowser(
                 'login',
                 '',
                 '',
                 '/login',
                 '',
-                'https://api.novem.io/v1/', // pull this from settings?
+                apiRoot,
+                undefined, // No username for new profile
+                undefined, // No profile name - create new profile based on username
             );
         }),
     );

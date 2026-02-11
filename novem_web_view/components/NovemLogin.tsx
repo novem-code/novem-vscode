@@ -1,12 +1,12 @@
 import React, { FormEvent, useEffect, useState } from 'react';
-import { VscodeApi } from '../types';
+import { VscodeApi, ViewData } from '../types';
 
 import './NovemLogin.css';
 
-export default function NovemLogin(props: { vsapi: VscodeApi }) {
+export default function NovemLogin(props: { vsapi: VscodeApi; viewData?: ViewData }) {
     const [progress, setProgress] = useState<'idle' | 'loggingIn' | 'error' | 'success'>('idle');
 
-    const [username, setUsername] = useState('');
+    const [username, setUsername] = useState(props.viewData?.username || '');
     const [password, setPassword] = useState('');
 
     const onclick = async (e: FormEvent) => {
@@ -14,8 +14,12 @@ export default function NovemLogin(props: { vsapi: VscodeApi }) {
 
         setProgress('loggingIn');
         let data: any;
+
+        // Use apiRoot from current profile settings or fall back to default
+        const apiRoot = props.viewData?.apiRoot || 'https://api.novem.io/v1';
+
         try {
-            const response = await fetch('https://api.novem.io/v1/token', {
+            const response = await fetch(`${apiRoot}/token`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -54,6 +58,7 @@ export default function NovemLogin(props: { vsapi: VscodeApi }) {
                 token_id: data.token_id,
                 token_name: data.token_name,
                 username: username,
+                api_root: apiRoot,
             },
             '*',
         );
