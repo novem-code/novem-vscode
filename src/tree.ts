@@ -51,7 +51,7 @@ export class NovemSideBarProvider
                         ? this.api.getJobsForUser(profile.user_info.username!)
                         : this.api.getReposForUser(profile.user_info.username!));
 
-                return response
+                return (Array.isArray(response) ? response : [])
                     .sort((a: any, b: any) => {
                         // If types are the same, sort alphabetically by name
                         const aId = a.id || a.name;
