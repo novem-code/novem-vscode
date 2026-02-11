@@ -51,7 +51,7 @@ Context menu Mail:
 
 import * as vscode from 'vscode';
 
-import { NovemSideBarProvider, MyTreeItem } from './tree';
+import { BaseNovemProvider, MyTreeItem } from './tree';
 import { UserConfig, UserProfile, VisInfo, typeToIcon, getAvailableProfiles, setActiveProfile } from './config';
 import { createNovemBrowser } from './browser';
 

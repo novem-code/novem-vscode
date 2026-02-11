@@ -126,10 +126,6 @@ export default class NovemApi {
         return await this.get(`${this.apiRoot}/`);
     }
 
-    async getVisualizationsForUser(user: string) {
-        return await this.get(`${this.apiRoot}/u/${user}/v`);
-    }
-
     async getMailsForUser(user: string) {
         return await this.get(`${this.apiRoot}/u/${user}/m`);
     }

@@ -3,7 +3,13 @@ import * as https from 'https';
 
 // Import the functions from config.ts
 import { getCurrentConfig, UserProfile, getActiveProfile } from './config';
-import { NovemSideBarProvider, NovemDummyProvider } from './tree';
+import {
+    PlotsProvider,
+    MailsProvider,
+    JobsProvider,
+    ReposProvider,
+    NovemDummyProvider,
+} from './tree';
 
 import { setupCommands } from './commands';
 
@@ -11,10 +17,10 @@ import { NovemFSProvider } from './vfs';
 import NovemApi from './novem-api';
 import { createNovemBrowser } from './browser';
 
-let plotsProvider: NovemSideBarProvider;
-let mailsProvider: NovemSideBarProvider;
-let jobsProvider: NovemSideBarProvider | null = null;
-let reposProvider: NovemSideBarProvider | null = null;
+let plotsProvider: PlotsProvider;
+let mailsProvider: MailsProvider;
+let jobsProvider: JobsProvider | null = null;
+let reposProvider: ReposProvider | null = null;
 
 function doLogin() {
     createNovemBrowser(
@@ -98,8 +104,8 @@ export async function activate(context: vscode.ExtensionContext) {
         ),
     );
 
-    plotsProvider = new NovemSideBarProvider(novemApi, context, 'plots');
-    mailsProvider = new NovemSideBarProvider(novemApi, context, 'mails');
+    plotsProvider = new PlotsProvider(novemApi, context);
+    mailsProvider = new MailsProvider(novemApi, context);
 
     context.subscriptions.push(
         vscode.window.registerTreeDataProvider('novem-plots', plotsProvider),
@@ -113,23 +119,41 @@ export async function activate(context: vscode.ExtensionContext) {
         const hasRepos = apiRoot.some((item: any) => item.name === 'repos');
 
         if (hasJobs) {
-            jobsProvider = new NovemSideBarProvider(novemApi, context, 'jobs');
+            jobsProvider = new JobsProvider(novemApi, context);
             context.subscriptions.push(
-                vscode.window.registerTreeDataProvider('novem-jobs', jobsProvider),
+                vscode.window.registerTreeDataProvider(
+                    'novem-jobs',
+                    jobsProvider,
+                ),
             );
             vscode.commands.executeCommand('setContext', 'novem.hasJobs', true);
         } else {
-            vscode.commands.executeCommand('setContext', 'novem.hasJobs', false);
+            vscode.commands.executeCommand(
+                'setContext',
+                'novem.hasJobs',
+                false,
+            );
         }
 
         if (hasRepos) {
-            reposProvider = new NovemSideBarProvider(novemApi, context, 'repos');
+            reposProvider = new ReposProvider(novemApi, context);
             context.subscriptions.push(
-                vscode.window.registerTreeDataProvider('novem-repos', reposProvider),
+                vscode.window.registerTreeDataProvider(
+                    'novem-repos',
+                    reposProvider,
+                ),
             );
-            vscode.commands.executeCommand('setContext', 'novem.hasRepos', true);
+            vscode.commands.executeCommand(
+                'setContext',
+                'novem.hasRepos',
+                true,
+            );
         } else {
-            vscode.commands.executeCommand('setContext', 'novem.hasRepos', false);
+            vscode.commands.executeCommand(
+                'setContext',
+                'novem.hasRepos',
+                false,
+            );
         }
     } catch (error) {
         console.error('Error checking for jobs/repos endpoints:', error);
