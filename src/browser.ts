@@ -19,8 +19,14 @@ function getWebviewContent(webview: vscode.Webview, extensionPath: string) {
     );
     const scriptUri = webview.asWebviewUri(scriptPathOnDisk);
 
-    // Inject the script URI into the HTML content
-    htmlContent = htmlContent.replace(/bundle.js/g, scriptUri.toString());
+    const cssPathOnDisk = vscode.Uri.file(
+        path.join(extensionPath, 'dist', 'novem_web_view', 'bundle.css'),
+    );
+    const cssUri = webview.asWebviewUri(cssPathOnDisk);
+
+    // Inject the URIs into the HTML content
+    htmlContent = htmlContent.replace(/bundle\.js/g, scriptUri.toString());
+    htmlContent = htmlContent.replace(/bundle\.css/g, cssUri.toString());
 
     return htmlContent;
 }
