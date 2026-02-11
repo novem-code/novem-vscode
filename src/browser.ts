@@ -5,12 +5,7 @@ import { writeConfig } from './config';
 
 function getWebviewContent(webview: vscode.Webview, extensionPath: string) {
     // Path to the compiled SPA
-    const htmlPath = path.join(
-        extensionPath,
-        'dist',
-        'novem_web_view',
-        'index.html',
-    );
+    const htmlPath = path.join(extensionPath, 'dist', 'novem_web_view', 'index.html');
     let htmlContent = fs.readFileSync(htmlPath, 'utf8');
 
     // Convert local resource paths to webview URIs
@@ -19,16 +14,20 @@ function getWebviewContent(webview: vscode.Webview, extensionPath: string) {
     );
     const scriptUri = webview.asWebviewUri(scriptPathOnDisk);
 
-    // Inject the script URI into the HTML content
-    htmlContent = htmlContent.replace(/bundle.js/g, scriptUri.toString());
+    const cssPathOnDisk = vscode.Uri.file(
+        path.join(extensionPath, 'dist', 'novem_web_view', 'bundle.css'),
+    );
+    const cssUri = webview.asWebviewUri(cssPathOnDisk);
+
+    // Inject the URIs into the HTML content
+    htmlContent = htmlContent.replace(/bundle\.js/g, scriptUri.toString());
+    htmlContent = htmlContent.replace(/bundle\.css/g, cssUri.toString());
 
     return htmlContent;
 }
 
 function getThemeColor(colorId: string): string | undefined {
-    return vscode.workspace
-        .getConfiguration('workbench')
-        .get(`colorCustomizations.${colorId}`);
+    return vscode.workspace.getConfiguration('workbench').get(`colorCustomizations.${colorId}`);
 }
 
 export function createNovemBrowser(
@@ -39,15 +38,10 @@ export function createNovemBrowser(
     token?: string,
     apiRoot?: string,
 ) {
-    const panel = vscode.window.createWebviewPanel(
-        shortname,
-        visId,
-        vscode.ViewColumn.One,
-        {
-            enableScripts: true,
-            retainContextWhenHidden: true,
-        },
-    );
+    const panel = vscode.window.createWebviewPanel(shortname, visId, vscode.ViewColumn.One, {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+    });
 
     // Set the HTML content of the WebView panel
     const content = getWebviewContent(
@@ -58,7 +52,7 @@ export function createNovemBrowser(
 
     console.log('ready');
 
-    panel.webview.onDidReceiveMessage((message) => {
+    panel.webview.onDidReceiveMessage(message => {
         if (message.command === 'contentReady') {
             // Now that the content is ready, send the navigation message
             panel.webview.postMessage({

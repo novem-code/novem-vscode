@@ -3,31 +3,23 @@ import * as vscode from 'vscode';
 import { UserConfig, UserProfile, typeToIcon, getActiveProfile } from './config';
 import NovemApi from './novem-api';
 
-export class NovemSideBarProvider
-    implements vscode.TreeDataProvider<vscode.TreeItem>
-{
-    private context: vscode.ExtensionContext;
-    private type: 'plots' | 'mails' | 'jobs' | 'repos';
-    private api: NovemApi;
+// Base class for all Novem tree providers
+export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+    protected context: vscode.ExtensionContext;
+    protected api: NovemApi;
 
-    constructor(
-        api: NovemApi,
-        context: vscode.ExtensionContext,
-        type: 'plots' | 'mails' | 'jobs' | 'repos',
-    ) {
+    constructor(api: NovemApi, context: vscode.ExtensionContext) {
         this.api = api;
         this.context = context;
-        this.type = type;
     }
 
-    private _onDidChangeTreeData: vscode.EventEmitter<
-        MyTreeItem | undefined | null | void
-    > = new vscode.EventEmitter<MyTreeItem | undefined | null | void>();
-    readonly onDidChangeTreeData: vscode.Event<
-        MyTreeItem | undefined | null | void
-    > = this._onDidChangeTreeData.event;
+    private _onDidChangeTreeData: vscode.EventEmitter<MyTreeItem | undefined | null | void> =
+        new vscode.EventEmitter<MyTreeItem | undefined | null | void>();
+    readonly onDidChangeTreeData: vscode.Event<MyTreeItem | undefined | null | void> =
+        this._onDidChangeTreeData.event;
 
     refresh(): void {
+        console.log(`Refreshing ${this.getType()} provider`);
         this._onDidChangeTreeData.fire();
     }
 
@@ -35,25 +27,21 @@ export class NovemSideBarProvider
         return element;
     }
 
-    async getChildren(element?: MyTreeItem): Promise<vscode.TreeItem[]> {
-        const profile = this.context.globalState.get(
-            'userProfile',
-        ) as UserProfile;
+    // Abstract methods that subclasses must implement
+    abstract getType(): 'plots' | 'mails' | 'jobs' | 'repos';
+    abstract getRootItems(username: string): Promise<any[]>;
+    abstract getChildItems(visId: string, path?: string): Promise<any[]>;
 
-        // Determine the URL to fetch from
+    async getChildren(element?: MyTreeItem): Promise<vscode.TreeItem[]> {
+        const profile = this.context.globalState.get('userProfile') as UserProfile;
+
         if (!element) {
             try {
-                const response = await (this.type === 'plots'
-                    ? this.api.getPlotsForUser(profile.user_info.username!)
-                    : this.type === 'mails'
-                      ? this.api.getMailsForUser(profile.user_info.username!)
-                      : this.type === 'jobs'
-                        ? this.api.getJobsForUser(profile.user_info.username!)
-                        : this.api.getReposForUser(profile.user_info.username!));
+                console.log(`Fetching root items for ${this.getType()}`);
+                const response = await this.getRootItems(profile.user_info.username!);
 
-                return response
+                return (Array.isArray(response) ? response : [])
                     .sort((a: any, b: any) => {
-                        // If types are the same, sort alphabetically by name
                         const aId = a.id || a.name;
                         const bId = b.id || b.name;
                         return aId.localeCompare(bId);
@@ -64,22 +52,18 @@ export class NovemSideBarProvider
                                 this,
                                 each.id || each.name,
                                 'dir',
-                                ['r', 'd'],
-                                this.type,
+                                each.permissions || ['r', 'w', 'd'],
+                                this.getType(),
                                 '',
-                                each.type || this.type === 'jobs' ? 'job' : 'repo',
+                                each.type || (this.getType() === 'jobs' ? 'job' : 'repo'),
                             ),
                     );
             } catch (error) {
-                console.error('Error!', error);
-                return [new vscode.TreeItem(`Error loading ${this.type}`)];
+                console.error(`Error loading ${this.getType()}:`, error);
+                return [new vscode.TreeItem(`Error loading ${this.getType()}`)];
             }
         } else {
-            function splitWithLimit(
-                str: string,
-                delimiter: string,
-                limit: number,
-            ): string[] {
+            function splitWithLimit(str: string, delimiter: string, limit: number): string[] {
                 const parts = str.split(delimiter);
                 const selected = parts.slice(0, limit);
                 selected.push(parts.slice(limit).join(delimiter));
@@ -90,27 +74,18 @@ export class NovemSideBarProvider
             if (element.type !== 'dir') throw new Error('Invalid type');
 
             try {
-                const response =
-                    this.type === 'jobs'
-                        ? await this.api.getDetailsForJob(visId, path)
-                        : this.type === 'repos'
-                          ? await this.api.getDetailsForRepo(visId, path)
-                          : await this.api.getDetailsForVis(
-                                this.type,
-                                visId,
-                                path,
-                            );
+                console.log(`Fetching child items for ${this.getType()} - ${visId}/${path || ''}`);
+                const response = await this.getChildItems(visId, path);
+
                 return response
                     .filter((each: any) => ['file', 'dir', 'link'].includes(each.type))
                     .sort((a: any, b: any) => {
-                        // Directories come first, then files and links together
                         const aIsDir = a.type === 'dir';
                         const bIsDir = b.type === 'dir';
 
                         if (aIsDir && !bIsDir) return -1;
                         if (!aIsDir && bIsDir) return 1;
 
-                        // Within the same group, sort alphabetically by name
                         return a.name.localeCompare(b.name);
                     })
                     .map(
@@ -120,22 +95,88 @@ export class NovemSideBarProvider
                                 each.name,
                                 each.type,
                                 each.permissions,
-                                this.type,
+                                this.getType(),
                                 element ? element.path : '',
                                 '',
                             ),
                     );
             } catch (error) {
-                console.error('Error!', error);
-                return [new vscode.TreeItem(`Error loading ${this.type}`)];
+                console.error(`Error loading ${this.getType()} children:`, error);
+                return [new vscode.TreeItem(`Error loading ${this.getType()}`)];
             }
         }
     }
 }
 
-export class NovemDummyProvider
-    implements vscode.TreeDataProvider<vscode.TreeItem>
-{
+// Specific provider implementations
+export class PlotsProvider extends BaseNovemProvider {
+    getType(): 'plots' {
+        return 'plots';
+    }
+
+    async getRootItems(username: string): Promise<any[]> {
+        console.log(`PlotsProvider: Fetching plots for ${username}`);
+        return await this.api.getPlotsForUser(username);
+    }
+
+    async getChildItems(visId: string, path?: string): Promise<any[]> {
+        console.log(`PlotsProvider: Fetching details for ${visId}/${path || ''}`);
+        return await this.api.getDetailsForVis('plots', visId, path);
+    }
+}
+
+export class MailsProvider extends BaseNovemProvider {
+    getType(): 'mails' {
+        return 'mails';
+    }
+
+    async getRootItems(username: string): Promise<any[]> {
+        console.log(`MailsProvider: Fetching mails for ${username}`);
+        return await this.api.getMailsForUser(username);
+    }
+
+    async getChildItems(visId: string, path?: string): Promise<any[]> {
+        console.log(`MailsProvider: Fetching details for ${visId}/${path || ''}`);
+        return await this.api.getDetailsForVis('mails', visId, path);
+    }
+}
+
+export class JobsProvider extends BaseNovemProvider {
+    getType(): 'jobs' {
+        return 'jobs';
+    }
+
+    async getRootItems(username: string): Promise<any[]> {
+        console.log(`JobsProvider: Fetching jobs for ${username}`);
+        return await this.api.getJobsForUser(username);
+    }
+
+    async getChildItems(visId: string, path?: string): Promise<any[]> {
+        console.log(`JobsProvider: Fetching job details for ${visId}/${path || ''}`);
+        return await this.api.getDetailsForJob(visId, path);
+    }
+}
+
+export class ReposProvider extends BaseNovemProvider {
+    getType(): 'repos' {
+        return 'repos';
+    }
+
+    async getRootItems(username: string): Promise<any[]> {
+        console.log(`ReposProvider: Fetching repos for ${username}`);
+        return await this.api.getReposForUser(username);
+    }
+
+    async getChildItems(visId: string, path?: string): Promise<any[]> {
+        console.log(`ReposProvider: Fetching repo details for ${visId}/${path || ''}`);
+        return await this.api.getDetailsForRepo(visId, path);
+    }
+}
+
+// Keep the original class name for backward compatibility
+export const NovemSideBarProvider = BaseNovemProvider;
+
+export class NovemDummyProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     constructor(private readonly context: vscode.ExtensionContext) {}
 
     async getTreeItem(element: vscode.TreeItem): Promise<vscode.TreeItem> {
@@ -148,16 +189,16 @@ export class NovemDummyProvider
 }
 
 export class MyTreeItem extends vscode.TreeItem {
-    public readonly path: string; // Store the full path here
+    public readonly path: string;
     public readonly desc: string;
 
     constructor(
-        public readonly parent: NovemSideBarProvider,
+        public readonly parent: BaseNovemProvider,
         public readonly name: string,
         public readonly type: string,
         public readonly permissions: string[],
         public readonly visType: string,
-        parentPath: string = '', // Parent's path, empty for root items
+        parentPath: string = '',
         public readonly iconType: string,
     ) {
         super(
@@ -188,7 +229,6 @@ export class MyTreeItem extends vscode.TreeItem {
         this.desc = ``;
         // Set the icon and its color based on type and permissions
         if (type === 'file') {
-            //this.iconPath = this.createColoredIcon('file', permissions);
             this.desc = `[${this.permissionsToUnixStyle(this.permissions)}]`;
             this.command = {
                 command: 'novem.openFile',
@@ -204,41 +244,34 @@ export class MyTreeItem extends vscode.TreeItem {
                 ],
             };
 
-            // Set contextValue for deletable files
             if (permissions.includes('d')) {
                 this.contextValue = 'file-deletable';
             }
         } else if (type === 'link') {
-            // Handle links (similar to files but with a link icon)
             this.iconPath = new vscode.ThemeIcon('link');
             this.desc = `[${this.permissionsToUnixStyle(this.permissions)}]`;
 
-            // Set contextValue for deletable links
             if (permissions.includes('d')) {
                 this.contextValue = 'file-deletable';
             }
         } else if (type === 'dir') {
             if (depth === 0 && this.visType === 'plots') {
-                this.iconPath = this.createColoredIcon(
-                    typeToIcon(iconType),
-                    permissions,
-                );
-                this.contextValue = 'plot-top'; // Add this line
+                this.iconPath = this.createColoredIcon(typeToIcon(iconType), permissions);
+                this.contextValue = 'plot-top';
             }
             if (depth === 0 && this.visType === 'mails') {
                 this.iconPath = this.createColoredIcon('mail', permissions);
-                this.contextValue = 'mail-top'; // Add this line
+                this.contextValue = 'mail-top';
             }
             if (depth === 0 && this.visType === 'jobs') {
                 this.iconPath = this.createColoredIcon('run', permissions);
-                this.contextValue = 'job-top'; // Add this line
+                this.contextValue = 'job-top';
             }
             if (depth === 0 && this.visType === 'repos') {
                 this.iconPath = this.createColoredIcon('repo', permissions);
-                this.contextValue = 'repo-top'; // Add this line
+                this.contextValue = 'repo-top';
             }
 
-            // Set contextValue for writable/deletable directories (not top-level)
             if (depth > 0) {
                 const isWritable = permissions.includes('w');
                 const isDeletable = permissions.includes('d');
@@ -251,23 +284,16 @@ export class MyTreeItem extends vscode.TreeItem {
                     this.contextValue = 'dir-deletable';
                 }
             }
-            //this.iconPath = this.createColoredIcon('folder', permissions);
         }
 
         this.description = this.desc;
     }
 
-    // This tooltip can be enhanced further
-    tooltip = `${this.name} (${
-        this.type
-    }) - Permissions: ${this.permissions.join(', ')}`;
-    //description = this.type;
+    tooltip = `${this.name} (${this.type}) - Permissions: ${this.permissions.join(', ')}`;
 
-    private createColoredIcon(
-        iconType: string,
-        permissions: string[],
-    ): vscode.ThemeIcon {
-        let color: vscode.ThemeColor | undefined;
+    private createColoredIcon(iconType: string, permissions: string[]): vscode.ThemeIcon {
+        console.log(`Creating icon for ${iconType} with permissions: ${permissions.join(', ')}`);
+        let color: vscode.ThemeColor | undefined = new vscode.ThemeColor('terminal.ansiGreen');
 
         if (permissions.includes('w')) {
             color = new vscode.ThemeColor('terminal.ansiGreen');
@@ -277,7 +303,6 @@ export class MyTreeItem extends vscode.TreeItem {
             color = new vscode.ThemeColor('terminal.ansiRed');
         }
 
-        color = new vscode.ThemeColor('terminal.ansiGreen');
         return new vscode.ThemeIcon(iconType, color);
     }
 

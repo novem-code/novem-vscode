@@ -19,7 +19,16 @@ button {
 .gradient {
     width: 100%;
     height: 100%;
-    background-image: radial-gradient(circle at -100% -100%, rgb(5, 68, 166) 0%, rgb(201, 21, 176) 12%, rgb(0, 212, 255) 33%, rgb(69, 200, 190) 42%, rgb(201, 21, 176) 61%, rgb(70, 52, 169) 74%, rgb(201, 21, 176) 91%);
+    background-image: radial-gradient(
+        circle at -100% -100%,
+        rgb(5, 68, 166) 0%,
+        rgb(201, 21, 176) 12%,
+        rgb(0, 212, 255) 33%,
+        rgb(69, 200, 190) 42%,
+        rgb(201, 21, 176) 61%,
+        rgb(70, 52, 169) 74%,
+        rgb(201, 21, 176) 91%
+    );
 }
 
 /* center this div */
@@ -38,7 +47,7 @@ button {
     background: var(--vscode-editor-background);
     border: 1px solid dark-grey;
     padding: 2rem;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 .login-body button {
@@ -56,8 +65,8 @@ button {
 
 .vscode-dark .login-success {
     color: rgb(117, 183, 152);
-    border-color: rgb(15,81,50);
-    background-color: rgb(5,27,17);
+    border-color: rgb(15, 81, 50);
+    background-color: rgb(5, 27, 17);
 }
 .vscode-dark .login-error {
     color: rgb(234, 134, 143);
@@ -72,8 +81,8 @@ button {
 
 .login-success {
     color: rgb(10, 54, 34);
-    border-color: rgb(163,207,187);
-    background-color: rgb(209,231,221);
+    border-color: rgb(163, 207, 187);
+    background-color: rgb(209, 231, 221);
 }
 .login-error {
     color: rgb(88, 21, 28);

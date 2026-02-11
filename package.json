@@ -409,16 +409,14 @@
     },
     "scripts": {
         "vscode:prepublish": "npm run build:spa:prod && npm run compile",
-        "build:spa:dev": "webpack --config novem_web_view/webpack.config.js --mode development",
-        "build:spa:prod": "webpack --config novem_web_view/webpack.config.js --mode production",
+        "build:spa:dev": "node novem_web_view/esbuild.config.js",
+        "build:spa:prod": "node novem_web_view/esbuild.config.js --production",
         "compile": "tsc -p ./",
         "build": "npm run build:spa:prod && npm run compile",
-        "watch:spa:dev": "webpack --watch --config novem_web_view/webpack.config.js --mode development",
-        "watch:spa:prod": "webpack --watch --config novem_web_view/webpack.config.js --mode production",
-        "start:spa": "webpack-dev-server --config novem_web_view/webpack.config.js --mode development",
-        "watch": "tsc -watch -p ./",
+        "format": "prettier --write \"src/**/*.ts\" \"novem_web_view/**/*.{ts,tsx,css}\"",
+        "format:check": "prettier --check \"src/**/*.ts\" \"novem_web_view/**/*.{ts,tsx,css}\"",
         "pretest": "npm run compile && npm run lint",
-        "lint": "eslint src --ext ts",
+        "lint": "eslint src --ext ts && npm run format:check",
         "test": "node ./out/src/test/runTest.js"
     },
     "devDependencies": {
@@ -432,24 +430,17 @@
         "@typescript-eslint/eslint-plugin": "^6.4.1",
         "@typescript-eslint/parser": "^6.4.1",
         "@vscode/test-electron": "^2.3.4",
-        "css-loader": "^6.8.1",
+        "esbuild": "^0.27.3",
         "eslint": "^8.47.0",
         "glob": "^10.5.0",
-        "html-webpack-plugin": "^5.5.3",
         "mocha": "^10.2.0",
         "prettier": "^3.0.3",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-router-dom": "^6.30.3",
-        "style-loader": "^3.3.3",
-        "ts-loader": "^9.4.4",
-        "typescript": "^5.1.6",
-        "webpack": "^5.105.0",
-        "webpack-cli": "^5.1.4",
-        "webpack-dev-server": "^5.2.1"
+        "typescript": "^5.1.6"
     },
     "dependencies": {
-        "axios": "^1.12.0",
         "ini": "^4.1.1"
     }
 }

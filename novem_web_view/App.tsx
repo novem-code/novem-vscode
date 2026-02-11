@@ -1,19 +1,8 @@
-import axios from 'axios';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-import {
-    BrowserRouter as Router,
-    Route,
-    Routes,
-    useNavigate,
-} from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 
-import {
-    NovemLogin,
-    NovemViewMail,
-    NovemViewPlot,
-    NovemViewProfile,
-} from './components';
+import { NovemLogin, NovemViewMail, NovemViewPlot, NovemViewProfile } from './components';
 
 import { enforceStyles } from './utils';
 import { ViewData, FetchedData, VscodeApi } from './types';
@@ -65,19 +54,25 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
         (async function () {
             if (token && apiRoot && shortname) {
                 try {
-                    const response = await axios.get(
-                        `${apiRoot || ''}i/${shortname}`,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                            },
+                    const response = await fetch(`${apiRoot || ''}/i/${shortname}`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
                         },
-                    );
+                    });
 
-                    setFetchedData(response.data);
-                    console.log(response.data);
+                    if (!response.ok) {
+                        const errorText = await response.text().catch(() => 'Unknown error');
+                        throw new Error(
+                            `HTTP ${response.status}: ${response.statusText} - ${errorText}`,
+                        );
+                    }
+
+                    const data = await response.json();
+                    setFetchedData(data);
+                    console.log(data);
                 } catch (error) {
                     console.error('Error fetching data:', error);
+                    // Could set an error state here to show user-friendly error message
                 }
             }
         })();
@@ -89,26 +84,17 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
             <Route
                 path="/plots"
                 element={
-                    <NovemViewPlot
-                        fetchedData={fetchedData || undefined}
-                        viewData={viewData}
-                    />
+                    <NovemViewPlot fetchedData={fetchedData || undefined} viewData={viewData} />
                 }
             />
             <Route
                 path="/mails"
                 element={
-                    <NovemViewMail
-                        fetchedData={fetchedData || undefined}
-                        viewData={viewData}
-                    />
+                    <NovemViewMail fetchedData={fetchedData || undefined} viewData={viewData} />
                 }
             />
             <Route path="/profile" Component={NovemViewProfile} />
-            <Route
-                path="/"
-                element={<div>Hello World from Novem Web View!</div>}
-            />
+            <Route path="/" element={<div>Hello World from Novem Web View!</div>} />
         </Routes>
     );
 };

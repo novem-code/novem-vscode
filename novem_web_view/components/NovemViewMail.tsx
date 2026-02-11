@@ -8,11 +8,7 @@ import { enforceStyles } from '../utils';
 
 // NS LIBRARY INTEGRATIONS
 interface NSFunctions {
-    setup: (config: {
-        bearerToken?: string;
-        apiUrl?: string;
-        assetUrl?: string;
-    }) => void;
+    setup: (config: { bearerToken?: string; apiUrl?: string; assetUrl?: string }) => void;
     register: (a: string, b: string, targetId: string) => void;
 }
 
@@ -27,22 +23,13 @@ function formatDate(input: string): string {
     const date = new Date(input);
 
     // Get the day of the week
-    const daysOfWeek: string[] = [
-        'Sun',
-        'Mon',
-        'Tue',
-        'Wed',
-        'Thu',
-        'Fri',
-        'Sat',
-    ];
+    const daysOfWeek: string[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const dayOfWeek: string = daysOfWeek[date.getUTCDay()];
 
     // Get the day of the month and format it with ordinal suffix
     const dayOfMonth: number = date.getUTCDate();
     let daySuffix: string = 'th';
-    if (dayOfMonth === 1 || dayOfMonth === 21 || dayOfMonth === 31)
-        daySuffix = 'st';
+    if (dayOfMonth === 1 || dayOfMonth === 21 || dayOfMonth === 31) daySuffix = 'st';
     else if (dayOfMonth === 2 || dayOfMonth === 22) daySuffix = 'nd';
     else if (dayOfMonth === 3 || dayOfMonth === 23) daySuffix = 'rd';
 
@@ -93,22 +80,17 @@ const NovemMailRender = (props: { viewData: ViewData }) => {
         }
     }, []); // Added dependencies to useEffect
 
-    return (
-        <div className="novem--vis--innerhold" id="novem--vis--target"></div>
-    );
+    return <div className="novem--vis--innerhold" id="novem--vis--target"></div>;
 };
 
 const NovemMailProfile = (props: { fetchedData: FetchedData }) => {
     const { fetchedData } = props;
 
-    const visualizationName =
-        fetchedData.about?.name ?? 'Your placeholder chart';
-    const subject = (fetchedData?.config?.subject ??
-        'Novem Mail Subject Placeholder') as string;
+    const visualizationName = fetchedData.about?.name ?? 'Your placeholder chart';
+    const subject = (fetchedData?.config?.subject ?? 'Novem Mail Subject Placeholder') as string;
     const date = fetchedData.about?.created ?? 'Your placeholder chart';
 
-    const authorName =
-        fetchedData.creator?.name ?? 'Tue, 25 Apr 2023 10:02:07 UTC';
+    const authorName = fetchedData.creator?.name ?? 'Tue, 25 Apr 2023 10:02:07 UTC';
     const authorUsername = fetchedData.creator?.username ?? 'novem_placeholder';
     const avatarUrl = fetchedData.creator?.avatar;
 
@@ -119,10 +101,7 @@ const NovemMailProfile = (props: { fetchedData: FetchedData }) => {
     return (
         <div className="novem--vis--profile--mail">
             <div className="holder">
-                <div
-                    className="img"
-                    style={{ backgroundImage: `url(${avatarUrl}&s=160)` }}
-                ></div>
+                <div className="img" style={{ backgroundImage: `url(${avatarUrl}&s=160)` }}></div>
                 <div className="novem--vis--profile--mail--text--content">
                     <div className="novem--vis--profile--mail--text--content--top">
                         <div className="from">{authorName}</div>
@@ -151,10 +130,7 @@ const NovemMailProfile = (props: { fetchedData: FetchedData }) => {
     );
 };
 
-const NovemViewMail = (props: {
-    fetchedData?: FetchedData;
-    viewData: ViewData;
-}) => {
+const NovemViewMail = (props: { fetchedData?: FetchedData; viewData: ViewData }) => {
     const { fetchedData, viewData } = props;
 
     if (!fetchedData) return <NovemLoading />;

@@ -3,7 +3,13 @@ import * as https from 'https';
 
 // Import the functions from config.ts
 import { getCurrentConfig, UserProfile, getActiveProfile } from './config';
-import { NovemSideBarProvider, NovemDummyProvider } from './tree';
+import {
+    PlotsProvider,
+    MailsProvider,
+    JobsProvider,
+    ReposProvider,
+    NovemDummyProvider,
+} from './tree';
 
 import { setupCommands } from './commands';
 
@@ -11,10 +17,10 @@ import { NovemFSProvider } from './vfs';
 import NovemApi from './novem-api';
 import { createNovemBrowser } from './browser';
 
-let plotsProvider: NovemSideBarProvider;
-let mailsProvider: NovemSideBarProvider;
-let jobsProvider: NovemSideBarProvider | null = null;
-let reposProvider: NovemSideBarProvider | null = null;
+let plotsProvider: PlotsProvider;
+let mailsProvider: MailsProvider;
+let jobsProvider: JobsProvider | null = null;
+let reposProvider: ReposProvider | null = null;
 
 function doLogin() {
     createNovemBrowser(
@@ -53,10 +59,7 @@ export async function activate(context: vscode.ExtensionContext) {
         doLogin();
 
         context.subscriptions.push(
-            vscode.window.registerTreeDataProvider(
-                'novem-login',
-                new NovemDummyProvider(context),
-            ),
+            vscode.window.registerTreeDataProvider('novem-login', new NovemDummyProvider(context)),
         );
 
         return;
@@ -70,11 +73,9 @@ export async function activate(context: vscode.ExtensionContext) {
     setupCommands(context, novemApi);
 
     const fsProvider = new NovemFSProvider(novemApi);
-    const fsRegistration = vscode.workspace.registerFileSystemProvider(
-        'novem',
-        fsProvider,
-        { isCaseSensitive: true },
-    );
+    const fsRegistration = vscode.workspace.registerFileSystemProvider('novem', fsProvider, {
+        isCaseSensitive: true,
+    });
 
     context.subscriptions.push(fsRegistration);
 
@@ -87,10 +88,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
                 // If a languageId is provided, set the language for the document
                 if (languageId) {
-                    doc = await vscode.languages.setTextDocumentLanguage(
-                        doc,
-                        languageId,
-                    );
+                    doc = await vscode.languages.setTextDocumentLanguage(doc, languageId);
                 }
 
                 vscode.window.showTextDocument(doc);
@@ -98,8 +96,8 @@ export async function activate(context: vscode.ExtensionContext) {
         ),
     );
 
-    plotsProvider = new NovemSideBarProvider(novemApi, context, 'plots');
-    mailsProvider = new NovemSideBarProvider(novemApi, context, 'mails');
+    plotsProvider = new PlotsProvider(novemApi, context);
+    mailsProvider = new MailsProvider(novemApi, context);
 
     context.subscriptions.push(
         vscode.window.registerTreeDataProvider('novem-plots', plotsProvider),
@@ -113,7 +111,7 @@ export async function activate(context: vscode.ExtensionContext) {
         const hasRepos = apiRoot.some((item: any) => item.name === 'repos');
 
         if (hasJobs) {
-            jobsProvider = new NovemSideBarProvider(novemApi, context, 'jobs');
+            jobsProvider = new JobsProvider(novemApi, context);
             context.subscriptions.push(
                 vscode.window.registerTreeDataProvider('novem-jobs', jobsProvider),
             );
@@ -123,7 +121,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }
 
         if (hasRepos) {
-            reposProvider = new NovemSideBarProvider(novemApi, context, 'repos');
+            reposProvider = new ReposProvider(novemApi, context);
             context.subscriptions.push(
                 vscode.window.registerTreeDataProvider('novem-repos', reposProvider),
             );
@@ -137,10 +135,7 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.executeCommand('setContext', 'novem.hasRepos', false);
     }
 
-    const sbi = vscode.window.createStatusBarItem(
-        vscode.StatusBarAlignment.Left,
-        50,
-    );
+    const sbi = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
 
     const activeProfile = getActiveProfile();
     const profileText = activeProfile ? ` [${activeProfile}]` : '';

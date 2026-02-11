@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build output
+out/
+dist/
+
+# Package files
+*.vsix
+
+# Test coverage
+coverage/
+
+# Generated files
+*.min.js
+*.map
+
+# Lock files
+package-lock.json
