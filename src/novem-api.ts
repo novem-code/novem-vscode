@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { UserProfile } from './config';
 
 export default class NovemApi {
@@ -20,39 +19,97 @@ export default class NovemApi {
         };
     }
 
-    private async get<T = any>(url: string, acceptJson: boolean = true) {
-        const headers = acceptJson
-            ? this.headers
-            : { Authorization: this.headers.Authorization };
-        return (
-            await axios.get<T>(url, {
-                headers: headers,
-            })
-        ).data;
+    private async makeRequest<T = any>(
+        method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+        url: string,
+        options: {
+            body?: any;
+            headers?: Record<string, string>;
+            expectJson?: boolean;
+        } = {},
+    ): Promise<T> {
+        const { body, headers: additionalHeaders, expectJson = true } = options;
+
+        const headers = expectJson
+            ? { ...this.headers, ...additionalHeaders }
+            : {
+                  Authorization: this.headers.Authorization,
+                  ...additionalHeaders,
+              };
+
+        let response: Response;
+        try {
+            response = await fetch(url, {
+                method,
+                headers,
+                body,
+            });
+        } catch (error) {
+            console.error(`Network error ${method} ${url}:`, error);
+            throw new Error(
+                `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            );
+        }
+
+        if (!response.ok) {
+            const errorText = await response
+                .text()
+                .catch(() => 'Unknown error');
+            console.error(
+                `HTTP ${response.status} error ${method} ${url}:`,
+                errorText,
+            );
+            throw new Error(
+                `HTTP ${response.status}: ${response.statusText} - ${errorText}`,
+            );
+        }
+
+        if (!expectJson) {
+            try {
+                return (await response.text()) as T;
+            } catch (error) {
+                console.error(`Error reading text from ${url}:`, error);
+                throw new Error(
+                    `Failed to read response as text: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                );
+            }
+        }
+
+        try {
+            return (await response.json()) as T;
+        } catch (error) {
+            const text = await response
+                .text()
+                .catch(() => '[Unable to read response]');
+            console.error(
+                `JSON parsing error for ${url}:`,
+                error,
+                'Response:',
+                text.substring(0, 200),
+            );
+            throw new Error(
+                `Invalid JSON response from ${url}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            );
+        }
     }
 
-    private async post(url: string, data: any, headers: any | null) {
-        return (
-            await axios.post(url, data, {
-                headers: { ...this.headers, ...headers },
-            })
-        ).data;
+    private async get<T = any>(url: string, acceptJson: boolean = true) {
+        return this.makeRequest<T>('GET', url, { expectJson: acceptJson });
+    }
+
+    private async post(url: string, data: any, headers: any | null = null) {
+        return this.makeRequest('POST', url, {
+            body: data,
+            headers: headers || undefined,
+        });
     }
 
     private async put(url: string, data: any) {
-        return (
-            await axios.put(url, data, {
-                headers: this.headers,
-            })
-        ).data;
+        return this.makeRequest('PUT', url, { body: data });
     }
 
     private async delete(url: string) {
-        return (
-            await axios.delete(url, {
-                headers: this.headers,
-            })
-        ).data;
+        return this.makeRequest('DELETE', url);
     }
 
     async logout() {
@@ -155,7 +212,10 @@ export default class NovemApi {
             if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
                 return await this.get(`${this.apiRoot}${path}`, false);
             }
-            return await this.get(`${this.apiRoot}/vis/${path.slice(1)}`, false);
+            return await this.get(
+                `${this.apiRoot}/vis/${path.slice(1)}`,
+                false,
+            );
         } catch (e) {
             console.error('Error fetching data', e);
         }
@@ -174,13 +234,9 @@ export default class NovemApi {
 
             // Jobs and repos are top-level, not under /vis/
             if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
-                return await this.post(
-                    `${this.apiRoot}${path}`,
-                    content,
-                    {
-                        'Content-Type': contentType,
-                    },
-                );
+                return await this.post(`${this.apiRoot}${path}`, content, {
+                    'Content-Type': contentType,
+                });
             }
             return await this.post(
                 `${this.apiRoot}/vis/${path.slice(1)}`,
@@ -201,10 +257,7 @@ export default class NovemApi {
             if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
                 return await this.put(`${this.apiRoot}${path}`, null);
             }
-            return await this.put(
-                `${this.apiRoot}/vis/${path.slice(1)}`,
-                null,
-            );
+            return await this.put(`${this.apiRoot}/vis/${path.slice(1)}`, null);
         } catch (e) {
             console.error('Error creating node', e);
             throw e;

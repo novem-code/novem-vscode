@@ -1,4 +1,3 @@
-import axios from 'axios';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import {
@@ -65,7 +64,7 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
         (async function () {
             if (token && apiRoot && shortname) {
                 try {
-                    const response = await axios.get(
+                    const response = await fetch(
                         `${apiRoot || ''}i/${shortname}`,
                         {
                             headers: {
@@ -74,10 +73,21 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
                         },
                     );
 
-                    setFetchedData(response.data);
-                    console.log(response.data);
+                    if (!response.ok) {
+                        const errorText = await response
+                            .text()
+                            .catch(() => 'Unknown error');
+                        throw new Error(
+                            `HTTP ${response.status}: ${response.statusText} - ${errorText}`,
+                        );
+                    }
+
+                    const data = await response.json();
+                    setFetchedData(data);
+                    console.log(data);
                 } catch (error) {
                     console.error('Error fetching data:', error);
+                    // Could set an error state here to show user-friendly error message
                 }
             }
         })();
