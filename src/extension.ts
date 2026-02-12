@@ -23,13 +23,22 @@ let jobsProvider: JobsProvider | null = null;
 let reposProvider: ReposProvider | null = null;
 
 function doLogin() {
+    // Get current profile settings to respect username and api_root
+    const currentConfig = getCurrentConfig();
+    const activeProfile = getActiveProfile();
+
+    // Use current profile's api_root, or fall back to default
+    const apiRoot = currentConfig?.api_root || 'https://api.novem.io/v1/';
+
     createNovemBrowser(
         'login',
         '',
         '',
         '/login',
         '',
-        'https://api.novem.io/v1/', // pull this from settings?
+        apiRoot,
+        currentConfig?.username || undefined,
+        activeProfile || undefined,
     );
 }
 

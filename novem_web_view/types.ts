@@ -5,6 +5,7 @@ export interface ViewData {
     route: string;
     token: string;
     apiRoot: string;
+    username?: string;
 }
 interface Creator {
     username: string;

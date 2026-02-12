@@ -17,6 +17,7 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
         route: '',
         token: '',
         apiRoot: '',
+        username: '',
     });
 
     const { visId, uri, shortname, route, token, apiRoot } = viewData;
@@ -40,6 +41,7 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
                         shortname: message.shortName,
                         token: message.token,
                         apiRoot: message.apiRoot,
+                        username: message.username,
                     });
                     navigate(message.route);
                     break;
@@ -80,7 +82,7 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
 
     return (
         <Routes>
-            <Route path="/login" element={<NovemLogin vsapi={props.vsapi} />} />
+            <Route path="/login" element={<NovemLogin vsapi={props.vsapi} viewData={viewData} />} />
             <Route
                 path="/plots"
                 element={

@@ -21,7 +21,7 @@ export function writeCSP() {
         'connect-src https://www.gravatar.com ' +
         [
             ['novem.io', true],
-            ['neuf.run', false],
+            ['neuf.dev', false],
             ['neuf.cloud', true],
         ]
             .map(([domain, ssl]) => {
