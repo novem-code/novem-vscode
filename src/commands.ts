@@ -66,6 +66,30 @@ import { createNovemBrowser } from './browser';
 import { mailsProvider, plotsProvider, jobsProvider, reposProvider } from './extension';
 import NovemApi from './novem-api';
 
+async function openCustomPlotFiles(plotName: string): Promise<void> {
+    const filesToOpen = [
+        { path: `/${plotName}/config/custom/custom.js`, lang: 'javascript' },
+        { path: `/${plotName}/config/custom/custom.css`, lang: 'css' },
+        { path: `/${plotName}/data`, lang: 'plaintext' },
+    ];
+    for (const file of filesToOpen) {
+        try {
+            await vscode.commands.executeCommand(
+                'novem.openFile',
+                vscode.Uri.from({
+                    scheme: 'novem',
+                    authority: 'plots',
+                    path: file.path,
+                }),
+                'file',
+                file.lang,
+            );
+        } catch {
+            // File may not exist — skip silently
+        }
+    }
+}
+
 async function closeEditorsForItem(visType: string, itemName: string): Promise<void> {
     const prefix = `novem://${visType}/${itemName}`;
     for (const group of vscode.window.tabGroups.all) {
@@ -434,17 +458,30 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
                 { label: 'bar', description: 'Bar chart' },
                 { label: 'sbar', description: 'Stacked bar chart' },
                 { label: 'gbar', description: 'Grouped bar chart' },
-                { label: 'pie', description: 'Pie chart' },
                 { label: 'line', description: 'Line chart' },
-                { label: 'mtable', description: '' },
             ];
 
-            const selected = await vscode.window.showQuickPick(plotTypes, {
-                placeHolder: 'Select the type of plot to create',
+            const type = await new Promise<string | undefined>(resolve => {
+                const picker = vscode.window.createQuickPick();
+                picker.items = plotTypes;
+                picker.placeholder = 'Select or type a plot type';
+                let accepted = false;
+                picker.onDidAccept(() => {
+                    accepted = true;
+                    const value = picker.selectedItems[0]?.label || picker.value;
+                    picker.hide();
+                    resolve(value || undefined);
+                });
+                picker.onDidHide(() => {
+                    picker.dispose();
+                    if (!accepted) {
+                        resolve(undefined);
+                    }
+                });
+                picker.show();
             });
 
-            const type = selected?.label || 'bar';
-            if (!selected) return;
+            if (!type) return;
 
             plotsProvider.setStatus(`Creating "${plotId}"...`);
 
@@ -464,28 +501,9 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
             vscode.window.showInformationMessage(`New plot ${plotId} created`);
 
-            // Auto-open key files for custom plots (best-effort — files may not exist yet)
+            // Auto-open key files for custom plots
             if (type === 'custom') {
-                const filesToOpen = [
-                    { path: `/${plotId}/config/custom/custom.js`, lang: 'javascript' },
-                    { path: `/${plotId}/data`, lang: 'json' },
-                ];
-                for (const file of filesToOpen) {
-                    try {
-                        await vscode.commands.executeCommand(
-                            'novem.openFile',
-                            vscode.Uri.from({
-                                scheme: 'novem',
-                                authority: 'plots',
-                                path: file.path,
-                            }),
-                            'file',
-                            file.lang,
-                        );
-                    } catch {
-                        // File may not exist yet — skip silently
-                    }
-                }
+                await openCustomPlotFiles(plotId);
             }
         }),
     );
@@ -502,26 +520,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.editCustomPlot', async (item: MyTreeItem) => {
-            const filesToOpen = [
-                { path: `/${item.name}/config/custom/custom.js`, lang: 'javascript' },
-                { path: `/${item.name}/data`, lang: 'json' },
-            ];
-            for (const file of filesToOpen) {
-                try {
-                    await vscode.commands.executeCommand(
-                        'novem.openFile',
-                        vscode.Uri.from({
-                            scheme: 'novem',
-                            authority: 'plots',
-                            path: file.path,
-                        }),
-                        'file',
-                        file.lang,
-                    );
-                } catch {
-                    // File may not exist — skip silently
-                }
-            }
+            await openCustomPlotFiles(item.name);
         }),
     );
 

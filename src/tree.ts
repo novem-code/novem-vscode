@@ -36,16 +36,13 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
         this._onDidChangeTreeData.fire();
     }
 
-    private loadInitial(username: string): void {
-        this.getRootItems(username)
-            .then(() => {
-                this.hasLoaded = true;
-                this._onDidChangeTreeData.fire();
-            })
-            .catch(() => {
-                this.hasLoaded = true;
-                this._onDidChangeTreeData.fire();
-            });
+    private async loadInitial(username: string): Promise<void> {
+        try {
+            await this.getRootItems(username);
+        } finally {
+            this.hasLoaded = true;
+            this._onDidChangeTreeData.fire();
+        }
     }
 
     async getTreeItem(element: vscode.TreeItem): Promise<vscode.TreeItem> {
