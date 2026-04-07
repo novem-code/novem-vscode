@@ -113,11 +113,11 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.window.registerTreeDataProvider('novem-mails', mailsProvider),
     );
 
-    // Check if jobs and repos endpoints are available by querying the API root
+    // Check if jobs and repos endpoints are available by querying /code
     try {
-        const apiRoot = await novemApi.getApiRoot();
-        const hasJobs = apiRoot.some((item: any) => item.name === 'jobs');
-        const hasRepos = apiRoot.some((item: any) => item.name === 'repos');
+        const codeRoot = await novemApi.getCodeRoot();
+        const hasJobs = codeRoot.some((item: any) => item.name === 'jobs');
+        const hasRepos = codeRoot.some((item: any) => item.name === 'repos');
 
         if (hasJobs) {
             jobsProvider = new JobsProvider(novemApi, context);

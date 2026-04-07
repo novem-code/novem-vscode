@@ -115,6 +115,10 @@ export default class NovemApi {
         return await this.get(`${this.apiRoot}/`);
     }
 
+    async getCodeRoot() {
+        return await this.get(`${this.apiRoot}/code`);
+    }
+
     async getMailsForUser(user: string) {
         return await this.get(`${this.apiRoot}/u/${user}/m`);
     }
@@ -124,11 +128,11 @@ export default class NovemApi {
     }
 
     async getJobsForUser(user: string) {
-        return await this.get(`${this.apiRoot}/jobs`);
+        return await this.get(`${this.apiRoot}/code/jobs`);
     }
 
     async getReposForUser(user: string) {
-        return await this.get(`${this.apiRoot}/repos`);
+        return await this.get(`${this.apiRoot}/code/repos`);
     }
 
     async createPlot(plotId: string) {
@@ -138,10 +142,10 @@ export default class NovemApi {
         return await this.put(`${this.apiRoot}/vis/mails/${mailId}`, null);
     }
     async createJob(jobId: string) {
-        return await this.put(`${this.apiRoot}/jobs/${jobId}`, null);
+        return await this.put(`${this.apiRoot}/code/jobs/${jobId}`, null);
     }
     async createRepo(repoId: string) {
-        return await this.put(`${this.apiRoot}/repos/${repoId}`, null);
+        return await this.put(`${this.apiRoot}/code/repos/${repoId}`, null);
     }
     async modifyPlot(plotId: string, key: string, value: string) {
         return await this.post(`${`${this.apiRoot}/vis/plots/${plotId}`}/${key}`, value, {
@@ -155,13 +159,13 @@ export default class NovemApi {
     }
 
     async getDetailsForJob(jobId: string, path?: string) {
-        if (path) return await this.get(`${this.apiRoot}/jobs/${jobId}/${path}`);
-        else return await this.get(`${this.apiRoot}/jobs/${jobId}`);
+        if (path) return await this.get(`${this.apiRoot}/code/jobs/${jobId}/${path}`);
+        else return await this.get(`${this.apiRoot}/code/jobs/${jobId}`);
     }
 
     async getDetailsForRepo(repoId: string, path?: string) {
-        if (path) return await this.get(`${this.apiRoot}/repos/${repoId}/${path}`);
-        else return await this.get(`${this.apiRoot}/repos/${repoId}`);
+        if (path) return await this.get(`${this.apiRoot}/code/repos/${repoId}/${path}`);
+        else return await this.get(`${this.apiRoot}/code/repos/${repoId}`);
     }
 
     async deletePlot(plotId: string) {
@@ -169,19 +173,19 @@ export default class NovemApi {
     }
 
     async deleteJob(jobId: string) {
-        return await this.delete(`${this.apiRoot}/jobs/${jobId}`);
+        return await this.delete(`${this.apiRoot}/code/jobs/${jobId}`);
     }
 
     async deleteRepo(repoId: string) {
-        return await this.delete(`${this.apiRoot}/repos/${repoId}`);
+        return await this.delete(`${this.apiRoot}/code/repos/${repoId}`);
     }
 
     async readFile(path: string) {
         //console.log('reading file', path);
         try {
             // Don't use Accept: application/json for file content
-            // Jobs and repos are top-level, not under /vis/
-            if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
+            // Jobs and repos are under /code/, not under /vis/
+            if (path.startsWith('/code/jobs/') || path.startsWith('/code/repos/')) {
                 return await this.get(`${this.apiRoot}${path}`, false);
             }
             return await this.get(`${this.apiRoot}/vis/${path.slice(1)}`, false);
@@ -197,12 +201,12 @@ export default class NovemApi {
             let contentType = 'text/plain';
 
             // Job data files should be sent as application/json
-            if (path.match(/^\/jobs\/[^/]+\/data$/)) {
+            if (path.match(/^\/code\/jobs\/[^/]+\/data$/)) {
                 contentType = 'application/json';
             }
 
-            // Jobs and repos are top-level, not under /vis/
-            if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
+            // Jobs and repos are under /code/, not under /vis/
+            if (path.startsWith('/code/jobs/') || path.startsWith('/code/repos/')) {
                 return await this.post(`${this.apiRoot}${path}`, content, {
                     'Content-Type': contentType,
                 });
@@ -218,8 +222,8 @@ export default class NovemApi {
     async createNodeInDirectory(path: string) {
         //console.log('creating node in directory', path);
         try {
-            // Jobs and repos are top-level, not under /vis/
-            if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
+            // Jobs and repos are under /code/, not under /vis/
+            if (path.startsWith('/code/jobs/') || path.startsWith('/code/repos/')) {
                 return await this.put(`${this.apiRoot}${path}`, null);
             }
             return await this.put(`${this.apiRoot}/vis/${path.slice(1)}`, null);
@@ -232,8 +236,8 @@ export default class NovemApi {
     async deleteNode(path: string) {
         //console.log('deleting node', path);
         try {
-            // Jobs and repos are top-level, not under /vis/
-            if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
+            // Jobs and repos are under /code/, not under /vis/
+            if (path.startsWith('/code/jobs/') || path.startsWith('/code/repos/')) {
                 return await this.delete(`${this.apiRoot}${path}`);
             }
             return await this.delete(`${this.apiRoot}/vis/${path.slice(1)}`);

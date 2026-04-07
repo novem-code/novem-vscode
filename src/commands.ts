@@ -611,8 +611,8 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             }
 
             try {
-                // Fetch the clone URL from /repos/:repoId/url
-                const cloneUrl = await api.readFile(`/repos/${item.name}/url`);
+                // Fetch the clone URL from /code/repos/:repoId/url
+                const cloneUrl = await api.readFile(`/code/repos/${item.name}/url`);
 
                 if (!cloneUrl || typeof cloneUrl !== 'string') {
                     vscode.window.showErrorMessage(
@@ -743,9 +743,9 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             // Construct the full path for the new node
             const fullPath =
                 item.visType === 'jobs'
-                    ? `/jobs${item.path}/${nodeName}`
+                    ? `/code/jobs${item.path}/${nodeName}`
                     : item.visType === 'repos'
-                      ? `/repos${item.path}/${nodeName}`
+                      ? `/code/repos${item.path}/${nodeName}`
                       : `/${item.visType}${item.path}/${nodeName}`;
 
             try {
@@ -785,9 +785,9 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             // Construct the full path for the node to delete
             const fullPath =
                 item.visType === 'jobs'
-                    ? `/jobs${item.path}`
+                    ? `/code/jobs${item.path}`
                     : item.visType === 'repos'
-                      ? `/repos${item.path}`
+                      ? `/code/repos${item.path}`
                       : `/${item.visType}${item.path}`;
 
             try {

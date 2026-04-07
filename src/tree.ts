@@ -235,9 +235,9 @@ export class MyTreeItem extends vscode.TreeItem {
                 title: 'Open File',
                 arguments: [
                     this.visType === 'jobs'
-                        ? `/jobs${this.path}`
+                        ? `/code/jobs${this.path}`
                         : this.visType === 'repos'
-                          ? `/repos${this.path}`
+                          ? `/code/repos${this.path}`
                           : `/${this.visType}${this.path}`,
                     this.type,
                     doctype,
