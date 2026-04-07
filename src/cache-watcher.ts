@@ -13,6 +13,55 @@ export class CacheWatcher {
         this.onChange = onChange;
     }
 
+    /**
+     * Seed known content from existing files on disk.
+     * Call this before start() to avoid spurious change events for files
+     * that already exist from a previous session.
+     */
+    seedFromDisk(filePaths: string[]): void {
+        for (const fullPath of filePaths) {
+            try {
+                if (!fs.existsSync(fullPath)) continue;
+                const stat = fs.statSync(fullPath);
+                if (stat.isDirectory()) continue;
+
+                const relative = path.relative(this.cacheDir, fullPath);
+                const novemPath = '/' + relative.split(path.sep).join('/');
+                const content = fs.readFileSync(fullPath, 'utf-8');
+                this.knownContent.set(novemPath, content);
+            } catch {
+                // skip files we can't read
+            }
+        }
+    }
+
+    /**
+     * Seed known content for all files under a directory.
+     */
+    seedDirectoryFromDisk(dirPath: string): void {
+        try {
+            if (!fs.existsSync(dirPath)) return;
+            const files = this.walkDir(dirPath);
+            this.seedFromDisk(files);
+        } catch {
+            // best effort
+        }
+    }
+
+    private walkDir(dir: string): string[] {
+        const results: string[] = [];
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+                results.push(...this.walkDir(fullPath));
+            } else {
+                results.push(fullPath);
+            }
+        }
+        return results;
+    }
+
     start(): void {
         if (!fs.existsSync(this.cacheDir)) {
             fs.mkdirSync(this.cacheDir, { recursive: true });
