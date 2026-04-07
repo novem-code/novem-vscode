@@ -67,6 +67,26 @@ import { createNovemBrowser } from './browser';
 import { mailsProvider, plotsProvider, jobsProvider, reposProvider } from './extension';
 import NovemApi from './novem-api';
 
+async function confirmDeletion(name: string, noun: string): Promise<boolean> {
+    const confirm = await vscode.window.showInputBox({
+        prompt: `Please confirm that you want to delete "${name}" by typing DELETE`,
+        placeHolder: 'type DELETE here',
+        validateInput: (inputValue: string) => {
+            if (!/^[DELETE]+$/.test(inputValue)) {
+                return 'Only uppercase DELETE allowed, hit escape to ABORT';
+            }
+            return undefined;
+        },
+    });
+    if (confirm !== 'DELETE') {
+        if (confirm !== undefined) {
+            vscode.window.showInformationMessage(`Action aborted, ${noun} not deleted`);
+        }
+        return false;
+    }
+    return true;
+}
+
 // Open a novem vis inside vscode
 const createViewFunction = (
     context: vscode.ExtensionContext,
@@ -424,32 +444,8 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.deleteNovemPlot', async (item: MyTreeItem) => {
-            // Handle the context menu action for the item
-            const profile = context.globalState.get('userProfile') as UserProfile;
-            const conf = context.globalState.get('userConfig') as UserConfig;
-
-            let confirm = await vscode.window.showInputBox({
-                prompt: `Please confirm that you want to delete "${item.name}" by typing DELETE`,
-                placeHolder: 'type DELETE here',
-                validateInput: (inputValue: string) => {
-                    if (!/^[DELETE]+$/.test(inputValue)) {
-                        return 'Only uppercase DELETE allowed, hit escape to ABORT';
-                    }
-                    return undefined;
-                },
-            });
-
-            if (confirm !== 'DELETE') {
-                if (confirm !== undefined) {
-                    vscode.window.showInformationMessage(
-                        `Action aborted, visualisation not deleted`,
-                    );
-                }
-                return;
-            }
-
+            if (!await confirmDeletion(item.name, 'visualisation')) return;
             await api.deletePlot(item.name);
-
             vscode.window.showWarningMessage(`Deleted "${item.name}"`);
             item.parent.refresh();
         }),
@@ -501,29 +497,8 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.deleteNovemJob', async (item: MyTreeItem) => {
-            const profile = context.globalState.get('userProfile') as UserProfile;
-            const conf = context.globalState.get('userConfig') as UserConfig;
-
-            let confirm = await vscode.window.showInputBox({
-                prompt: `Please confirm that you want to delete "${item.name}" by typing DELETE`,
-                placeHolder: 'type DELETE here',
-                validateInput: (inputValue: string) => {
-                    if (!/^[DELETE]+$/.test(inputValue)) {
-                        return 'Only uppercase DELETE allowed, hit escape to ABORT';
-                    }
-                    return undefined;
-                },
-            });
-
-            if (confirm !== 'DELETE') {
-                if (confirm !== undefined) {
-                    vscode.window.showInformationMessage(`Action aborted, job not deleted`);
-                }
-                return;
-            }
-
+            if (!await confirmDeletion(item.name, 'job')) return;
             await api.deleteJob(item.name);
-
             vscode.window.showWarningMessage(`Deleted "${item.name}"`);
             item.parent.refresh();
         }),
@@ -569,29 +544,8 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.deleteNovemRepo', async (item: MyTreeItem) => {
-            const profile = context.globalState.get('userProfile') as UserProfile;
-            const conf = context.globalState.get('userConfig') as UserConfig;
-
-            let confirm = await vscode.window.showInputBox({
-                prompt: `Please confirm that you want to delete "${item.name}" by typing DELETE`,
-                placeHolder: 'type DELETE here',
-                validateInput: (inputValue: string) => {
-                    if (!/^[DELETE]+$/.test(inputValue)) {
-                        return 'Only uppercase DELETE allowed, hit escape to ABORT';
-                    }
-                    return undefined;
-                },
-            });
-
-            if (confirm !== 'DELETE') {
-                if (confirm !== undefined) {
-                    vscode.window.showInformationMessage(`Action aborted, repo not deleted`);
-                }
-                return;
-            }
-
+            if (!await confirmDeletion(item.name, 'repo')) return;
             await api.deleteRepo(item.name);
-
             vscode.window.showWarningMessage(`Deleted "${item.name}"`);
             item.parent.refresh();
         }),
