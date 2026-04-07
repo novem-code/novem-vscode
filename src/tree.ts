@@ -233,11 +233,7 @@ export class MyTreeItem extends vscode.TreeItem {
             this.command = {
                 command: 'novem.openFile',
                 title: 'Open File',
-                arguments: [
-                    `${visTypePath(this.visType)}${this.path}`,
-                    this.type,
-                    doctype,
-                ],
+                arguments: [`${visTypePath(this.visType)}${this.path}`, this.type, doctype],
             };
 
             if (permissions.includes('d')) {
