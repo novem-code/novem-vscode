@@ -300,7 +300,10 @@ export class MyTreeItem extends vscode.TreeItem {
             if (depth === 0 && this.visType in VIS_TOP) {
                 const { icon, contextValue } = VIS_TOP[this.visType];
                 this.iconPath = this.createColoredIcon(icon || typeToIcon(iconType), permissions);
-                this.contextValue = contextValue;
+                this.contextValue =
+                    this.visType === 'plots' && iconType === 'custom'
+                        ? 'plot-top-custom'
+                        : contextValue;
             }
 
             if (depth > 0) {

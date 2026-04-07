@@ -501,6 +501,31 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
     );
 
     context.subscriptions.push(
+        vscode.commands.registerCommand('novem.editCustomPlot', async (item: MyTreeItem) => {
+            const filesToOpen = [
+                { path: `/${item.name}/config/custom/custom.js`, lang: 'javascript' },
+                { path: `/${item.name}/data`, lang: 'json' },
+            ];
+            for (const file of filesToOpen) {
+                try {
+                    await vscode.commands.executeCommand(
+                        'novem.openFile',
+                        vscode.Uri.from({
+                            scheme: 'novem',
+                            authority: 'plots',
+                            path: file.path,
+                        }),
+                        'file',
+                        file.lang,
+                    );
+                } catch {
+                    // File may not exist — skip silently
+                }
+            }
+        }),
+    );
+
+    context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemPlots', async () => {
             plotsProvider.refresh();
         }),
