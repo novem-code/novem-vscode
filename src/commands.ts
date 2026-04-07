@@ -344,7 +344,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             const profile = context.globalState.get('userProfile') as UserProfile;
             const conf = context.globalState.get('userConfig') as UserConfig;
 
-            let plotId = await vscode.window.showInputBox({
+            let mailId = await vscode.window.showInputBox({
                 prompt: 'Please provide the mail id to create:',
                 placeHolder: 'test_mail_1',
                 validateInput: (inputValue: string) => {
@@ -355,20 +355,19 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
                 },
             });
 
-            if (!plotId) return;
+            if (!mailId) return;
 
-            //console.log(`Create mail: "${plotId}"`);
             try {
-                await api.createMail(plotId);
+                await api.createMail(mailId);
             } catch (error) {
                 console.log('error', error);
-                vscode.window.showErrorMessage(`Failed to create new mail ${plotId}`);
+                vscode.window.showErrorMessage(`Failed to create new mail ${mailId}`);
                 return;
             }
 
             mailsProvider.refresh();
 
-            vscode.window.showInformationMessage(`New mail ${plotId} created`);
+            vscode.window.showInformationMessage(`New mail ${mailId} created`);
         }),
     );
 
