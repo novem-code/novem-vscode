@@ -17,10 +17,10 @@ import { NovemFSProvider } from './vfs';
 import NovemApi from './novem-api';
 import { createNovemBrowser } from './browser';
 
-let plotsProvider: PlotsProvider;
-let mailsProvider: MailsProvider;
-let jobsProvider: JobsProvider | null = null;
-let reposProvider: ReposProvider | null = null;
+let plotsProvider: InstanceType<typeof PlotsProvider>;
+let mailsProvider: InstanceType<typeof MailsProvider>;
+let jobsProvider: InstanceType<typeof JobsProvider> | null = null;
+let reposProvider: InstanceType<typeof ReposProvider> | null = null;
 
 function doLogin() {
     // Get current profile settings to respect username and api_root
@@ -91,8 +91,7 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand(
             'novem.openFile',
-            async (path: string, type: string, languageId?: string) => {
-                const uri = vscode.Uri.parse(`novem:${path}`);
+            async (uri: vscode.Uri, type: string, languageId?: string) => {
                 let doc = await vscode.workspace.openTextDocument(uri);
 
                 // If a languageId is provided, set the language for the document
@@ -113,11 +112,11 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.window.registerTreeDataProvider('novem-mails', mailsProvider),
     );
 
-    // Check if jobs and repos endpoints are available by querying the API root
+    // Check if jobs and repos endpoints are available by querying /code
     try {
-        const apiRoot = await novemApi.getApiRoot();
-        const hasJobs = apiRoot.some((item: any) => item.name === 'jobs');
-        const hasRepos = apiRoot.some((item: any) => item.name === 'repos');
+        const codeRoot = await novemApi.getCodeRoot();
+        const hasJobs = codeRoot.some((item: any) => item.name === 'jobs');
+        const hasRepos = codeRoot.some((item: any) => item.name === 'repos');
 
         if (hasJobs) {
             jobsProvider = new JobsProvider(novemApi, context);

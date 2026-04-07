@@ -108,70 +108,46 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
     }
 }
 
-// Specific provider implementations
-export class PlotsProvider extends BaseNovemProvider {
-    getType(): 'plots' {
-        return 'plots';
-    }
+type VisType = 'plots' | 'mails' | 'jobs' | 'repos';
 
-    async getRootItems(username: string): Promise<any[]> {
-        console.log(`PlotsProvider: Fetching plots for ${username}`);
-        return await this.api.getPlotsForUser(username);
-    }
-
-    async getChildItems(visId: string, path?: string): Promise<any[]> {
-        console.log(`PlotsProvider: Fetching details for ${visId}/${path || ''}`);
-        return await this.api.getDetailsForVis('plots', visId, path);
-    }
+function makeProvider(
+    type: VisType,
+    getRootFn: (api: NovemApi, username: string) => Promise<any[]>,
+    getChildFn: (api: NovemApi, id: string, path?: string) => Promise<any[]>,
+) {
+    return class extends BaseNovemProvider {
+        getType() {
+            return type;
+        }
+        async getRootItems(username: string) {
+            return getRootFn(this.api, username);
+        }
+        async getChildItems(id: string, path?: string) {
+            return getChildFn(this.api, id, path);
+        }
+    };
 }
 
-export class MailsProvider extends BaseNovemProvider {
-    getType(): 'mails' {
-        return 'mails';
-    }
-
-    async getRootItems(username: string): Promise<any[]> {
-        console.log(`MailsProvider: Fetching mails for ${username}`);
-        return await this.api.getMailsForUser(username);
-    }
-
-    async getChildItems(visId: string, path?: string): Promise<any[]> {
-        console.log(`MailsProvider: Fetching details for ${visId}/${path || ''}`);
-        return await this.api.getDetailsForVis('mails', visId, path);
-    }
-}
-
-export class JobsProvider extends BaseNovemProvider {
-    getType(): 'jobs' {
-        return 'jobs';
-    }
-
-    async getRootItems(username: string): Promise<any[]> {
-        console.log(`JobsProvider: Fetching jobs for ${username}`);
-        return await this.api.getJobsForUser(username);
-    }
-
-    async getChildItems(visId: string, path?: string): Promise<any[]> {
-        console.log(`JobsProvider: Fetching job details for ${visId}/${path || ''}`);
-        return await this.api.getDetailsForJob(visId, path);
-    }
-}
-
-export class ReposProvider extends BaseNovemProvider {
-    getType(): 'repos' {
-        return 'repos';
-    }
-
-    async getRootItems(username: string): Promise<any[]> {
-        console.log(`ReposProvider: Fetching repos for ${username}`);
-        return await this.api.getReposForUser(username);
-    }
-
-    async getChildItems(visId: string, path?: string): Promise<any[]> {
-        console.log(`ReposProvider: Fetching repo details for ${visId}/${path || ''}`);
-        return await this.api.getDetailsForRepo(visId, path);
-    }
-}
+export const PlotsProvider = makeProvider(
+    'plots',
+    (api, u) => api.getPlotsForUser(u),
+    (api, id, path) => api.getDetailsForVis('plots', id, path),
+);
+export const MailsProvider = makeProvider(
+    'mails',
+    (api, u) => api.getMailsForUser(u),
+    (api, id, path) => api.getDetailsForVis('mails', id, path),
+);
+export const JobsProvider = makeProvider(
+    'jobs',
+    (api, u) => api.getJobsForUser(u),
+    (api, id, path) => api.getDetailsForJob(id, path),
+);
+export const ReposProvider = makeProvider(
+    'repos',
+    (api, u) => api.getReposForUser(u),
+    (api, id, path) => api.getDetailsForRepo(id, path),
+);
 
 // Keep the original class name for backward compatibility
 export const NovemSideBarProvider = BaseNovemProvider;
@@ -212,19 +188,13 @@ export class MyTreeItem extends vscode.TreeItem {
         this.path = `${parentPath}/${this.name}`;
         this.visType = visType;
 
-        // Determine the document type based on path and name
-        let doctype = 'nv_markdown';
-
-        // doctype overrides for certain files
-        if (this.visType === 'jobs' && this.name === 'data') {
-            doctype = 'json';
-        } else if (this.name === 'custom.js') {
-            doctype = 'javascript';
-        } else if (this.name === 'custom.css') {
-            doctype = 'css';
-        } else if (this.name === 'custom.deps') {
-            doctype = 'plaintext';
-        }
+        const FILE_DOCTYPES: Record<string, string> = {
+            'custom.js': 'javascript',
+            'custom.css': 'css',
+            'custom.deps': 'plaintext',
+            ...(this.visType === 'jobs' ? { data: 'json' } : {}),
+        };
+        const doctype = FILE_DOCTYPES[this.name] ?? 'nv_markdown';
 
         this.desc = ``;
         // Set the icon and its color based on type and permissions
@@ -234,11 +204,7 @@ export class MyTreeItem extends vscode.TreeItem {
                 command: 'novem.openFile',
                 title: 'Open File',
                 arguments: [
-                    this.visType === 'jobs'
-                        ? `/jobs${this.path}`
-                        : this.visType === 'repos'
-                          ? `/repos${this.path}`
-                          : `/${this.visType}${this.path}`,
+                    vscode.Uri.from({ scheme: 'novem', authority: this.visType, path: this.path }),
                     this.type,
                     doctype,
                 ],
@@ -255,21 +221,18 @@ export class MyTreeItem extends vscode.TreeItem {
                 this.contextValue = 'file-deletable';
             }
         } else if (type === 'dir') {
-            if (depth === 0 && this.visType === 'plots') {
-                this.iconPath = this.createColoredIcon(typeToIcon(iconType), permissions);
-                this.contextValue = 'plot-top';
-            }
-            if (depth === 0 && this.visType === 'mails') {
-                this.iconPath = this.createColoredIcon('mail', permissions);
-                this.contextValue = 'mail-top';
-            }
-            if (depth === 0 && this.visType === 'jobs') {
-                this.iconPath = this.createColoredIcon('run', permissions);
-                this.contextValue = 'job-top';
-            }
-            if (depth === 0 && this.visType === 'repos') {
-                this.iconPath = this.createColoredIcon('repo', permissions);
-                this.contextValue = 'repo-top';
+            // Fixed icons per type; plots falls back to typeToIcon() since icon
+            // varies by plot kind (bar, line, etc.)
+            const VIS_TOP: Record<string, { icon: string; contextValue: string }> = {
+                plots: { icon: '', contextValue: 'plot-top' },
+                mails: { icon: 'mail', contextValue: 'mail-top' },
+                jobs: { icon: 'run', contextValue: 'job-top' },
+                repos: { icon: 'repo', contextValue: 'repo-top' },
+            };
+            if (depth === 0 && this.visType in VIS_TOP) {
+                const { icon, contextValue } = VIS_TOP[this.visType];
+                this.iconPath = this.createColoredIcon(icon || typeToIcon(iconType), permissions);
+                this.contextValue = contextValue;
             }
 
             if (depth > 0) {

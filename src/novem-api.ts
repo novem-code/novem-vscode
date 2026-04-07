@@ -1,5 +1,18 @@
 import { UserProfile } from './config';
 
+// Maps each visType to its API path prefix.
+// Add new types here to extend support without touching call sites.
+export const VIS_TYPE_PREFIX: Record<string, string> = {
+    plots: '/vis/plots',
+    mails: '/vis/mails',
+    jobs: '/code/jobs',
+    repos: '/code/repos',
+};
+
+function visTypePath(visType: string): string {
+    return VIS_TYPE_PREFIX[visType] ?? `/vis/${visType}`;
+}
+
 export default class NovemApi {
     private token: string;
     private apiRoot: string;
@@ -115,6 +128,10 @@ export default class NovemApi {
         return await this.get(`${this.apiRoot}/`);
     }
 
+    async getCodeRoot() {
+        return await this.get(`${this.apiRoot}/code`);
+    }
+
     async getMailsForUser(user: string) {
         return await this.get(`${this.apiRoot}/u/${user}/m`);
     }
@@ -124,11 +141,11 @@ export default class NovemApi {
     }
 
     async getJobsForUser(user: string) {
-        return await this.get(`${this.apiRoot}/jobs`);
+        return await this.get(`${this.apiRoot}/code/jobs`);
     }
 
     async getReposForUser(user: string) {
-        return await this.get(`${this.apiRoot}/repos`);
+        return await this.get(`${this.apiRoot}/code/repos`);
     }
 
     async createPlot(plotId: string) {
@@ -138,10 +155,10 @@ export default class NovemApi {
         return await this.put(`${this.apiRoot}/vis/mails/${mailId}`, null);
     }
     async createJob(jobId: string) {
-        return await this.put(`${this.apiRoot}/jobs/${jobId}`, null);
+        return await this.put(`${this.apiRoot}/code/jobs/${jobId}`, null);
     }
     async createRepo(repoId: string) {
-        return await this.put(`${this.apiRoot}/repos/${repoId}`, null);
+        return await this.put(`${this.apiRoot}/code/repos/${repoId}`, null);
     }
     async modifyPlot(plotId: string, key: string, value: string) {
         return await this.post(`${`${this.apiRoot}/vis/plots/${plotId}`}/${key}`, value, {
@@ -155,13 +172,13 @@ export default class NovemApi {
     }
 
     async getDetailsForJob(jobId: string, path?: string) {
-        if (path) return await this.get(`${this.apiRoot}/jobs/${jobId}/${path}`);
-        else return await this.get(`${this.apiRoot}/jobs/${jobId}`);
+        if (path) return await this.get(`${this.apiRoot}/code/jobs/${jobId}/${path}`);
+        else return await this.get(`${this.apiRoot}/code/jobs/${jobId}`);
     }
 
     async getDetailsForRepo(repoId: string, path?: string) {
-        if (path) return await this.get(`${this.apiRoot}/repos/${repoId}/${path}`);
-        else return await this.get(`${this.apiRoot}/repos/${repoId}`);
+        if (path) return await this.get(`${this.apiRoot}/code/repos/${repoId}/${path}`);
+        else return await this.get(`${this.apiRoot}/code/repos/${repoId}`);
     }
 
     async deletePlot(plotId: string) {
@@ -169,74 +186,47 @@ export default class NovemApi {
     }
 
     async deleteJob(jobId: string) {
-        return await this.delete(`${this.apiRoot}/jobs/${jobId}`);
+        return await this.delete(`${this.apiRoot}/code/jobs/${jobId}`);
     }
 
     async deleteRepo(repoId: string) {
-        return await this.delete(`${this.apiRoot}/repos/${repoId}`);
+        return await this.delete(`${this.apiRoot}/code/repos/${repoId}`);
     }
 
-    async readFile(path: string) {
-        //console.log('reading file', path);
+    async readFile(visType: string, path: string) {
         try {
-            // Don't use Accept: application/json for file content
-            // Jobs and repos are top-level, not under /vis/
-            if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
-                return await this.get(`${this.apiRoot}${path}`, false);
-            }
-            return await this.get(`${this.apiRoot}/vis/${path.slice(1)}`, false);
+            return await this.get(`${this.apiRoot}${visTypePath(visType)}${path}`, false);
         } catch (e) {
             console.error('Error fetching data', e);
         }
     }
 
-    async writeFile(path: string, content: string) {
-        //console.log('writing file', path, content);
+    async writeFile(visType: string, path: string, content: string) {
         try {
-            // Determine content type based on path
-            let contentType = 'text/plain';
-
-            // Job data files should be sent as application/json
-            if (path.match(/^\/jobs\/[^/]+\/data$/)) {
-                contentType = 'application/json';
-            }
-
-            // Jobs and repos are top-level, not under /vis/
-            if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
-                return await this.post(`${this.apiRoot}${path}`, content, {
-                    'Content-Type': contentType,
-                });
-            }
-            return await this.post(`${this.apiRoot}/vis/${path.slice(1)}`, content, {
-                'Content-Type': 'text/plain', // Set content type as text/plain
+            const contentType =
+                visType === 'jobs' && path.match(/^\/[^/]+\/data$/)
+                    ? 'application/json'
+                    : 'text/plain';
+            return await this.post(`${this.apiRoot}${visTypePath(visType)}${path}`, content, {
+                'Content-Type': contentType,
             });
         } catch (e) {
             console.error('Error posting data', e);
         }
     }
 
-    async createNodeInDirectory(path: string) {
-        //console.log('creating node in directory', path);
+    async createNodeInDirectory(visType: string, path: string) {
         try {
-            // Jobs and repos are top-level, not under /vis/
-            if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
-                return await this.put(`${this.apiRoot}${path}`, null);
-            }
-            return await this.put(`${this.apiRoot}/vis/${path.slice(1)}`, null);
+            return await this.put(`${this.apiRoot}${visTypePath(visType)}${path}`, null);
         } catch (e) {
             console.error('Error creating node', e);
             throw e;
         }
     }
 
-    async deleteNode(path: string) {
-        //console.log('deleting node', path);
+    async deleteNode(visType: string, path: string) {
         try {
-            // Jobs and repos are top-level, not under /vis/
-            if (path.startsWith('/jobs/') || path.startsWith('/repos/')) {
-                return await this.delete(`${this.apiRoot}${path}`);
-            }
-            return await this.delete(`${this.apiRoot}/vis/${path.slice(1)}`);
+            return await this.delete(`${this.apiRoot}${visTypePath(visType)}${path}`);
         } catch (e) {
             console.error('Error deleting node', e);
             throw e;
