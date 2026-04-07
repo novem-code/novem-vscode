@@ -67,6 +67,22 @@ import { createNovemBrowser } from './browser';
 import { mailsProvider, plotsProvider, jobsProvider, reposProvider } from './extension';
 import NovemApi from './novem-api';
 
+async function promptForId(
+    prompt: string,
+    placeholder: string,
+    allowHyphens = false,
+): Promise<string | undefined> {
+    const pattern = allowHyphens ? /^[a-z0-9_-]+$/ : /^[a-z0-9_]+$/;
+    const message = allowHyphens
+        ? 'Only lowercase ASCII characters, underscores, and hyphens are allowed!'
+        : 'Only lowercase ASCII characters and underscores are allowed!';
+    return vscode.window.showInputBox({
+        prompt,
+        placeHolder: placeholder,
+        validateInput: (inputValue: string) => (!pattern.test(inputValue) ? message : undefined),
+    });
+}
+
 async function confirmDeletion(name: string, noun: string): Promise<boolean> {
     const confirm = await vscode.window.showInputBox({
         prompt: `Please confirm that you want to delete "${name}" by typing DELETE`,
@@ -364,17 +380,10 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             const profile = context.globalState.get('userProfile') as UserProfile;
             const conf = context.globalState.get('userConfig') as UserConfig;
 
-            let mailId = await vscode.window.showInputBox({
-                prompt: 'Please provide the mail id to create:',
-                placeHolder: 'test_mail_1',
-                validateInput: (inputValue: string) => {
-                    if (!/^[a-z0-9_]+$/.test(inputValue)) {
-                        return 'Only lowercase ASCII characters and underscores are allowed!';
-                    }
-                    return undefined;
-                },
-            });
-
+            const mailId = await promptForId(
+                'Please provide the mail id to create:',
+                'test_mail_1',
+            );
             if (!mailId) return;
 
             try {
@@ -444,7 +453,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.deleteNovemPlot', async (item: MyTreeItem) => {
-            if (!await confirmDeletion(item.name, 'visualisation')) return;
+            if (!(await confirmDeletion(item.name, 'visualisation'))) return;
             await api.deletePlot(item.name);
             vscode.window.showWarningMessage(`Deleted "${item.name}"`);
             item.parent.refresh();
@@ -468,17 +477,11 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             const profile = context.globalState.get('userProfile') as UserProfile;
             const conf = context.globalState.get('userConfig') as UserConfig;
 
-            let jobId = await vscode.window.showInputBox({
-                prompt: 'Please provide the job id to create:',
-                placeHolder: 'test_job_1',
-                validateInput: (inputValue: string) => {
-                    if (!/^[a-z0-9_-]+$/.test(inputValue)) {
-                        return 'Only lowercase ASCII characters, underscores, and hyphens are allowed!';
-                    }
-                    return undefined;
-                },
-            });
-
+            const jobId = await promptForId(
+                'Please provide the job id to create:',
+                'test_job_1',
+                true,
+            );
             if (!jobId) return;
 
             try {
@@ -497,7 +500,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.deleteNovemJob', async (item: MyTreeItem) => {
-            if (!await confirmDeletion(item.name, 'job')) return;
+            if (!(await confirmDeletion(item.name, 'job'))) return;
             await api.deleteJob(item.name);
             vscode.window.showWarningMessage(`Deleted "${item.name}"`);
             item.parent.refresh();
@@ -515,17 +518,11 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             const profile = context.globalState.get('userProfile') as UserProfile;
             const conf = context.globalState.get('userConfig') as UserConfig;
 
-            let repoId = await vscode.window.showInputBox({
-                prompt: 'Please provide the repo id to create:',
-                placeHolder: 'test_repo_1',
-                validateInput: (inputValue: string) => {
-                    if (!/^[a-z0-9_-]+$/.test(inputValue)) {
-                        return 'Only lowercase ASCII characters, underscores, and hyphens are allowed!';
-                    }
-                    return undefined;
-                },
-            });
-
+            const repoId = await promptForId(
+                'Please provide the repo id to create:',
+                'test_repo_1',
+                true,
+            );
             if (!repoId) return;
 
             try {
@@ -544,7 +541,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.deleteNovemRepo', async (item: MyTreeItem) => {
-            if (!await confirmDeletion(item.name, 'repo')) return;
+            if (!(await confirmDeletion(item.name, 'repo'))) return;
             await api.deleteRepo(item.name);
             vscode.window.showWarningMessage(`Deleted "${item.name}"`);
             item.parent.refresh();
