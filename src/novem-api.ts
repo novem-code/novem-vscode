@@ -9,7 +9,7 @@ export const VIS_TYPE_PREFIX: Record<string, string> = {
     repos: '/code/repos',
 };
 
-export function visTypePath(visType: string): string {
+function visTypePath(visType: string): string {
     return VIS_TYPE_PREFIX[visType] ?? `/vis/${visType}`;
 }
 
@@ -193,21 +193,21 @@ export default class NovemApi {
         return await this.delete(`${this.apiRoot}/code/repos/${repoId}`);
     }
 
-    async readFile(path: string) {
+    async readFile(visType: string, path: string) {
         try {
-            return await this.get(`${this.apiRoot}${path}`, false);
+            return await this.get(`${this.apiRoot}${visTypePath(visType)}${path}`, false);
         } catch (e) {
             console.error('Error fetching data', e);
         }
     }
 
-    async writeFile(path: string, content: string) {
+    async writeFile(visType: string, path: string, content: string) {
         try {
-            // Job data files should be sent as application/json
-            const contentType = path.match(/^\/code\/jobs\/[^/]+\/data$/)
-                ? 'application/json'
-                : 'text/plain';
-            return await this.post(`${this.apiRoot}${path}`, content, {
+            const contentType =
+                visType === 'jobs' && path.match(/^\/[^/]+\/data$/)
+                    ? 'application/json'
+                    : 'text/plain';
+            return await this.post(`${this.apiRoot}${visTypePath(visType)}${path}`, content, {
                 'Content-Type': contentType,
             });
         } catch (e) {
@@ -215,18 +215,18 @@ export default class NovemApi {
         }
     }
 
-    async createNodeInDirectory(path: string) {
+    async createNodeInDirectory(visType: string, path: string) {
         try {
-            return await this.put(`${this.apiRoot}${path}`, null);
+            return await this.put(`${this.apiRoot}${visTypePath(visType)}${path}`, null);
         } catch (e) {
             console.error('Error creating node', e);
             throw e;
         }
     }
 
-    async deleteNode(path: string) {
+    async deleteNode(visType: string, path: string) {
         try {
-            return await this.delete(`${this.apiRoot}${path}`);
+            return await this.delete(`${this.apiRoot}${visTypePath(visType)}${path}`);
         } catch (e) {
             console.error('Error deleting node', e);
             throw e;

@@ -16,7 +16,7 @@ export class NovemFSProvider implements vscode.FileSystemProvider {
 
     async readFile(uri: vscode.Uri): Promise<Uint8Array> {
         // TODO: Let's add some caching here so we don't have to fetch it from the server all the time?
-        const content = await this.api.readFile(uri.path);
+        const content = await this.api.readFile(uri.authority, uri.path);
         return new TextEncoder().encode(content);
     }
 
@@ -25,8 +25,7 @@ export class NovemFSProvider implements vscode.FileSystemProvider {
         content: Uint8Array,
         options: { create: boolean; overwrite: boolean },
     ): Promise<void> {
-        const data = new TextDecoder().decode(content);
-        await this.api.writeFile(uri.path, data);
+        await this.api.writeFile(uri.authority, uri.path, new TextDecoder().decode(content));
     }
 
     // Stub implementations for other required methods

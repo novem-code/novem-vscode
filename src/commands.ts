@@ -52,7 +52,6 @@ Context menu Mail:
 import * as vscode from 'vscode';
 
 import { BaseNovemProvider, MyTreeItem } from './tree';
-import { visTypePath } from './novem-api';
 import {
     UserConfig,
     UserProfile,
@@ -562,8 +561,8 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             }
 
             try {
-                // Fetch the clone URL from /code/repos/:repoId/url
-                const cloneUrl = await api.readFile(`/code/repos/${item.name}/url`);
+                // Fetch the clone URL from the repos API
+                const cloneUrl = await api.readFile('repos', `/${item.name}/url`);
 
                 if (!cloneUrl || typeof cloneUrl !== 'string') {
                     vscode.window.showErrorMessage(
@@ -691,11 +690,8 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
             if (!nodeName) return;
 
-            // Construct the full path for the new node
-            const fullPath = `${visTypePath(item.visType)}${item.path}/${nodeName}`;
-
             try {
-                await api.createNodeInDirectory(fullPath);
+                await api.createNodeInDirectory(item.visType, `${item.path}/${nodeName}`);
                 vscode.window.showInformationMessage(`Created node "${nodeName}" in ${item.name}`);
                 item.parent.refresh();
             } catch (error) {
@@ -728,11 +724,8 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
                 return;
             }
 
-            // Construct the full path for the node to delete
-            const fullPath = `${visTypePath(item.visType)}${item.path}`;
-
             try {
-                await api.deleteNode(fullPath);
+                await api.deleteNode(item.visType, item.path);
                 vscode.window.showInformationMessage(`Deleted ${itemType} "${item.name}"`);
                 item.parent.refresh();
             } catch (error) {

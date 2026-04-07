@@ -91,8 +91,7 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand(
             'novem.openFile',
-            async (path: string, type: string, languageId?: string) => {
-                const uri = vscode.Uri.parse(`novem:${path}`);
+            async (uri: vscode.Uri, type: string, languageId?: string) => {
                 let doc = await vscode.workspace.openTextDocument(uri);
 
                 // If a languageId is provided, set the language for the document

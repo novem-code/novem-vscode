@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { UserConfig, UserProfile, typeToIcon, getActiveProfile } from './config';
-import NovemApi, { visTypePath } from './novem-api';
+import NovemApi from './novem-api';
 
 // Base class for all Novem tree providers
 export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
@@ -203,7 +203,11 @@ export class MyTreeItem extends vscode.TreeItem {
             this.command = {
                 command: 'novem.openFile',
                 title: 'Open File',
-                arguments: [`${visTypePath(this.visType)}${this.path}`, this.type, doctype],
+                arguments: [
+                    vscode.Uri.from({ scheme: 'novem', authority: this.visType, path: this.path }),
+                    this.type,
+                    doctype,
+                ],
             };
 
             if (permissions.includes('d')) {
