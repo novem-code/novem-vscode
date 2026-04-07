@@ -108,70 +108,46 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
     }
 }
 
-// Specific provider implementations
-export class PlotsProvider extends BaseNovemProvider {
-    getType(): 'plots' {
-        return 'plots';
-    }
+type VisType = 'plots' | 'mails' | 'jobs' | 'repos';
 
-    async getRootItems(username: string): Promise<any[]> {
-        console.log(`PlotsProvider: Fetching plots for ${username}`);
-        return await this.api.getPlotsForUser(username);
-    }
-
-    async getChildItems(visId: string, path?: string): Promise<any[]> {
-        console.log(`PlotsProvider: Fetching details for ${visId}/${path || ''}`);
-        return await this.api.getDetailsForVis('plots', visId, path);
-    }
+function makeProvider(
+    type: VisType,
+    getRootFn: (api: NovemApi, username: string) => Promise<any[]>,
+    getChildFn: (api: NovemApi, id: string, path?: string) => Promise<any[]>,
+) {
+    return class extends BaseNovemProvider {
+        getType() {
+            return type;
+        }
+        async getRootItems(username: string) {
+            return getRootFn(this.api, username);
+        }
+        async getChildItems(id: string, path?: string) {
+            return getChildFn(this.api, id, path);
+        }
+    };
 }
 
-export class MailsProvider extends BaseNovemProvider {
-    getType(): 'mails' {
-        return 'mails';
-    }
-
-    async getRootItems(username: string): Promise<any[]> {
-        console.log(`MailsProvider: Fetching mails for ${username}`);
-        return await this.api.getMailsForUser(username);
-    }
-
-    async getChildItems(visId: string, path?: string): Promise<any[]> {
-        console.log(`MailsProvider: Fetching details for ${visId}/${path || ''}`);
-        return await this.api.getDetailsForVis('mails', visId, path);
-    }
-}
-
-export class JobsProvider extends BaseNovemProvider {
-    getType(): 'jobs' {
-        return 'jobs';
-    }
-
-    async getRootItems(username: string): Promise<any[]> {
-        console.log(`JobsProvider: Fetching jobs for ${username}`);
-        return await this.api.getJobsForUser(username);
-    }
-
-    async getChildItems(visId: string, path?: string): Promise<any[]> {
-        console.log(`JobsProvider: Fetching job details for ${visId}/${path || ''}`);
-        return await this.api.getDetailsForJob(visId, path);
-    }
-}
-
-export class ReposProvider extends BaseNovemProvider {
-    getType(): 'repos' {
-        return 'repos';
-    }
-
-    async getRootItems(username: string): Promise<any[]> {
-        console.log(`ReposProvider: Fetching repos for ${username}`);
-        return await this.api.getReposForUser(username);
-    }
-
-    async getChildItems(visId: string, path?: string): Promise<any[]> {
-        console.log(`ReposProvider: Fetching repo details for ${visId}/${path || ''}`);
-        return await this.api.getDetailsForRepo(visId, path);
-    }
-}
+export const PlotsProvider = makeProvider(
+    'plots',
+    (api, u) => api.getPlotsForUser(u),
+    (api, id, path) => api.getDetailsForVis('plots', id, path),
+);
+export const MailsProvider = makeProvider(
+    'mails',
+    (api, u) => api.getMailsForUser(u),
+    (api, id, path) => api.getDetailsForVis('mails', id, path),
+);
+export const JobsProvider = makeProvider(
+    'jobs',
+    (api, u) => api.getJobsForUser(u),
+    (api, id, path) => api.getDetailsForJob(id, path),
+);
+export const ReposProvider = makeProvider(
+    'repos',
+    (api, u) => api.getReposForUser(u),
+    (api, id, path) => api.getDetailsForRepo(id, path),
+);
 
 // Keep the original class name for backward compatibility
 export const NovemSideBarProvider = BaseNovemProvider;

@@ -17,10 +17,10 @@ import { NovemFSProvider } from './vfs';
 import NovemApi from './novem-api';
 import { createNovemBrowser } from './browser';
 
-let plotsProvider: PlotsProvider;
-let mailsProvider: MailsProvider;
-let jobsProvider: JobsProvider | null = null;
-let reposProvider: ReposProvider | null = null;
+let plotsProvider: InstanceType<typeof PlotsProvider>;
+let mailsProvider: InstanceType<typeof MailsProvider>;
+let jobsProvider: InstanceType<typeof JobsProvider> | null = null;
+let reposProvider: InstanceType<typeof ReposProvider> | null = null;
 
 function doLogin() {
     // Get current profile settings to respect username and api_root
