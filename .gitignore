@@ -134,3 +134,5 @@ dist
 .js.map
 
 *.vsix
+
+.novem-cache/

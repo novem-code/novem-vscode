@@ -1,7 +1,10 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 
 import { UserConfig } from './config';
 import NovemApi from './novem-api';
+import { CacheWatcher } from './cache-watcher';
 
 export class NovemFSProvider implements vscode.FileSystemProvider {
     private readonly _onDidChangeFile: vscode.EventEmitter<vscode.FileChangeEvent[]> =
@@ -10,13 +13,29 @@ export class NovemFSProvider implements vscode.FileSystemProvider {
         this._onDidChangeFile.event;
 
     private api: NovemApi;
-    constructor(api: NovemApi) {
+    private cacheDir: string | null;
+    private cacheWatcher: CacheWatcher | null;
+
+    constructor(api: NovemApi, cacheDir?: string, cacheWatcher?: CacheWatcher) {
         this.api = api;
+        this.cacheDir = cacheDir || null;
+        this.cacheWatcher = cacheWatcher || null;
+    }
+
+    private writeToCache(uri: vscode.Uri, content: string): void {
+        if (!this.cacheDir) return;
+        const novemPath = `/${uri.authority}${uri.path}`;
+        const localPath = path.join(this.cacheDir, ...novemPath.split('/').filter(Boolean));
+        fs.mkdirSync(path.dirname(localPath), { recursive: true });
+        fs.writeFileSync(localPath, content, 'utf-8');
+        if (this.cacheWatcher) {
+            this.cacheWatcher.updateKnownContent(novemPath, content);
+        }
     }
 
     async readFile(uri: vscode.Uri): Promise<Uint8Array> {
-        // TODO: Let's add some caching here so we don't have to fetch it from the server all the time?
         const content = await this.api.readFile(uri.authority, uri.path);
+        this.writeToCache(uri, content);
         return new TextEncoder().encode(content);
     }
 
@@ -25,7 +44,9 @@ export class NovemFSProvider implements vscode.FileSystemProvider {
         content: Uint8Array,
         options: { create: boolean; overwrite: boolean },
     ): Promise<void> {
-        await this.api.writeFile(uri.authority, uri.path, new TextDecoder().decode(content));
+        const data = new TextDecoder().decode(content);
+        await this.api.writeFile(uri.authority, uri.path, data);
+        this.writeToCache(uri, data);
     }
 
     // Stub implementations for other required methods

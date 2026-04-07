@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import * as https from 'https';
+import * as path from 'path';
+import * as fs from 'fs';
 
 // Import the functions from config.ts
 import { getCurrentConfig, UserProfile, getActiveProfile } from './config';
@@ -16,6 +18,7 @@ import { setupCommands } from './commands';
 import { NovemFSProvider } from './vfs';
 import NovemApi from './novem-api';
 import { createNovemBrowser } from './browser';
+import { CacheWatcher } from './cache-watcher';
 
 let plotsProvider: InstanceType<typeof PlotsProvider>;
 let mailsProvider: InstanceType<typeof MailsProvider>;
@@ -81,18 +84,111 @@ export async function activate(context: vscode.ExtensionContext) {
 
     setupCommands(context, novemApi);
 
-    const fsProvider = new NovemFSProvider(novemApi);
+    // Set up local file cache so external tools (Claude Code, grep) can access novem files
+    const cacheDir = path.join(context.globalStorageUri.fsPath, 'novem-cache');
+    try {
+        fs.mkdirSync(cacheDir, { recursive: true });
+    } catch (error) {
+        console.error('Failed to create novem cache directory:', error);
+    }
+
+    const cacheWatcher = new CacheWatcher(cacheDir, async (novemPath, newContent) => {
+        const shortPath = novemPath.replace(/^\//, '');
+        const choice = await vscode.window.showInformationMessage(
+            `"${shortPath}" was modified locally. Push changes to novem?`,
+            'Push',
+            'Diff',
+            'Ignore',
+        );
+
+        if (choice === 'Push') {
+            try {
+                // Parse the novemPath to extract visType and subpath
+                // Path format: /visType/visId/rest/of/path
+                const parts = novemPath.split('/').filter(Boolean);
+                const visType = parts[0];
+                const subPath = '/' + parts.slice(1).join('/');
+                await novemApi.writeFile(visType, subPath, newContent);
+                cacheWatcher.updateKnownContent(novemPath, newContent);
+                vscode.window.showInformationMessage(`Pushed ${shortPath} to novem`);
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to push ${shortPath}: ${error}`);
+            }
+        } else if (choice === 'Diff') {
+            const cacheUri = vscode.Uri.file(
+                path.join(cacheDir, ...novemPath.split('/').filter(Boolean)),
+            );
+            const parts = novemPath.split('/').filter(Boolean);
+            const visType = parts[0];
+            const subPath = '/' + parts.slice(1).join('/');
+            const novemUri = vscode.Uri.from({
+                scheme: 'novem',
+                authority: visType,
+                path: subPath,
+            });
+            vscode.commands.executeCommand(
+                'vscode.diff',
+                novemUri,
+                cacheUri,
+                `novem: ${shortPath} ↔ local`,
+            );
+        } else {
+            // Ignore — revert cache to current API version
+            try {
+                const parts = novemPath.split('/').filter(Boolean);
+                const visType = parts[0];
+                const subPath = '/' + parts.slice(1).join('/');
+                const apiContent = await novemApi.readFile(visType, subPath);
+                if (apiContent !== undefined) {
+                    const localPath = path.join(cacheDir, ...novemPath.split('/').filter(Boolean));
+                    fs.writeFileSync(localPath, apiContent, 'utf-8');
+                    cacheWatcher.updateKnownContent(novemPath, apiContent);
+                }
+            } catch {
+                // best effort revert
+            }
+        }
+    });
+
+    cacheWatcher.start();
+    context.subscriptions.push(new vscode.Disposable(() => cacheWatcher.stop()));
+
+    const fsProvider = new NovemFSProvider(novemApi, cacheDir, cacheWatcher);
     const fsRegistration = vscode.workspace.registerFileSystemProvider('novem', fsProvider, {
         isCaseSensitive: true,
     });
 
     context.subscriptions.push(fsRegistration);
 
+    // Track which local cached files map to novem paths
+    const cachedFileToNovemPath = new Map<string, string>();
+
     context.subscriptions.push(
         vscode.commands.registerCommand(
             'novem.openFile',
             async (uri: vscode.Uri, type: string, languageId?: string) => {
-                let doc = await vscode.workspace.openTextDocument(uri);
+                // Fetch content from API and write to cache
+                const novemPath = `/${uri.authority}${uri.path}`;
+                try {
+                    const content = await novemApi.readFile(uri.authority, uri.path);
+                    if (content !== undefined) {
+                        const localPath = path.join(
+                            cacheDir,
+                            ...novemPath.split('/').filter(Boolean),
+                        );
+                        fs.mkdirSync(path.dirname(localPath), { recursive: true });
+                        fs.writeFileSync(localPath, content, 'utf-8');
+                        cacheWatcher.updateKnownContent(novemPath, content);
+                        cachedFileToNovemPath.set(localPath, novemPath);
+                    }
+                } catch (error) {
+                    console.error(`Failed to cache ${novemPath}:`, error);
+                }
+
+                // Open the cached local file
+                const localPath = path.join(cacheDir, ...novemPath.split('/').filter(Boolean));
+                const fileUri = vscode.Uri.file(localPath);
+                let doc = await vscode.workspace.openTextDocument(fileUri);
 
                 // If a languageId is provided, set the language for the document
                 if (languageId) {
@@ -102,6 +198,28 @@ export async function activate(context: vscode.ExtensionContext) {
                 vscode.window.showTextDocument(doc);
             },
         ),
+    );
+
+    // Intercept saves on cached files and push to novem API
+    context.subscriptions.push(
+        vscode.workspace.onDidSaveTextDocument(async doc => {
+            const filePath = doc.uri.fsPath;
+            const novemPath = cachedFileToNovemPath.get(filePath);
+            if (!novemPath) return;
+
+            try {
+                const content = doc.getText();
+                const parts = novemPath.split('/').filter(Boolean);
+                const visType = parts[0];
+                const subPath = '/' + parts.slice(1).join('/');
+                await novemApi.writeFile(visType, subPath, content);
+                if (cacheWatcher) {
+                    cacheWatcher.updateKnownContent(novemPath, content);
+                }
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to push ${novemPath} to novem: ${error}`);
+            }
+        }),
     );
 
     plotsProvider = new PlotsProvider(novemApi, context);
