@@ -291,6 +291,10 @@ export class NovemCache {
         }
     }
 
+    // Directories to skip during recursive caching (e.g. "files" generates
+    // PNGs/PDFs on access which is expensive and unnecessary for local caching)
+    private static readonly SKIP_DIRS = new Set(['files']);
+
     // ── Private: resource fetching ─────────────────────────────────────
 
     private async fetchResourceDirectory(
@@ -335,6 +339,7 @@ export class NovemCache {
             const entryPath = dirPath ? `${dirPath}/${entry.name}` : entry.name;
 
             if (entry.type === 'dir') {
+                if (NovemCache.SKIP_DIRS.has(entry.name)) continue;
                 await this.fetchResourceDirectory(visType, resourceId, entryPath);
             } else if (entry.type === 'file') {
                 const novemPath = `/${visType}/${resourceId}/${entryPath}`;
