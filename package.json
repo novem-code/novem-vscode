@@ -415,9 +415,8 @@
         "build": "npm run build:spa:prod && npm run compile",
         "format": "prettier --write \"src/**/*.ts\" \"novem_web_view/**/*.{ts,tsx,css}\"",
         "format:check": "prettier --check \"src/**/*.ts\" \"novem_web_view/**/*.{ts,tsx,css}\"",
-        "pretest": "npm run compile && npm run lint",
         "lint": "eslint src --ext ts && npm run format:check",
-        "test": "node ./out/src/test/runTest.js"
+        "test": "npm run compile && npm run lint && node ./out/src/test/runTest.js"
     },
     "devDependencies": {
         "@types/d3-selection": "^3.0.7",
