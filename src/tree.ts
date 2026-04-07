@@ -18,8 +18,20 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
     readonly onDidChangeTreeData: vscode.Event<MyTreeItem | undefined | null | void> =
         this._onDidChangeTreeData.event;
 
+    private statusMessage: string | null = null;
+
     refresh(): void {
         console.log(`Refreshing ${this.getType()} provider`);
+        this._onDidChangeTreeData.fire();
+    }
+
+    setStatus(message: string): void {
+        this.statusMessage = message;
+        this._onDidChangeTreeData.fire();
+    }
+
+    clearStatus(): void {
+        this.statusMessage = null;
         this._onDidChangeTreeData.fire();
     }
 
@@ -40,7 +52,15 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
                 console.log(`Fetching root items for ${this.getType()}`);
                 const response = await this.getRootItems(profile.user_info.username!);
 
-                return (Array.isArray(response) ? response : [])
+                const items: vscode.TreeItem[] = [];
+
+                if (this.statusMessage) {
+                    const statusItem = new vscode.TreeItem(this.statusMessage);
+                    statusItem.iconPath = new vscode.ThemeIcon('loading~spin');
+                    items.push(statusItem);
+                }
+
+                const rootItems = (Array.isArray(response) ? response : [])
                     .sort((a: any, b: any) => {
                         const aId = a.id || a.name;
                         const bId = b.id || b.name;
@@ -58,6 +78,9 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
                                 each.type || (this.getType() === 'jobs' ? 'job' : 'repo'),
                             ),
                     );
+
+                items.push(...rootItems);
+                return items;
             } catch (error) {
                 console.error(`Error loading ${this.getType()}:`, error);
                 return [new vscode.TreeItem(`Error loading ${this.getType()}`)];

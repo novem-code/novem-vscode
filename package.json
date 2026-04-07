@@ -405,7 +405,29 @@
                     "when": "!novem.loggedIn"
                 }
             ]
-        }
+        },
+        "viewsWelcome": [
+            {
+                "view": "novem-plots",
+                "contents": "No plots found.\n[Create Your First Plot](command:novem.createNovemPlot)",
+                "when": "novem.loggedIn"
+            },
+            {
+                "view": "novem-mails",
+                "contents": "No e-mails found.\n[Create Your First E-Mail](command:novem.createNovemMail)",
+                "when": "novem.loggedIn"
+            },
+            {
+                "view": "novem-jobs",
+                "contents": "No jobs found.\n[Create Your First Job](command:novem.createNovemJob)",
+                "when": "novem.loggedIn"
+            },
+            {
+                "view": "novem-repos",
+                "contents": "No repos found.\n[Create Your First Repo](command:novem.createNovemRepo)",
+                "when": "novem.loggedIn"
+            }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "npm run build:spa:prod && npm run compile",

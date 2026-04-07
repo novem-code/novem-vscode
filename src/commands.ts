@@ -417,36 +417,64 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
             if (!plotId) return;
 
-            let type = await vscode.window.showInputBox({
-                prompt: 'Please specify the type of plot to create:',
-                placeHolder: 'bar',
-                validateInput: (inputValue: string) => {
-                    if (!/^[a-z]+$/.test(inputValue)) {
-                        return 'Only lowercase ASCII characters are allowed!';
-                    }
-                    return undefined;
-                },
+            const plotTypes = [
+                { label: 'custom', description: 'Custom visualization' },
+                { label: 'bar', description: 'Bar chart' },
+                { label: 'sbar', description: 'Stacked bar chart' },
+                { label: 'gbar', description: 'Grouped bar chart' },
+                { label: 'pie', description: 'Pie chart' },
+                { label: 'line', description: 'Line chart' },
+                { label: 'mtable', description: '' },
+            ];
+
+            const selected = await vscode.window.showQuickPick(plotTypes, {
+                placeHolder: 'Select the type of plot to create',
             });
 
-            if (!type) type = 'bar';
+            const type = selected?.label || 'bar';
+            if (!selected) return;
 
-            let url = `${conf.api_root}vis/plots/${plotId}`;
-            //console.log(`Create plot: "${plotId}"`);
+            plotsProvider.setStatus(`Creating "${plotId}"...`);
+
             try {
                 await api.createPlot(plotId);
             } catch (error) {
                 console.log('error', error);
+                plotsProvider.clearStatus();
                 vscode.window.showErrorMessage(`Failed to create new plot ${plotId}`);
                 return;
             }
 
             await api.modifyPlot(plotId, '/config/type', type);
-            //item.parent.refresh();
 
+            plotsProvider.clearStatus();
             plotsProvider.refresh();
 
             vscode.window.showInformationMessage(`New plot ${plotId} created`);
-            // let's refresh our plot treeview
+
+            // Auto-open key files for custom plots
+            if (type === 'custom') {
+                vscode.commands.executeCommand(
+                    'novem.openFile',
+                    vscode.Uri.from({
+                        scheme: 'novem',
+                        authority: 'plots',
+                        path: `/${plotId}/config/custom/custom.js`,
+                    }),
+                    'file',
+                    'javascript',
+                );
+                vscode.commands.executeCommand(
+                    'novem.openFile',
+                    vscode.Uri.from({
+                        scheme: 'novem',
+                        authority: 'plots',
+                        path: `/${plotId}/data`,
+                    }),
+                    'file',
+                    'json',
+                );
+            }
         }),
     );
 
