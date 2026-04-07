@@ -66,6 +66,18 @@ import { createNovemBrowser } from './browser';
 import { mailsProvider, plotsProvider, jobsProvider, reposProvider } from './extension';
 import NovemApi from './novem-api';
 
+async function closeEditorsForItem(visType: string, itemName: string): Promise<void> {
+    const prefix = `novem://${visType}/${itemName}`;
+    for (const group of vscode.window.tabGroups.all) {
+        for (const tab of group.tabs) {
+            const uri = (tab.input as any)?.uri as vscode.Uri | undefined;
+            if (uri && uri.toString().startsWith(prefix)) {
+                await vscode.window.tabGroups.close(tab);
+            }
+        }
+    }
+}
+
 async function promptForId(
     prompt: string,
     placeholder: string,
@@ -452,28 +464,28 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
             vscode.window.showInformationMessage(`New plot ${plotId} created`);
 
-            // Auto-open key files for custom plots
+            // Auto-open key files for custom plots (best-effort — files may not exist yet)
             if (type === 'custom') {
-                vscode.commands.executeCommand(
-                    'novem.openFile',
-                    vscode.Uri.from({
-                        scheme: 'novem',
-                        authority: 'plots',
-                        path: `/${plotId}/config/custom/custom.js`,
-                    }),
-                    'file',
-                    'javascript',
-                );
-                vscode.commands.executeCommand(
-                    'novem.openFile',
-                    vscode.Uri.from({
-                        scheme: 'novem',
-                        authority: 'plots',
-                        path: `/${plotId}/data`,
-                    }),
-                    'file',
-                    'json',
-                );
+                const filesToOpen = [
+                    { path: `/${plotId}/config/custom/custom.js`, lang: 'javascript' },
+                    { path: `/${plotId}/data`, lang: 'json' },
+                ];
+                for (const file of filesToOpen) {
+                    try {
+                        await vscode.commands.executeCommand(
+                            'novem.openFile',
+                            vscode.Uri.from({
+                                scheme: 'novem',
+                                authority: 'plots',
+                                path: file.path,
+                            }),
+                            'file',
+                            file.lang,
+                        );
+                    } catch {
+                        // File may not exist yet — skip silently
+                    }
+                }
             }
         }),
     );
@@ -482,6 +494,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
         vscode.commands.registerCommand('novem.deleteNovemPlot', async (item: MyTreeItem) => {
             if (!(await confirmDeletion(item.name, 'visualisation'))) return;
             await api.deletePlot(item.name);
+            await closeEditorsForItem('plots', item.name);
             vscode.window.showWarningMessage(`Deleted "${item.name}"`);
             item.parent.refresh();
         }),
@@ -529,6 +542,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
         vscode.commands.registerCommand('novem.deleteNovemJob', async (item: MyTreeItem) => {
             if (!(await confirmDeletion(item.name, 'job'))) return;
             await api.deleteJob(item.name);
+            await closeEditorsForItem('jobs', item.name);
             vscode.window.showWarningMessage(`Deleted "${item.name}"`);
             item.parent.refresh();
         }),
@@ -570,6 +584,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
         vscode.commands.registerCommand('novem.deleteNovemRepo', async (item: MyTreeItem) => {
             if (!(await confirmDeletion(item.name, 'repo'))) return;
             await api.deleteRepo(item.name);
+            await closeEditorsForItem('repos', item.name);
             vscode.window.showWarningMessage(`Deleted "${item.name}"`);
             item.parent.refresh();
         }),

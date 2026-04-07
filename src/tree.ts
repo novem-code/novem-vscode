@@ -19,6 +19,7 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
         this._onDidChangeTreeData.event;
 
     private statusMessage: string | null = null;
+    private hasLoaded = false;
 
     refresh(): void {
         console.log(`Refreshing ${this.getType()} provider`);
@@ -35,6 +36,18 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
         this._onDidChangeTreeData.fire();
     }
 
+    private loadInitial(username: string): void {
+        this.getRootItems(username)
+            .then(() => {
+                this.hasLoaded = true;
+                this._onDidChangeTreeData.fire();
+            })
+            .catch(() => {
+                this.hasLoaded = true;
+                this._onDidChangeTreeData.fire();
+            });
+    }
+
     async getTreeItem(element: vscode.TreeItem): Promise<vscode.TreeItem> {
         return element;
     }
@@ -44,10 +57,26 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
     abstract getRootItems(username: string): Promise<any[]>;
     abstract getChildItems(visId: string, path?: string): Promise<any[]>;
 
+    private static readonly CREATE_COMMANDS: Record<string, { command: string; label: string }> = {
+        plots: { command: 'novem.createNovemPlot', label: 'Create New Plot...' },
+        mails: { command: 'novem.createNovemMail', label: 'Create New Mail...' },
+        jobs: { command: 'novem.createNovemJob', label: 'Create New Job...' },
+        repos: { command: 'novem.createNovemRepo', label: 'Create New Repo...' },
+    };
+
     async getChildren(element?: MyTreeItem): Promise<vscode.TreeItem[]> {
         const profile = this.context.globalState.get('userProfile') as UserProfile;
 
         if (!element) {
+            // Show a loading spinner before the first load completes
+            // (prevents viewsWelcome from flashing during data fetch)
+            if (!this.hasLoaded) {
+                this.loadInitial(profile.user_info.username!);
+                const loadingItem = new vscode.TreeItem('Loading...');
+                loadingItem.iconPath = new vscode.ThemeIcon('loading~spin');
+                return [loadingItem];
+            }
+
             try {
                 console.log(`Fetching root items for ${this.getType()}`);
                 const response = await this.getRootItems(profile.user_info.username!);
@@ -80,6 +109,22 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
                     );
 
                 items.push(...rootItems);
+
+                // Add a "Create New..." button at the bottom (only when there are items;
+                // empty views use viewsWelcome instead)
+                if (rootItems.length > 0) {
+                    const createInfo = BaseNovemProvider.CREATE_COMMANDS[this.getType()];
+                    if (createInfo) {
+                        const createItem = new vscode.TreeItem(createInfo.label);
+                        createItem.iconPath = new vscode.ThemeIcon('add');
+                        createItem.command = {
+                            command: createInfo.command,
+                            title: createInfo.label,
+                        };
+                        items.push(createItem);
+                    }
+                }
+
                 return items;
             } catch (error) {
                 console.error(`Error loading ${this.getType()}:`, error);
