@@ -1,5 +1,18 @@
 import { UserProfile } from './config';
 
+// Maps each visType to its API path prefix.
+// Add new types here to extend support without touching call sites.
+export const VIS_TYPE_PREFIX: Record<string, string> = {
+    plots: '/vis/plots',
+    mails: '/vis/mails',
+    jobs: '/code/jobs',
+    repos: '/code/repos',
+};
+
+export function visTypePath(visType: string): string {
+    return VIS_TYPE_PREFIX[visType] ?? `/vis/${visType}`;
+}
+
 export default class NovemApi {
     private token: string;
     private apiRoot: string;
@@ -181,38 +194,21 @@ export default class NovemApi {
     }
 
     async readFile(path: string) {
-        //console.log('reading file', path);
         try {
-            // Don't use Accept: application/json for file content
-            // Jobs and repos are under /code/, not under /vis/
-            if (path.startsWith('/code/jobs/') || path.startsWith('/code/repos/')) {
-                return await this.get(`${this.apiRoot}${path}`, false);
-            }
-            return await this.get(`${this.apiRoot}/vis/${path.slice(1)}`, false);
+            return await this.get(`${this.apiRoot}${path}`, false);
         } catch (e) {
             console.error('Error fetching data', e);
         }
     }
 
     async writeFile(path: string, content: string) {
-        //console.log('writing file', path, content);
         try {
-            // Determine content type based on path
-            let contentType = 'text/plain';
-
             // Job data files should be sent as application/json
-            if (path.match(/^\/code\/jobs\/[^/]+\/data$/)) {
-                contentType = 'application/json';
-            }
-
-            // Jobs and repos are under /code/, not under /vis/
-            if (path.startsWith('/code/jobs/') || path.startsWith('/code/repos/')) {
-                return await this.post(`${this.apiRoot}${path}`, content, {
-                    'Content-Type': contentType,
-                });
-            }
-            return await this.post(`${this.apiRoot}/vis/${path.slice(1)}`, content, {
-                'Content-Type': 'text/plain', // Set content type as text/plain
+            const contentType = path.match(/^\/code\/jobs\/[^/]+\/data$/)
+                ? 'application/json'
+                : 'text/plain';
+            return await this.post(`${this.apiRoot}${path}`, content, {
+                'Content-Type': contentType,
             });
         } catch (e) {
             console.error('Error posting data', e);
@@ -220,13 +216,8 @@ export default class NovemApi {
     }
 
     async createNodeInDirectory(path: string) {
-        //console.log('creating node in directory', path);
         try {
-            // Jobs and repos are under /code/, not under /vis/
-            if (path.startsWith('/code/jobs/') || path.startsWith('/code/repos/')) {
-                return await this.put(`${this.apiRoot}${path}`, null);
-            }
-            return await this.put(`${this.apiRoot}/vis/${path.slice(1)}`, null);
+            return await this.put(`${this.apiRoot}${path}`, null);
         } catch (e) {
             console.error('Error creating node', e);
             throw e;
@@ -234,13 +225,8 @@ export default class NovemApi {
     }
 
     async deleteNode(path: string) {
-        //console.log('deleting node', path);
         try {
-            // Jobs and repos are under /code/, not under /vis/
-            if (path.startsWith('/code/jobs/') || path.startsWith('/code/repos/')) {
-                return await this.delete(`${this.apiRoot}${path}`);
-            }
-            return await this.delete(`${this.apiRoot}/vis/${path.slice(1)}`);
+            return await this.delete(`${this.apiRoot}${path}`);
         } catch (e) {
             console.error('Error deleting node', e);
             throw e;

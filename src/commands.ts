@@ -52,6 +52,7 @@ Context menu Mail:
 import * as vscode from 'vscode';
 
 import { BaseNovemProvider, MyTreeItem } from './tree';
+import { visTypePath } from './novem-api';
 import {
     UserConfig,
     UserProfile,
@@ -741,12 +742,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             if (!nodeName) return;
 
             // Construct the full path for the new node
-            const fullPath =
-                item.visType === 'jobs'
-                    ? `/code/jobs${item.path}/${nodeName}`
-                    : item.visType === 'repos'
-                      ? `/code/repos${item.path}/${nodeName}`
-                      : `/${item.visType}${item.path}/${nodeName}`;
+            const fullPath = `${visTypePath(item.visType)}${item.path}/${nodeName}`;
 
             try {
                 await api.createNodeInDirectory(fullPath);
@@ -783,12 +779,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             }
 
             // Construct the full path for the node to delete
-            const fullPath =
-                item.visType === 'jobs'
-                    ? `/code/jobs${item.path}`
-                    : item.visType === 'repos'
-                      ? `/code/repos${item.path}`
-                      : `/${item.visType}${item.path}`;
+            const fullPath = `${visTypePath(item.visType)}${item.path}`;
 
             try {
                 await api.deleteNode(fullPath);
