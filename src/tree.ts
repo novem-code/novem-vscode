@@ -241,21 +241,18 @@ export class MyTreeItem extends vscode.TreeItem {
                 this.contextValue = 'file-deletable';
             }
         } else if (type === 'dir') {
-            if (depth === 0 && this.visType === 'plots') {
-                this.iconPath = this.createColoredIcon(typeToIcon(iconType), permissions);
-                this.contextValue = 'plot-top';
-            }
-            if (depth === 0 && this.visType === 'mails') {
-                this.iconPath = this.createColoredIcon('mail', permissions);
-                this.contextValue = 'mail-top';
-            }
-            if (depth === 0 && this.visType === 'jobs') {
-                this.iconPath = this.createColoredIcon('run', permissions);
-                this.contextValue = 'job-top';
-            }
-            if (depth === 0 && this.visType === 'repos') {
-                this.iconPath = this.createColoredIcon('repo', permissions);
-                this.contextValue = 'repo-top';
+            // Fixed icons per type; plots falls back to typeToIcon() since icon
+            // varies by plot kind (bar, line, etc.)
+            const VIS_TOP: Record<string, { icon: string; contextValue: string }> = {
+                plots: { icon: '', contextValue: 'plot-top' },
+                mails: { icon: 'mail', contextValue: 'mail-top' },
+                jobs: { icon: 'run', contextValue: 'job-top' },
+                repos: { icon: 'repo', contextValue: 'repo-top' },
+            };
+            if (depth === 0 && this.visType in VIS_TOP) {
+                const { icon, contextValue } = VIS_TOP[this.visType];
+                this.iconPath = this.createColoredIcon(icon || typeToIcon(iconType), permissions);
+                this.contextValue = contextValue;
             }
 
             if (depth > 0) {
