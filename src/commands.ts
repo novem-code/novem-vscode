@@ -66,6 +66,42 @@ import { createNovemBrowser } from './browser';
 import { mailsProvider, plotsProvider, jobsProvider, reposProvider } from './extension';
 import NovemApi from './novem-api';
 
+async function openCustomPlotFiles(plotName: string): Promise<void> {
+    const filesToOpen = [
+        { path: `/${plotName}/config/custom/custom.js`, lang: 'javascript' },
+        { path: `/${plotName}/config/custom/custom.css`, lang: 'css' },
+        { path: `/${plotName}/data`, lang: 'plaintext' },
+    ];
+    for (const file of filesToOpen) {
+        try {
+            await vscode.commands.executeCommand(
+                'novem.openFile',
+                vscode.Uri.from({
+                    scheme: 'novem',
+                    authority: 'plots',
+                    path: file.path,
+                }),
+                'file',
+                file.lang,
+            );
+        } catch {
+            // File may not exist — skip silently
+        }
+    }
+}
+
+async function closeEditorsForItem(visType: string, itemName: string): Promise<void> {
+    const prefix = `novem://${visType}/${itemName}`;
+    for (const group of vscode.window.tabGroups.all) {
+        for (const tab of group.tabs) {
+            const uri = (tab.input as any)?.uri as vscode.Uri | undefined;
+            if (uri && uri.toString().startsWith(prefix)) {
+                await vscode.window.tabGroups.close(tab);
+            }
+        }
+    }
+}
+
 async function promptForId(
     prompt: string,
     placeholder: string,
@@ -417,36 +453,58 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
             if (!plotId) return;
 
-            let type = await vscode.window.showInputBox({
-                prompt: 'Please specify the type of plot to create:',
-                placeHolder: 'bar',
-                validateInput: (inputValue: string) => {
-                    if (!/^[a-z]+$/.test(inputValue)) {
-                        return 'Only lowercase ASCII characters are allowed!';
+            const plotTypes = [
+                { label: 'custom', description: 'Custom visualization' },
+                { label: 'bar', description: 'Bar chart' },
+                { label: 'sbar', description: 'Stacked bar chart' },
+                { label: 'gbar', description: 'Grouped bar chart' },
+                { label: 'line', description: 'Line chart' },
+            ];
+
+            const type = await new Promise<string | undefined>(resolve => {
+                const picker = vscode.window.createQuickPick();
+                picker.items = plotTypes;
+                picker.placeholder = 'Select or type a plot type';
+                let accepted = false;
+                picker.onDidAccept(() => {
+                    accepted = true;
+                    const value = picker.selectedItems[0]?.label || picker.value;
+                    picker.hide();
+                    resolve(value || undefined);
+                });
+                picker.onDidHide(() => {
+                    picker.dispose();
+                    if (!accepted) {
+                        resolve(undefined);
                     }
-                    return undefined;
-                },
+                });
+                picker.show();
             });
 
-            if (!type) type = 'bar';
+            if (!type) return;
 
-            let url = `${conf.api_root}vis/plots/${plotId}`;
-            //console.log(`Create plot: "${plotId}"`);
+            plotsProvider.setStatus(`Creating "${plotId}"...`);
+
             try {
                 await api.createPlot(plotId);
             } catch (error) {
                 console.log('error', error);
+                plotsProvider.clearStatus();
                 vscode.window.showErrorMessage(`Failed to create new plot ${plotId}`);
                 return;
             }
 
             await api.modifyPlot(plotId, '/config/type', type);
-            //item.parent.refresh();
 
+            plotsProvider.clearStatus();
             plotsProvider.refresh();
 
             vscode.window.showInformationMessage(`New plot ${plotId} created`);
-            // let's refresh our plot treeview
+
+            // Auto-open key files for custom plots
+            if (type === 'custom') {
+                await openCustomPlotFiles(plotId);
+            }
         }),
     );
 
@@ -454,8 +512,15 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
         vscode.commands.registerCommand('novem.deleteNovemPlot', async (item: MyTreeItem) => {
             if (!(await confirmDeletion(item.name, 'visualisation'))) return;
             await api.deletePlot(item.name);
+            await closeEditorsForItem('plots', item.name);
             vscode.window.showWarningMessage(`Deleted "${item.name}"`);
             item.parent.refresh();
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.editCustomPlot', async (item: MyTreeItem) => {
+            await openCustomPlotFiles(item.name);
         }),
     );
 
@@ -501,6 +566,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
         vscode.commands.registerCommand('novem.deleteNovemJob', async (item: MyTreeItem) => {
             if (!(await confirmDeletion(item.name, 'job'))) return;
             await api.deleteJob(item.name);
+            await closeEditorsForItem('jobs', item.name);
             vscode.window.showWarningMessage(`Deleted "${item.name}"`);
             item.parent.refresh();
         }),
@@ -542,6 +608,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
         vscode.commands.registerCommand('novem.deleteNovemRepo', async (item: MyTreeItem) => {
             if (!(await confirmDeletion(item.name, 'repo'))) return;
             await api.deleteRepo(item.name);
+            await closeEditorsForItem('repos', item.name);
             vscode.window.showWarningMessage(`Deleted "${item.name}"`);
             item.parent.refresh();
         }),

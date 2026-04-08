@@ -18,9 +18,31 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
     readonly onDidChangeTreeData: vscode.Event<MyTreeItem | undefined | null | void> =
         this._onDidChangeTreeData.event;
 
+    private statusMessage: string | null = null;
+    private hasLoaded = false;
+
     refresh(): void {
         console.log(`Refreshing ${this.getType()} provider`);
         this._onDidChangeTreeData.fire();
+    }
+
+    setStatus(message: string): void {
+        this.statusMessage = message;
+        this._onDidChangeTreeData.fire();
+    }
+
+    clearStatus(): void {
+        this.statusMessage = null;
+        this._onDidChangeTreeData.fire();
+    }
+
+    private async loadInitial(username: string): Promise<void> {
+        try {
+            await this.getRootItems(username);
+        } finally {
+            this.hasLoaded = true;
+            this._onDidChangeTreeData.fire();
+        }
     }
 
     async getTreeItem(element: vscode.TreeItem): Promise<vscode.TreeItem> {
@@ -32,15 +54,39 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
     abstract getRootItems(username: string): Promise<any[]>;
     abstract getChildItems(visId: string, path?: string): Promise<any[]>;
 
+    private static readonly CREATE_COMMANDS: Record<string, { command: string; label: string }> = {
+        plots: { command: 'novem.createNovemPlot', label: 'Create New Plot...' },
+        mails: { command: 'novem.createNovemMail', label: 'Create New Mail...' },
+        jobs: { command: 'novem.createNovemJob', label: 'Create New Job...' },
+        repos: { command: 'novem.createNovemRepo', label: 'Create New Repo...' },
+    };
+
     async getChildren(element?: MyTreeItem): Promise<vscode.TreeItem[]> {
         const profile = this.context.globalState.get('userProfile') as UserProfile;
 
         if (!element) {
+            // Show a loading spinner before the first load completes
+            // (prevents viewsWelcome from flashing during data fetch)
+            if (!this.hasLoaded) {
+                this.loadInitial(profile.user_info.username!);
+                const loadingItem = new vscode.TreeItem('Loading...');
+                loadingItem.iconPath = new vscode.ThemeIcon('loading~spin');
+                return [loadingItem];
+            }
+
             try {
                 console.log(`Fetching root items for ${this.getType()}`);
                 const response = await this.getRootItems(profile.user_info.username!);
 
-                return (Array.isArray(response) ? response : [])
+                const items: vscode.TreeItem[] = [];
+
+                if (this.statusMessage) {
+                    const statusItem = new vscode.TreeItem(this.statusMessage);
+                    statusItem.iconPath = new vscode.ThemeIcon('loading~spin');
+                    items.push(statusItem);
+                }
+
+                const rootItems = (Array.isArray(response) ? response : [])
                     .sort((a: any, b: any) => {
                         const aId = a.id || a.name;
                         const bId = b.id || b.name;
@@ -58,6 +104,25 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
                                 each.type || (this.getType() === 'jobs' ? 'job' : 'repo'),
                             ),
                     );
+
+                items.push(...rootItems);
+
+                // Add a "Create New..." button at the bottom (only when there are items;
+                // empty views use viewsWelcome instead)
+                if (rootItems.length > 0) {
+                    const createInfo = BaseNovemProvider.CREATE_COMMANDS[this.getType()];
+                    if (createInfo) {
+                        const createItem = new vscode.TreeItem(createInfo.label);
+                        createItem.iconPath = new vscode.ThemeIcon('add');
+                        createItem.command = {
+                            command: createInfo.command,
+                            title: createInfo.label,
+                        };
+                        items.push(createItem);
+                    }
+                }
+
+                return items;
             } catch (error) {
                 console.error(`Error loading ${this.getType()}:`, error);
                 return [new vscode.TreeItem(`Error loading ${this.getType()}`)];
@@ -232,7 +297,10 @@ export class MyTreeItem extends vscode.TreeItem {
             if (depth === 0 && this.visType in VIS_TOP) {
                 const { icon, contextValue } = VIS_TOP[this.visType];
                 this.iconPath = this.createColoredIcon(icon || typeToIcon(iconType), permissions);
-                this.contextValue = contextValue;
+                this.contextValue =
+                    this.visType === 'plots' && iconType === 'custom'
+                        ? 'plot-top-custom'
+                        : contextValue;
             }
 
             if (depth > 0) {

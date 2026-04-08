@@ -99,7 +99,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     doc = await vscode.languages.setTextDocumentLanguage(doc, languageId);
                 }
 
-                vscode.window.showTextDocument(doc);
+                await vscode.window.showTextDocument(doc, { preview: false });
             },
         ),
     );
