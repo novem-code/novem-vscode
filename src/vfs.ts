@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 
 import { UserConfig } from './config';
 import NovemApi from './novem-api';
+import { NovemCache } from './cache';
 
 export class NovemFSProvider implements vscode.FileSystemProvider {
     private readonly _onDidChangeFile: vscode.EventEmitter<vscode.FileChangeEvent[]> =
@@ -10,13 +11,19 @@ export class NovemFSProvider implements vscode.FileSystemProvider {
         this._onDidChangeFile.event;
 
     private api: NovemApi;
-    constructor(api: NovemApi) {
+    private cache: NovemCache | null;
+
+    constructor(api: NovemApi, cache?: NovemCache) {
         this.api = api;
+        this.cache = cache || null;
     }
 
     async readFile(uri: vscode.Uri): Promise<Uint8Array> {
-        // TODO: Let's add some caching here so we don't have to fetch it from the server all the time?
         const content = await this.api.readFile(uri.authority, uri.path);
+        if (this.cache) {
+            const novemPath = `/${uri.authority}${uri.path}`;
+            this.cache.writeToLocalCache(novemPath, content);
+        }
         return new TextEncoder().encode(content);
     }
 
@@ -25,22 +32,25 @@ export class NovemFSProvider implements vscode.FileSystemProvider {
         content: Uint8Array,
         options: { create: boolean; overwrite: boolean },
     ): Promise<void> {
-        await this.api.writeFile(uri.authority, uri.path, new TextDecoder().decode(content));
+        const data = new TextDecoder().decode(content);
+        await this.api.writeFile(uri.authority, uri.path, data);
+        if (this.cache) {
+            const novemPath = `/${uri.authority}${uri.path}`;
+            this.cache.writeToLocalCache(novemPath, data);
+        }
     }
 
     // Stub implementations for other required methods
     watch(uri: vscode.Uri, options: { recursive: boolean; excludes: string[] }): vscode.Disposable {
-        // For simplicity, we're not handling file watching in this example.
-        // This method is required by the FileSystemProvider interface.
         return new vscode.Disposable(() => {});
     }
 
     stat(uri: vscode.Uri): vscode.FileStat | Thenable<vscode.FileStat> {
         return {
-            type: vscode.FileType.File, // Assuming everything is a file for simplicity
+            type: vscode.FileType.File,
             ctime: Date.now(),
             mtime: Date.now(),
-            size: 0, // Size isn't known without additional server info
+            size: 0,
         };
     }
 
@@ -62,7 +72,6 @@ export class NovemFSProvider implements vscode.FileSystemProvider {
         throw new vscode.FileSystemError('Method not implemented: rename.');
     }
 
-    // Use this method to notify VS Code about file changes
     private notifyFileChange(uri: vscode.Uri, type: vscode.FileChangeType): void {
         this._onDidChangeFile.fire([{ uri, type }]);
     }

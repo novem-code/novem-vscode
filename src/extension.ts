@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as https from 'https';
+import * as path from 'path';
 
 // Import the functions from config.ts
 import { getCurrentConfig, UserProfile, getActiveProfile } from './config';
@@ -16,11 +17,13 @@ import { setupCommands } from './commands';
 import { NovemFSProvider } from './vfs';
 import NovemApi from './novem-api';
 import { createNovemBrowser } from './browser';
+import { NovemCache } from './cache';
 
 let plotsProvider: InstanceType<typeof PlotsProvider>;
 let mailsProvider: InstanceType<typeof MailsProvider>;
 let jobsProvider: InstanceType<typeof JobsProvider> | null = null;
 let reposProvider: InstanceType<typeof ReposProvider> | null = null;
+let novemCache: NovemCache | null = null;
 
 function doLogin() {
     // Get current profile settings to respect username and api_root
@@ -81,7 +84,21 @@ export async function activate(context: vscode.ExtensionContext) {
 
     setupCommands(context, novemApi);
 
-    const fsProvider = new NovemFSProvider(novemApi);
+    // Set up local file cache
+    const cacheDir = path.join(context.globalStorageUri.fsPath, 'novem-cache');
+    novemCache = new NovemCache(cacheDir, novemApi);
+
+    // If the user/profile changed since last activation, clear the entire cache
+    const currentCacheIdentity = `${config.api_root}:${profile.user_info.username}`;
+    const previousCacheIdentity = context.globalState.get<string>('novemCacheIdentity');
+    if (previousCacheIdentity && previousCacheIdentity !== currentCacheIdentity) {
+        novemCache.reset();
+    }
+    context.globalState.update('novemCacheIdentity', currentCacheIdentity);
+
+    novemCache.activate(context);
+
+    const fsProvider = new NovemFSProvider(novemApi, novemCache);
     const fsRegistration = vscode.workspace.registerFileSystemProvider('novem', fsProvider, {
         isCaseSensitive: true,
     });
@@ -92,9 +109,19 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand(
             'novem.openFile',
             async (uri: vscode.Uri, type: string, languageId?: string) => {
-                let doc = await vscode.workspace.openTextDocument(uri);
+                if (!novemCache) return;
 
-                // If a languageId is provided, set the language for the document
+                // Cache the entire resource directory on first access
+                await novemCache.ensureResourceCached(uri.authority, uri.path.split('/')[1]);
+
+                // Fetch the specific file (may be newer than directory cache)
+                await novemCache.cacheFile(uri.authority, uri.path);
+
+                // Open the cached local file
+                const localPath = novemCache.getLocalPath(uri.authority, uri.path);
+                const fileUri = vscode.Uri.file(localPath);
+                let doc = await vscode.workspace.openTextDocument(fileUri);
+
                 if (languageId) {
                     doc = await vscode.languages.setTextDocumentLanguage(doc, languageId);
                 }
@@ -102,6 +129,14 @@ export async function activate(context: vscode.ExtensionContext) {
                 await vscode.window.showTextDocument(doc, { preview: false });
             },
         ),
+    );
+
+    // Intercept saves on cached files and push to novem API
+    context.subscriptions.push(
+        vscode.workspace.onDidSaveTextDocument(async doc => {
+            if (!novemCache) return;
+            await novemCache.pushFile(doc.uri.fsPath, doc.getText());
+        }),
     );
 
     plotsProvider = new PlotsProvider(novemApi, context);
@@ -158,4 +193,4 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() {}
 
 // Export them if needed
-export { plotsProvider, mailsProvider, jobsProvider, reposProvider };
+export { plotsProvider, mailsProvider, jobsProvider, reposProvider, novemCache };

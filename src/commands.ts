@@ -63,7 +63,7 @@ import {
 } from './config';
 import { createNovemBrowser } from './browser';
 
-import { mailsProvider, plotsProvider, jobsProvider, reposProvider } from './extension';
+import { mailsProvider, plotsProvider, jobsProvider, reposProvider, novemCache } from './extension';
 import NovemApi from './novem-api';
 
 async function openCustomPlotFiles(plotName: string): Promise<void> {
@@ -526,12 +526,14 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemPlots', async () => {
+            novemCache?.invalidateAndRefresh('plots');
             plotsProvider.refresh();
         }),
     );
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemMails', async () => {
+            novemCache?.invalidateAndRefresh('mails');
             mailsProvider.refresh();
         }),
     );
@@ -574,6 +576,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemJobs', async () => {
+            novemCache?.invalidateAndRefresh('jobs');
             jobsProvider?.refresh();
         }),
     );
@@ -616,6 +619,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemRepos', async () => {
+            novemCache?.invalidateAndRefresh('repos');
             reposProvider?.refresh();
         }),
     );
