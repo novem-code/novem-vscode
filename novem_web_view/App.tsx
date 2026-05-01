@@ -25,6 +25,13 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
 
     useEffect(() => {
         enforceStyles();
+
+        const observer = new MutationObserver(() => enforceStyles());
+        observer.observe(document.body, {
+            attributes: true,
+            attributeFilter: ['class'],
+        });
+        return () => observer.disconnect();
     }, []);
 
     useEffect(() => {
