@@ -1,7 +1,11 @@
 export const enforceStyles = () => {
     const isDark = document.body.classList.contains('vscode-dark');
 
-    // localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    if (isDark) {
+        document.documentElement.setAttribute('data-dark-mode', '');
+    } else {
+        document.documentElement.removeAttribute('data-dark-mode');
+    }
 
     const iframes = document.getElementsByTagName('iframe');
     for (const iframe of iframes) {
