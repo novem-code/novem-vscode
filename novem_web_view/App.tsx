@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 
-import { NovemLogin, NovemViewMail, NovemViewPlot, NovemViewProfile } from './components';
+import { NovemViewMail, NovemViewPlot, NovemViewProfile } from './components';
 
 import { enforceStyles } from './utils';
 import { ViewData, FetchedData, VscodeApi } from './types';
@@ -89,7 +89,6 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
 
     return (
         <Routes>
-            <Route path="/login" element={<NovemLogin vsapi={props.vsapi} viewData={viewData} />} />
             <Route
                 path="/plots"
                 element={

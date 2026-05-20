@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { writeConfig } from './config';
 
 function getWebviewContent(webview: vscode.Webview, extensionPath: string) {
     // Path to the compiled SPA
@@ -38,7 +37,6 @@ export function createNovemBrowser(
     token?: string,
     apiRoot?: string,
     username?: string,
-    profileName?: string,
 ) {
     const panel = vscode.window.createWebviewPanel(shortname, visId, vscode.ViewColumn.One, {
         enableScripts: true,
@@ -54,7 +52,7 @@ export function createNovemBrowser(
 
     console.log('ready');
 
-    panel.webview.onDidReceiveMessage(async message => {
+    panel.webview.onDidReceiveMessage(message => {
         if (message.command === 'contentReady') {
             // Now that the content is ready, send the navigation message
             panel.webview.postMessage({
@@ -67,24 +65,6 @@ export function createNovemBrowser(
                 apiRoot: apiRoot,
                 username: username,
             });
-        }
-
-        if (message.command === 'signinSuccessful') {
-            console.log('signinSuccessful', message);
-            try {
-                await writeConfig({
-                    username: message.username,
-                    token: message.token,
-                    token_name: message.token_name,
-                    api_root: message.api_root,
-                    profile: profileName || message.username,
-                });
-                console.log('Config written successfully, reloading window...');
-                vscode.commands.executeCommand('workbench.action.reloadWindow');
-            } catch (error) {
-                console.error('Failed to write config:', error);
-                vscode.window.showErrorMessage(`Failed to save login: ${error}`);
-            }
         }
     });
 }

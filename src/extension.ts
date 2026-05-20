@@ -12,12 +12,12 @@ import {
     NovemDummyProvider,
 } from './tree';
 
-import { setupCommands } from './commands';
+import { setupCommands, setupAuthCommands } from './commands';
 
 import { NovemFSProvider } from './vfs';
 import NovemApi from './novem-api';
-import { createNovemBrowser } from './browser';
 import { NovemCache } from './cache';
+import { NovemUriHandler } from './oauth';
 
 let plotsProvider: InstanceType<typeof PlotsProvider>;
 let mailsProvider: InstanceType<typeof MailsProvider>;
@@ -25,33 +25,23 @@ let jobsProvider: InstanceType<typeof JobsProvider> | null = null;
 let reposProvider: InstanceType<typeof ReposProvider> | null = null;
 let novemCache: NovemCache | null = null;
 
-function doLogin() {
-    // Get current profile settings to respect username and api_root
-    const currentConfig = getCurrentConfig();
-    const activeProfile = getActiveProfile();
-
-    // Use current profile's api_root, or fall back to default
-    const apiRoot = currentConfig?.api_root || 'https://api.novem.io/v1/';
-
-    createNovemBrowser(
-        'login',
-        '',
-        '',
-        '/login',
-        '',
-        apiRoot,
-        currentConfig?.username || undefined,
-        activeProfile || undefined,
+function showLoggedOut(context: vscode.ExtensionContext) {
+    vscode.commands.executeCommand('setContext', 'novem.loggedIn', false);
+    context.subscriptions.push(
+        vscode.window.registerTreeDataProvider('novem-login', new NovemDummyProvider(context)),
     );
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-    // Get our token from the user config
+    // Register the OAuth URI handler and auth commands unconditionally,
+    // so the welcome action and OAuth callback work even without a token.
+    context.subscriptions.push(vscode.window.registerUriHandler(new NovemUriHandler()));
+    setupAuthCommands(context);
+
     const config = getCurrentConfig();
 
     if (!config) {
-        vscode.commands.executeCommand('setContext', 'novem.loggedIn', false);
-        doLogin();
+        showLoggedOut(context);
         return;
     }
 
@@ -67,13 +57,7 @@ export async function activate(context: vscode.ExtensionContext) {
         profile = await novemApi.getProfile();
     } catch (e) {
         // bad token probably
-        vscode.commands.executeCommand('setContext', 'novem.loggedIn', false);
-        doLogin();
-
-        context.subscriptions.push(
-            vscode.window.registerTreeDataProvider('novem-login', new NovemDummyProvider(context)),
-        );
-
+        showLoggedOut(context);
         return;
     }
 

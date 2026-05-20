@@ -441,6 +441,11 @@
                 "view": "novem-repos",
                 "contents": "[$(repo) Create Your First Repo](command:novem.createNovemRepo)",
                 "when": "novem.loggedIn"
+            },
+            {
+                "view": "novem-login",
+                "contents": "You're not signed in to Novem.\n[$(sign-in) Sign in to Novem](command:novem.login?%5Btrue%5D)",
+                "when": "!novem.loggedIn"
             }
         ]
     },

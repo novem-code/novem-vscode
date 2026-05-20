@@ -225,7 +225,7 @@ export class NovemDummyProvider implements vscode.TreeDataProvider<vscode.TreeIt
     }
 
     async getChildren(element?: MyTreeItem): Promise<vscode.TreeItem[]> {
-        return [new vscode.TreeItem('Please log in')];
+        return [];
     }
 }
 
