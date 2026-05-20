@@ -59,9 +59,58 @@ import {
     typeToIcon,
     getAvailableProfiles,
     setActiveProfile,
-    getCurrentConfig,
 } from './config';
 import { createNovemBrowser } from './browser';
+import { startOAuthLogin } from './oauth';
+
+const DEFAULT_API_ROOT = 'https://api.novem.io/v1/';
+
+async function promptApiRoot(): Promise<string | undefined> {
+    const value = await vscode.window.showInputBox({
+        prompt: 'Novem API endpoint',
+        value: DEFAULT_API_ROOT,
+        validateInput: v => (v.trim() ? null : 'API endpoint cannot be empty'),
+    });
+    return value?.trim();
+}
+
+export function setupAuthCommands(context: vscode.ExtensionContext) {
+    context.subscriptions.push(
+        // Always sign in against the canonical novem.io endpoint, regardless
+        // of the current profile's api_root. To sign in elsewhere, use
+        // "Login New Profile".
+        vscode.commands.registerCommand('novem.login', async () => {
+            await startOAuthLogin({ apiRootOverride: DEFAULT_API_ROOT });
+        }),
+        vscode.commands.registerCommand('novem.loginNewProfile', async () => {
+            const profileName = await vscode.window.showInputBox({
+                prompt: 'Profile name (leave blank to use your Novem username)',
+                placeHolder: 'e.g. work, staging, personal',
+            });
+            if (profileName === undefined) return;
+            const apiRoot = await promptApiRoot();
+            if (apiRoot === undefined) return;
+            await startOAuthLogin({
+                profileName: profileName.trim() || undefined,
+                apiRootOverride: apiRoot,
+            });
+        }),
+        vscode.commands.registerCommand('novem.editConfig', async () => {
+            try {
+                const configPath = require('./config').getConfigPath();
+                const configUri = vscode.Uri.file(configPath.config);
+                const document = await vscode.workspace.openTextDocument(configUri);
+                await vscode.window.showTextDocument(document);
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to open config file: ${error}`);
+            }
+        }),
+        vscode.commands.registerCommand('novem.reloadWindow', async () => {
+            vscode.window.showInformationMessage('Reloading Novem extension...');
+            await vscode.commands.executeCommand('workbench.action.reloadWindow');
+        }),
+    );
+}
 
 import { mailsProvider, plotsProvider, jobsProvider, reposProvider, novemCache } from './extension';
 import NovemApi from './novem-api';
@@ -142,7 +191,7 @@ async function confirmDeletion(name: string, noun: string): Promise<boolean> {
 const createViewFunction = (
     context: vscode.ExtensionContext,
     api: NovemApi,
-    type: 'plots' | 'mails' | 'login',
+    type: 'plots' | 'mails',
 ) => {
     const profile = context.globalState.get('userProfile') as UserProfile;
     const conf = context.globalState.get('userConfig') as UserConfig;
@@ -150,11 +199,6 @@ const createViewFunction = (
     const apiRoot = conf?.api_root;
 
     const uname = profile?.user_info?.username;
-
-    if (type === 'login') {
-        return () =>
-            void createNovemBrowser(type, '', '', '/login', '', apiRoot, undefined, undefined);
-    }
 
     return async (item: MyTreeItem) => {
         // Let's grab our profile information
@@ -208,7 +252,7 @@ const createViewFunction = (
             let visId = selectedItem.description;
             let uri = uriMap[visId];
             let sn = snMap[visId];
-            createNovemBrowser(type, visId, sn, uri, token, apiRoot, undefined, undefined);
+            createNovemBrowser(type, visId, sn, uri, token, apiRoot, undefined);
         }
     };
 };
@@ -292,7 +336,7 @@ const createViewForUserFunction = (
             let visId = selectedItem.description;
             let uri = uriMap[visId];
             let sn = snMap[visId];
-            createNovemBrowser(type, visId, sn, uri, token, apiRoot, undefined, undefined);
+            createNovemBrowser(type, visId, sn, uri, token, apiRoot, undefined);
         }
     };
 };
@@ -308,10 +352,6 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
                 }),
         ),
     );
-    context.subscriptions.push(
-        vscode.commands.registerCommand('novem.login', createViewFunction(context, api, 'login')),
-    );
-
     // Profile management commands
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.selectProfile', async () => {
@@ -341,47 +381,6 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             } catch (error) {
                 vscode.window.showErrorMessage(`Failed to switch profile: ${error}`);
             }
-        }),
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('novem.loginNewProfile', () => {
-            // Get current profile settings to respect api_root, but don't pre-fill username for new profile
-            const currentConfig = getCurrentConfig();
-            const apiRoot = currentConfig?.api_root || 'https://api.novem.io/v1/';
-
-            createNovemBrowser(
-                'login',
-                '',
-                '',
-                '/login',
-                '',
-                apiRoot,
-                undefined, // No username for new profile
-                undefined, // No profile name - create new profile based on username
-            );
-        }),
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('novem.editConfig', async () => {
-            try {
-                const configPath = require('./config').getConfigPath();
-                const configUri = vscode.Uri.file(configPath.config);
-
-                // Open the config file in the editor
-                const document = await vscode.workspace.openTextDocument(configUri);
-                await vscode.window.showTextDocument(document);
-            } catch (error) {
-                vscode.window.showErrorMessage(`Failed to open config file: ${error}`);
-            }
-        }),
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('novem.reloadWindow', async () => {
-            vscode.window.showInformationMessage('Reloading Novem extension...');
-            await vscode.commands.executeCommand('workbench.action.reloadWindow');
         }),
     );
 
