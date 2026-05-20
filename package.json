@@ -376,16 +376,13 @@
                     "when": "novem.loggedIn"
                 },
                 {
-                    "command": "novem.loginNewProfile",
-                    "when": "novem.loggedIn"
+                    "command": "novem.loginNewProfile"
                 },
                 {
-                    "command": "novem.editConfig",
-                    "when": "novem.loggedIn"
+                    "command": "novem.editConfig"
                 },
                 {
-                    "command": "novem.reloadWindow",
-                    "when": "novem.loggedIn"
+                    "command": "novem.reloadWindow"
                 }
             ]
         },
@@ -444,8 +441,13 @@
             },
             {
                 "view": "novem-login",
-                "contents": "You're not signed in to Novem.\n[$(sign-in) Sign in to Novem](command:novem.login?%5Btrue%5D)",
-                "when": "!novem.loggedIn"
+                "contents": "$(loading~spin) Loading Novem…",
+                "when": "!novem.activated"
+            },
+            {
+                "view": "novem-login",
+                "contents": "You're not signed in to Novem.\n[$(sign-in) Sign in to Novem](command:novem.login)",
+                "when": "novem.activated && !novem.loggedIn"
             }
         ]
     },

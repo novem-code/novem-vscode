@@ -40,6 +40,16 @@ export async function activate(context: vscode.ExtensionContext) {
 
     const config = getCurrentConfig();
 
+    // Set novem.loggedIn (optimistically, if we have a token) *before*
+    // flipping novem.activated. The welcome view defaults to a loading
+    // spinner until novem.activated is true, so this ordering takes the
+    // user straight from "Loading…" to either the authenticated sidebar or
+    // the "Sign in" prompt — never a flash of "Sign in" first.
+    if (config) {
+        vscode.commands.executeCommand('setContext', 'novem.loggedIn', true);
+    }
+    vscode.commands.executeCommand('setContext', 'novem.activated', true);
+
     if (!config) {
         showLoggedOut(context);
         return;
@@ -60,8 +70,6 @@ export async function activate(context: vscode.ExtensionContext) {
         showLoggedOut(context);
         return;
     }
-
-    vscode.commands.executeCommand('setContext', 'novem.loggedIn', true);
     // Store user information
     context.globalState.update('userConfig', config);
     context.globalState.update('userProfile', profile);
