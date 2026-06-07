@@ -315,6 +315,25 @@ export class MyTreeItem extends vscode.TreeItem {
                     this.visType === 'plots' && iconType === 'custom'
                         ? 'plot-top-custom'
                         : contextValue;
+
+                // Clicking a viewable resource opens its preview (the chevron
+                // still expands to browse files). VSCode tree items can't
+                // distinguish a plain click from a ctrl/cmd+click, so plain
+                // click is wired to View — the resource's primary action.
+                const VIEW_COMMANDS: Record<string, string> = {
+                    plots: 'novem.viewNovemPlot',
+                    mails: 'novem.viewNovemMail',
+                    grids: 'novem.viewNovemGrid',
+                    docs: 'novem.viewNovemDoc',
+                };
+                const viewCommand = VIEW_COMMANDS[this.visType];
+                if (viewCommand) {
+                    this.command = {
+                        command: viewCommand,
+                        title: 'View',
+                        arguments: [this],
+                    };
+                }
             }
 
             if (depth > 0) {

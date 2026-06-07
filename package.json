@@ -250,7 +250,7 @@
                     "command": "novem.viewNovemPlot",
                     "when": "view == novem-plots && viewItem =~ /^plot-top/",
                     "title": "View Plot",
-                    "group": "1_show"
+                    "group": "0_view"
                 },
                 {
                     "command": "novem.editCustomPlot",
@@ -262,7 +262,7 @@
                     "command": "novem.viewNovemMail",
                     "when": "view == novem-mails && viewItem == mail-top",
                     "title": "View Mail",
-                    "group": "1_show"
+                    "group": "0_view"
                 },
                 {
                     "command": "novem.sendMail",
@@ -274,13 +274,13 @@
                     "command": "novem.viewNovemGrid",
                     "when": "view == novem-grids && viewItem == grid-top",
                     "title": "View Grid",
-                    "group": "1_show"
+                    "group": "0_view"
                 },
                 {
                     "command": "novem.viewNovemDoc",
                     "when": "view == novem-docs && viewItem == doc-top",
                     "title": "View Document",
-                    "group": "1_show"
+                    "group": "0_view"
                 },
                 {
                     "command": "novem.deleteNovemPlot",
