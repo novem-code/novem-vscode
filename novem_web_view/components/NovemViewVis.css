@@ -26,3 +26,20 @@
     min-height: 100%;
     text-align: left;
 }
+
+/*
+ * Docs grow with their content and scroll via #root (the whole document
+ * scrolls, like mail), rather than being clamped to the panel height with an
+ * inner scroll. The page stack can be arbitrarily tall, so an outer scroll
+ * reads more naturally than a nested one. Plots/grids keep the fixed-height
+ * .novem--vis--hold so their render target tracks the panel for resize.
+ */
+.novem--vis--hold--doc {
+    height: auto;
+    min-height: calc(100% - 40px);
+}
+
+.novem--vis--doc {
+    flex: 0 0 auto;
+    overflow: visible;
+}

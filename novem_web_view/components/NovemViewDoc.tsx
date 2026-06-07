@@ -44,7 +44,7 @@ const NovemViewDoc = (props: { fetchedData?: FetchedData; viewData: ViewData }) 
     if (!fetchedData) return <NovemLoading />;
 
     return (
-        <div className="novem--vis--hold">
+        <div className="novem--vis--hold novem--vis--hold--doc">
             <div className="novem--vis--scroll novem--vis--doc">
                 <DocScaleWrapper>
                     <NovemDocRender viewData={viewData} />
