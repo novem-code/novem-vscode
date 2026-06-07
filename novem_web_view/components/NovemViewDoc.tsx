@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { NovemLoading } from '.';
+import DocScaleWrapper from './DocScaleWrapper';
 import './NovemViewVis.css';
 
 import { FetchedData, ViewData } from '../types';
@@ -45,7 +46,9 @@ const NovemViewDoc = (props: { fetchedData?: FetchedData; viewData: ViewData }) 
     return (
         <div className="novem--vis--hold">
             <div className="novem--vis--scroll novem--vis--doc">
-                <NovemDocRender viewData={viewData} />
+                <DocScaleWrapper>
+                    <NovemDocRender viewData={viewData} />
+                </DocScaleWrapper>
             </div>
             <NovemDocProfile fetchedData={fetchedData} />
         </div>
