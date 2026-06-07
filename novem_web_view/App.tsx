@@ -28,6 +28,12 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
     const { visId, uri, shortname, route, token, apiRoot } = viewData;
     const [fetchedData, setFetchedData] = useState<FetchedData | null>(null);
 
+    // Bumped by the chrome refresh button. Re-fetches the resource metadata
+    // (name/avatar may have changed) AND re-registers the vis (via the
+    // refreshKey passed down to useNsRegistration).
+    const [refreshKey, setRefreshKey] = useState(0);
+    const onRefresh = () => setRefreshKey(k => k + 1);
+
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
             const message = event.data;
@@ -79,34 +85,21 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
                 }
             }
         })();
-    }, [token, apiRoot, shortname]);
+    }, [token, apiRoot, shortname, refreshKey]);
+
+    const viewProps = {
+        fetchedData: fetchedData || undefined,
+        viewData,
+        refreshKey,
+        onRefresh,
+    };
 
     return (
         <Routes>
-            <Route
-                path="/plots"
-                element={
-                    <NovemViewPlot fetchedData={fetchedData || undefined} viewData={viewData} />
-                }
-            />
-            <Route
-                path="/mails"
-                element={
-                    <NovemViewMail fetchedData={fetchedData || undefined} viewData={viewData} />
-                }
-            />
-            <Route
-                path="/grids"
-                element={
-                    <NovemViewGrid fetchedData={fetchedData || undefined} viewData={viewData} />
-                }
-            />
-            <Route
-                path="/docs"
-                element={
-                    <NovemViewDoc fetchedData={fetchedData || undefined} viewData={viewData} />
-                }
-            />
+            <Route path="/plots" element={<NovemViewPlot {...viewProps} />} />
+            <Route path="/mails" element={<NovemViewMail {...viewProps} />} />
+            <Route path="/grids" element={<NovemViewGrid {...viewProps} />} />
+            <Route path="/docs" element={<NovemViewDoc {...viewProps} />} />
             <Route path="/profile" Component={NovemViewProfile} />
             <Route path="/" element={<div>Hello World from Novem Web View!</div>} />
         </Routes>

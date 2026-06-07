@@ -98,3 +98,61 @@
     width: 16px;
     height: 16px;
 }
+
+/* 3-way theme toggle: segmented control with a sliding thumb (gaia layout),
+   styled from --vscode-* tokens so it reads as native VSCode chrome. */
+.nv-theme {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 2px;
+    border-radius: 6px;
+    background: var(--vscode-editorWidget-background, rgba(128, 128, 128, 0.1));
+    border: 1px solid var(--vscode-widget-border, transparent);
+}
+
+.nv-theme__thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 24px;
+    height: 22px;
+    border-radius: 4px;
+    background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.25));
+    transition: transform 0.15s ease-in-out;
+    pointer-events: none;
+}
+
+.nv-theme__seg {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--vscode-descriptionForeground);
+    cursor: pointer;
+}
+
+.nv-theme__seg:hover {
+    color: var(--vscode-foreground);
+}
+
+.nv-theme__seg--active {
+    color: var(--vscode-foreground);
+}
+
+.nv-theme__seg:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
+}
+
+.nv-theme__seg svg {
+    width: 14px;
+    height: 14px;
+}

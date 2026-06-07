@@ -4,7 +4,7 @@ import NovemVisChrome from './NovemVisChrome';
 import DocScaleWrapper from './DocScaleWrapper';
 
 import { FetchedData, ViewData } from '../types';
-import { NsType, VisThemeMode, nextThemeMode, useVisTheme, useNsRegistration } from '../ns';
+import { NsType, VisThemeMode, useVisTheme, useNsRegistration } from '../ns';
 
 // One vis per webview panel, so a constant target id is fine.
 const TARGET_ID = 'novem--vis--target';
@@ -23,13 +23,26 @@ interface VisViewProps {
     bodyClassName?: string;
     /** Wrap the target in DocScaleWrapper (docs scale their page stack to the panel). */
     scale?: boolean;
+    /** Bumped by the chrome refresh button; re-registers the vis. */
+    refreshKey: number;
+    /** Refresh handler — owned by App so it can also re-fetch resource metadata. */
+    onRefresh: () => void;
 }
 
 const NovemVisView = (props: VisViewProps) => {
-    const { type, variant, fetchedData, viewData, title, bodyClassName, scale } = props;
+    const {
+        type,
+        variant,
+        fetchedData,
+        viewData,
+        title,
+        bodyClassName,
+        scale,
+        refreshKey,
+        onRefresh,
+    } = props;
 
     const [mode, setMode] = useState<VisThemeMode>('system');
-    const [refreshKey, setRefreshKey] = useState(0);
 
     // useVisTheme MUST be called before useNsRegistration: effects run in
     // declaration order, so data-dark-mode is applied before the (async)
@@ -45,8 +58,8 @@ const NovemVisView = (props: VisViewProps) => {
                 fetchedData={fetchedData}
                 title={title}
                 mode={mode}
-                onCycleTheme={() => setMode(nextThemeMode(mode))}
-                onRefresh={() => setRefreshKey(k => k + 1)}
+                onSetMode={setMode}
+                onRefresh={onRefresh}
             />
             <div
                 className={`nv-body nv-body--${variant}${bodyClassName ? ` ${bodyClassName}` : ''}`}

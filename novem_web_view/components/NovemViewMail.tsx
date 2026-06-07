@@ -7,8 +7,13 @@ import { FetchedData, ViewData } from '../types';
 
 const MAIL_SIZES = ['xs', 'small', 'medium', 'large'] as const;
 
-const NovemViewMail = (props: { fetchedData?: FetchedData; viewData: ViewData }) => {
-    const { fetchedData, viewData } = props;
+const NovemViewMail = (props: {
+    fetchedData?: FetchedData;
+    viewData: ViewData;
+    refreshKey: number;
+    onRefresh: () => void;
+}) => {
+    const { fetchedData, viewData, refreshKey, onRefresh } = props;
 
     if (!fetchedData) return <NovemLoading />;
 
@@ -26,6 +31,8 @@ const NovemViewMail = (props: { fetchedData?: FetchedData; viewData: ViewData })
             viewData={viewData}
             title={subject || fetchedData.about?.name}
             bodyClassName={`nv-body--mail nv-mail--size-${size}`}
+            refreshKey={refreshKey}
+            onRefresh={onRefresh}
         />
     );
 };

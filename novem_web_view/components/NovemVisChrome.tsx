@@ -42,30 +42,31 @@ const RefreshIcon = () => (
     </svg>
 );
 
-const THEME_ICON: Record<VisThemeMode, () => React.ReactElement> = {
-    light: SunIcon,
-    system: SystemIcon,
-    dark: MoonIcon,
-};
+// 3-way theme toggle, ordered light → system → dark (matches gaia/webapp).
+const THEME_MODES: { mode: VisThemeMode; Icon: () => React.ReactElement; label: string }[] = [
+    { mode: 'light', Icon: SunIcon, label: 'Light theme' },
+    { mode: 'system', Icon: SystemIcon, label: 'System theme' },
+    { mode: 'dark', Icon: MoonIcon, label: 'Dark theme' },
+];
 
 interface ChromeProps {
     fetchedData: FetchedData;
     /** Optional title override (mails prefer their subject). */
     title?: string;
     mode: VisThemeMode;
-    onCycleTheme: () => void;
+    onSetMode: (mode: VisThemeMode) => void;
     onRefresh: () => void;
 }
 
 const NovemVisChrome = (props: ChromeProps) => {
-    const { fetchedData, title, mode, onCycleTheme, onRefresh } = props;
+    const { fetchedData, title, mode, onSetMode, onRefresh } = props;
 
     const visName = title || fetchedData.about?.name || 'Untitled';
     const authorName = fetchedData.creator?.name ?? '';
     const authorUsername = fetchedData.creator?.username ?? '';
     const avatarUrl = fetchedData.creator?.avatar;
 
-    const ThemeIcon = THEME_ICON[mode];
+    const activeIndex = THEME_MODES.findIndex(m => m.mode === mode);
 
     return (
         <header className="nv-chrome">
@@ -82,15 +83,26 @@ const NovemVisChrome = (props: ChromeProps) => {
                 </div>
             </div>
             <div className="nv-chrome__actions">
-                <button
-                    type="button"
-                    className="nv-chrome__btn"
-                    onClick={onCycleTheme}
-                    title={`Theme: ${mode} (click to change)`}
-                    aria-label={`Theme: ${mode}`}
-                >
-                    <ThemeIcon />
-                </button>
+                <div className="nv-theme" role="radiogroup" aria-label="Theme">
+                    <span
+                        className="nv-theme__thumb"
+                        style={{ transform: `translateX(${Math.max(activeIndex, 0) * 100}%)` }}
+                    />
+                    {THEME_MODES.map(({ mode: m, Icon, label }) => (
+                        <button
+                            key={m}
+                            type="button"
+                            role="radio"
+                            aria-checked={mode === m}
+                            className={`nv-theme__seg${mode === m ? ' nv-theme__seg--active' : ''}`}
+                            onClick={() => onSetMode(m)}
+                            title={label}
+                            aria-label={label}
+                        >
+                            <Icon />
+                        </button>
+                    ))}
+                </div>
                 <button
                     type="button"
                     className="nv-chrome__btn"
