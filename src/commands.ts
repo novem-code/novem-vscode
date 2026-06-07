@@ -119,7 +119,6 @@ import {
     docsProvider,
     jobsProvider,
     reposProvider,
-    novemCache,
 } from './extension';
 import NovemApi from './novem-api';
 
@@ -569,14 +568,12 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemPlots', async () => {
-            novemCache?.invalidateAndRefresh('plots');
             plotsProvider.refresh();
         }),
     );
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemMails', async () => {
-            novemCache?.invalidateAndRefresh('mails');
             mailsProvider.refresh();
         }),
     );
@@ -615,7 +612,6 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemGrids', async () => {
-            novemCache?.invalidateAndRefresh('grids');
             gridsProvider.refresh();
         }),
     );
@@ -654,7 +650,6 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemDocs', async () => {
-            novemCache?.invalidateAndRefresh('docs');
             docsProvider.refresh();
         }),
     );
@@ -697,7 +692,6 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemJobs', async () => {
-            novemCache?.invalidateAndRefresh('jobs');
             jobsProvider?.refresh();
         }),
     );
@@ -740,7 +734,6 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemRepos', async () => {
-            novemCache?.invalidateAndRefresh('repos');
             reposProvider?.refresh();
         }),
     );

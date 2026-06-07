@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import * as https from 'https';
-import * as path from 'path';
 
 // Import the functions from config.ts
 import { getCurrentConfig, UserProfile, getActiveProfile } from './config';
@@ -18,7 +17,6 @@ import { setupCommands, setupAuthCommands } from './commands';
 
 import { NovemFSProvider } from './vfs';
 import NovemApi from './novem-api';
-import { NovemCache } from './cache';
 import { NovemUriHandler } from './oauth';
 
 let plotsProvider: InstanceType<typeof PlotsProvider>;
@@ -27,7 +25,6 @@ let gridsProvider: InstanceType<typeof GridsProvider>;
 let docsProvider: InstanceType<typeof DocsProvider>;
 let jobsProvider: InstanceType<typeof JobsProvider> | null = null;
 let reposProvider: InstanceType<typeof ReposProvider> | null = null;
-let novemCache: NovemCache | null = null;
 
 function showLoggedOut(context: vscode.ExtensionContext) {
     vscode.commands.executeCommand('setContext', 'novem.loggedIn', false);
@@ -80,21 +77,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
     setupCommands(context, novemApi);
 
-    // Set up local file cache
-    const cacheDir = path.join(context.globalStorageUri.fsPath, 'novem-cache');
-    novemCache = new NovemCache(cacheDir, novemApi);
-
-    // If the user/profile changed since last activation, clear the entire cache
-    const currentCacheIdentity = `${config.api_root}:${profile.user_info.username}`;
-    const previousCacheIdentity = context.globalState.get<string>('novemCacheIdentity');
-    if (previousCacheIdentity && previousCacheIdentity !== currentCacheIdentity) {
-        novemCache.reset();
-    }
-    context.globalState.update('novemCacheIdentity', currentCacheIdentity);
-
-    novemCache.activate(context);
-
-    const fsProvider = new NovemFSProvider(novemApi, novemCache);
+    // Files are served live through the novem:// FileSystemProvider — readFile
+    // fetches the single opened file from the API on demand, writeFile pushes it
+    // back on save. No disk mirror or recursive prefetch.
+    const fsProvider = new NovemFSProvider(novemApi);
     const fsRegistration = vscode.workspace.registerFileSystemProvider('novem', fsProvider, {
         isCaseSensitive: true,
     });
@@ -105,18 +91,8 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand(
             'novem.openFile',
             async (uri: vscode.Uri, type: string, languageId?: string) => {
-                if (!novemCache) return;
-
-                // Cache the entire resource directory on first access
-                await novemCache.ensureResourceCached(uri.authority, uri.path.split('/')[1]);
-
-                // Fetch the specific file (may be newer than directory cache)
-                await novemCache.cacheFile(uri.authority, uri.path);
-
-                // Open the cached local file
-                const localPath = novemCache.getLocalPath(uri.authority, uri.path);
-                const fileUri = vscode.Uri.file(localPath);
-                let doc = await vscode.workspace.openTextDocument(fileUri);
+                // Open the novem:// URI directly; the FS provider reads it live.
+                let doc = await vscode.workspace.openTextDocument(uri);
 
                 if (languageId) {
                     doc = await vscode.languages.setTextDocumentLanguage(doc, languageId);
@@ -125,14 +101,6 @@ export async function activate(context: vscode.ExtensionContext) {
                 await vscode.window.showTextDocument(doc, { preview: false });
             },
         ),
-    );
-
-    // Intercept saves on cached files and push to novem API
-    context.subscriptions.push(
-        vscode.workspace.onDidSaveTextDocument(async doc => {
-            if (!novemCache) return;
-            await novemCache.pushFile(doc.uri.fsPath, doc.getText());
-        }),
     );
 
     plotsProvider = new PlotsProvider(novemApi, context);
@@ -193,12 +161,4 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() {}
 
 // Export them if needed
-export {
-    plotsProvider,
-    mailsProvider,
-    gridsProvider,
-    docsProvider,
-    jobsProvider,
-    reposProvider,
-    novemCache,
-};
+export { plotsProvider, mailsProvider, gridsProvider, docsProvider, jobsProvider, reposProvider };

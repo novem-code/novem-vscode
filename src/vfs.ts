@@ -1,9 +1,12 @@
 import * as vscode from 'vscode';
 
-import { UserConfig } from './config';
 import NovemApi from './novem-api';
-import { NovemCache } from './cache';
 
+/**
+ * Live FileSystemProvider for the novem:// scheme. Each opened file is read
+ * from the API on demand and written back on save — no disk cache, no
+ * recursive prefetch. VSCode holds the document in memory while it's open.
+ */
 export class NovemFSProvider implements vscode.FileSystemProvider {
     private readonly _onDidChangeFile: vscode.EventEmitter<vscode.FileChangeEvent[]> =
         new vscode.EventEmitter<vscode.FileChangeEvent[]>();
@@ -11,19 +14,13 @@ export class NovemFSProvider implements vscode.FileSystemProvider {
         this._onDidChangeFile.event;
 
     private api: NovemApi;
-    private cache: NovemCache | null;
 
-    constructor(api: NovemApi, cache?: NovemCache) {
+    constructor(api: NovemApi) {
         this.api = api;
-        this.cache = cache || null;
     }
 
     async readFile(uri: vscode.Uri): Promise<Uint8Array> {
         const content = await this.api.readFile(uri.authority, uri.path);
-        if (this.cache) {
-            const novemPath = `/${uri.authority}${uri.path}`;
-            this.cache.writeToLocalCache(novemPath, content);
-        }
         return new TextEncoder().encode(content);
     }
 
@@ -32,25 +29,22 @@ export class NovemFSProvider implements vscode.FileSystemProvider {
         content: Uint8Array,
         options: { create: boolean; overwrite: boolean },
     ): Promise<void> {
-        const data = new TextDecoder().decode(content);
-        await this.api.writeFile(uri.authority, uri.path, data);
-        if (this.cache) {
-            const novemPath = `/${uri.authority}${uri.path}`;
-            this.cache.writeToLocalCache(novemPath, data);
-        }
+        await this.api.writeFile(uri.authority, uri.path, new TextDecoder().decode(content));
     }
 
     // Stub implementations for other required methods
     watch(uri: vscode.Uri, options: { recursive: boolean; excludes: string[] }): vscode.Disposable {
+        // File watching isn't supported for novem:// — directory listing is
+        // handled by the tree providers via the API.
         return new vscode.Disposable(() => {});
     }
 
     stat(uri: vscode.Uri): vscode.FileStat | Thenable<vscode.FileStat> {
         return {
-            type: vscode.FileType.File,
+            type: vscode.FileType.File, // Everything we open is a file
             ctime: Date.now(),
             mtime: Date.now(),
-            size: 0,
+            size: 0, // Size isn't known without additional server info
         };
     }
 
