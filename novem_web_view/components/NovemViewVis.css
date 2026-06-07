@@ -1,0 +1,27 @@
+/*
+ * Shared layout for grid and doc previews. Plots get vertically/horizontally
+ * centred in their box (a single chart looks best centred), but grids
+ * (dashboards) and docs (multi-page) want a top-left aligned, scrollable
+ * surface so wide/tall content reads naturally.
+ */
+.novem--vis--scroll {
+    height: calc(100% - 110px);
+
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+
+    overflow: auto;
+
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.novem--vis--scroll .novem--vis--innerhold {
+    width: 100%;
+    height: auto;
+    min-height: 100%;
+    text-align: left;
+}

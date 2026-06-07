@@ -2,7 +2,13 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 
-import { NovemViewMail, NovemViewPlot, NovemViewProfile } from './components';
+import {
+    NovemViewMail,
+    NovemViewPlot,
+    NovemViewGrid,
+    NovemViewDoc,
+    NovemViewProfile,
+} from './components';
 
 import { enforceStyles } from './utils';
 import { ViewData, FetchedData, VscodeApi } from './types';
@@ -99,6 +105,18 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
                 path="/mails"
                 element={
                     <NovemViewMail fetchedData={fetchedData || undefined} viewData={viewData} />
+                }
+            />
+            <Route
+                path="/grids"
+                element={
+                    <NovemViewGrid fetchedData={fetchedData || undefined} viewData={viewData} />
+                }
+            />
+            <Route
+                path="/docs"
+                element={
+                    <NovemViewDoc fetchedData={fetchedData || undefined} viewData={viewData} />
                 }
             />
             <Route path="/profile" Component={NovemViewProfile} />

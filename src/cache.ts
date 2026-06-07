@@ -310,7 +310,7 @@ export class NovemCache {
                 entries = await this.api.getDetailsForRepo(resourceId, dirPath);
             } else {
                 entries = await this.api.getDetailsForVis(
-                    visType as 'plots' | 'mails',
+                    visType as 'plots' | 'mails' | 'grids' | 'docs',
                     resourceId,
                     dirPath,
                 );

@@ -1,22 +1,11 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 
 import { NovemLoading } from '.';
 import './NovemViewMail.css';
 
 import { FetchedData, ViewData } from '../types';
-import { enforceStyles } from '../utils';
-
-// NS LIBRARY INTEGRATIONS
-interface NSFunctions {
-    setup: (config: { bearerToken?: string; apiUrl?: string; assetUrl?: string }) => void;
-    register: (a: string, b: string, targetId: string) => void;
-}
-
-declare global {
-    interface Window {
-        ns?: NSFunctions;
-    }
-}
+import { useNsRegistration } from '../ns';
+import { avatarStyle } from '../utils';
 
 function formatDate(input: string): string {
     // Parse the input date string into a Date object
@@ -58,27 +47,7 @@ function formatDate(input: string): string {
 }
 
 const NovemMailRender = (props: { viewData: ViewData }) => {
-    const { visId, uri, shortname, token, apiRoot } = props.viewData;
-
-    useEffect(() => {
-        if (!shortname) return;
-
-        // Check if the function exists on the window object before calling it
-        if (window.ns?.setup && shortname && token) {
-            let apiUrl = new URL(apiRoot).origin;
-            let assetUrl = apiUrl.replace('://api.', '://');
-
-            window.ns.setup({
-                bearerToken: token,
-                apiUrl: apiUrl,
-                assetUrl: assetUrl,
-            });
-
-            window.ns.register('m', shortname, `novem--vis--target`);
-
-            enforceStyles();
-        }
-    }, []); // Added dependencies to useEffect
+    useNsRegistration('m', props.viewData, 'novem--vis--target');
 
     return <div className="novem--vis--innerhold" id="novem--vis--target"></div>;
 };
@@ -101,7 +70,7 @@ const NovemMailProfile = (props: { fetchedData: FetchedData }) => {
     return (
         <div className="novem--vis--profile--mail">
             <div className="holder">
-                <div className="img" style={{ backgroundImage: `url(${avatarUrl}&s=160)` }}></div>
+                <div className="img" style={avatarStyle(avatarUrl)}></div>
                 <div className="novem--vis--profile--mail--text--content">
                     <div className="novem--vis--profile--mail--text--content--top">
                         <div className="from">{authorName}</div>

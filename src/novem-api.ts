@@ -5,6 +5,8 @@ import { UserProfile } from './config';
 export const VIS_TYPE_PREFIX: Record<string, string> = {
     plots: '/vis/plots',
     mails: '/vis/mails',
+    grids: '/vis/grids',
+    docs: '/vis/docs',
     jobs: '/code/jobs',
     repos: '/code/repos',
 };
@@ -140,6 +142,14 @@ export default class NovemApi {
         return await this.get(`${this.apiRoot}/u/${user}/p`);
     }
 
+    async getGridsForUser(user: string) {
+        return await this.get(`${this.apiRoot}/u/${user}/g`);
+    }
+
+    async getDocsForUser(user: string) {
+        return await this.get(`${this.apiRoot}/u/${user}/d`);
+    }
+
     async getJobsForUser(user: string) {
         return await this.get(`${this.apiRoot}/code/jobs`);
     }
@@ -154,6 +164,12 @@ export default class NovemApi {
     async createMail(mailId: string) {
         return await this.put(`${this.apiRoot}/vis/mails/${mailId}`, null);
     }
+    async createGrid(gridId: string) {
+        return await this.put(`${this.apiRoot}/vis/grids/${gridId}`, null);
+    }
+    async createDoc(docId: string) {
+        return await this.put(`${this.apiRoot}/vis/docs/${docId}`, null);
+    }
     async createJob(jobId: string) {
         return await this.put(`${this.apiRoot}/code/jobs/${jobId}`, null);
     }
@@ -166,7 +182,11 @@ export default class NovemApi {
         });
     }
 
-    async getDetailsForVis(type: 'mails' | 'plots', visId: string, path?: string) {
+    async getDetailsForVis(
+        type: 'mails' | 'plots' | 'grids' | 'docs',
+        visId: string,
+        path?: string,
+    ) {
         if (path) return await this.get(`${this.apiRoot}/vis/${type}/${visId}/${path}`);
         else return await this.get(`${this.apiRoot}/vis/${type}/${visId}`);
     }
@@ -183,6 +203,14 @@ export default class NovemApi {
 
     async deletePlot(plotId: string) {
         return await this.delete(`${this.apiRoot}/vis/plots/${plotId}`);
+    }
+
+    async deleteGrid(gridId: string) {
+        return await this.delete(`${this.apiRoot}/vis/grids/${gridId}`);
+    }
+
+    async deleteDoc(docId: string) {
+        return await this.delete(`${this.apiRoot}/vis/docs/${docId}`);
     }
 
     async deleteJob(jobId: string) {

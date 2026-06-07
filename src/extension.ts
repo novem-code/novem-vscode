@@ -7,6 +7,8 @@ import { getCurrentConfig, UserProfile, getActiveProfile } from './config';
 import {
     PlotsProvider,
     MailsProvider,
+    GridsProvider,
+    DocsProvider,
     JobsProvider,
     ReposProvider,
     NovemDummyProvider,
@@ -21,6 +23,8 @@ import { NovemUriHandler } from './oauth';
 
 let plotsProvider: InstanceType<typeof PlotsProvider>;
 let mailsProvider: InstanceType<typeof MailsProvider>;
+let gridsProvider: InstanceType<typeof GridsProvider>;
+let docsProvider: InstanceType<typeof DocsProvider>;
 let jobsProvider: InstanceType<typeof JobsProvider> | null = null;
 let reposProvider: InstanceType<typeof ReposProvider> | null = null;
 let novemCache: NovemCache | null = null;
@@ -133,10 +137,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
     plotsProvider = new PlotsProvider(novemApi, context);
     mailsProvider = new MailsProvider(novemApi, context);
+    gridsProvider = new GridsProvider(novemApi, context);
+    docsProvider = new DocsProvider(novemApi, context);
 
     context.subscriptions.push(
         vscode.window.registerTreeDataProvider('novem-plots', plotsProvider),
         vscode.window.registerTreeDataProvider('novem-mails', mailsProvider),
+        vscode.window.registerTreeDataProvider('novem-grids', gridsProvider),
+        vscode.window.registerTreeDataProvider('novem-docs', docsProvider),
     );
 
     // Check if jobs and repos endpoints are available by querying /code
@@ -185,4 +193,12 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() {}
 
 // Export them if needed
-export { plotsProvider, mailsProvider, jobsProvider, reposProvider, novemCache };
+export {
+    plotsProvider,
+    mailsProvider,
+    gridsProvider,
+    docsProvider,
+    jobsProvider,
+    reposProvider,
+    novemCache,
+};

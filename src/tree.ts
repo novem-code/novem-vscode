@@ -50,13 +50,15 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
     }
 
     // Abstract methods that subclasses must implement
-    abstract getType(): 'plots' | 'mails' | 'jobs' | 'repos';
+    abstract getType(): VisType;
     abstract getRootItems(username: string): Promise<any[]>;
     abstract getChildItems(visId: string, path?: string): Promise<any[]>;
 
     private static readonly CREATE_COMMANDS: Record<string, { command: string; label: string }> = {
         plots: { command: 'novem.createNovemPlot', label: 'Create New Plot...' },
         mails: { command: 'novem.createNovemMail', label: 'Create New Mail...' },
+        grids: { command: 'novem.createNovemGrid', label: 'Create New Grid...' },
+        docs: { command: 'novem.createNovemDoc', label: 'Create New Document...' },
         jobs: { command: 'novem.createNovemJob', label: 'Create New Job...' },
         repos: { command: 'novem.createNovemRepo', label: 'Create New Repo...' },
     };
@@ -173,7 +175,7 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
     }
 }
 
-type VisType = 'plots' | 'mails' | 'jobs' | 'repos';
+type VisType = 'plots' | 'mails' | 'grids' | 'docs' | 'jobs' | 'repos';
 
 function makeProvider(
     type: VisType,
@@ -202,6 +204,16 @@ export const MailsProvider = makeProvider(
     'mails',
     (api, u) => api.getMailsForUser(u),
     (api, id, path) => api.getDetailsForVis('mails', id, path),
+);
+export const GridsProvider = makeProvider(
+    'grids',
+    (api, u) => api.getGridsForUser(u),
+    (api, id, path) => api.getDetailsForVis('grids', id, path),
+);
+export const DocsProvider = makeProvider(
+    'docs',
+    (api, u) => api.getDocsForUser(u),
+    (api, id, path) => api.getDetailsForVis('docs', id, path),
 );
 export const JobsProvider = makeProvider(
     'jobs',
@@ -291,6 +303,8 @@ export class MyTreeItem extends vscode.TreeItem {
             const VIS_TOP: Record<string, { icon: string; contextValue: string }> = {
                 plots: { icon: '', contextValue: 'plot-top' },
                 mails: { icon: 'mail', contextValue: 'mail-top' },
+                grids: { icon: 'table', contextValue: 'grid-top' },
+                docs: { icon: 'book', contextValue: 'doc-top' },
                 jobs: { icon: 'run', contextValue: 'job-top' },
                 repos: { icon: 'repo', contextValue: 'repo-top' },
             };
