@@ -25,10 +25,14 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '22'
+          cache: 'pnpm'
 
       - name: Extract version from tag
         id: version
@@ -44,7 +48,7 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
-        run: npm install
+        run: pnpm install --frozen-lockfile
 
       - name: Bump package.json version
         run: npm version "$VERSION" --no-git-tag-version
@@ -59,7 +63,7 @@ jobs:
           # Explicitly set the remote URL with the app token
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
 
-          git add package.json package-lock.json
+          git add package.json pnpm-lock.yaml
 
           if ! git diff --cached --quiet; then
             git commit -m "Release v$VERSION"
