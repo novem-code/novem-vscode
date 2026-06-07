@@ -92,6 +92,17 @@ html:not([data-dark-mode]) body.vscode-high-contrast .nv-body {
     flex: 1 1 auto;
     min-height: 0;
     width: 100%;
+    /*
+     * Centre vislib's loading spinner + enter-animation origin in the panel.
+     * vislib's loading `.holder` is height:100%/width:100%, which only resolves
+     * when the target has a definite height; flex-centring keeps it centred
+     * regardless. The real plot is sized explicitly by vislib, so this doesn't
+     * change its layout — and the target's own measured box is unchanged, so it
+     * can't trigger a ResizeObserver growth loop.
+     */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /*
