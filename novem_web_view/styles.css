@@ -27,35 +27,42 @@ body {
     overflow: auto;
 }
 
+/*
+ * The vis container is a definite-height flex column so the render target
+ * (.novem--vis--innerhold / .novem--vis--scroll) gets a resolvable height that
+ * tracks the panel. vislib attaches a ResizeObserver to the target and
+ * re-renders from its computed width/height (see vislib events/resize.ts), so
+ * the target MUST actually resize for plots/grids to reflow — a percentage
+ * chain hung off a min/max-height parent didn't reliably resolve.
+ */
 .novem--vis--hold {
-    min-width: calc(100% - 40px);
-    min-height: calc(100vh - 40px);
-    max-height: calc(100vh - 40px);
-    margin-top: 20px;
-    /*
-    border: 1px solid var(--vscode-checkbox-selectBorder);
-    border: 1px solid var(--vscode-editorHoverWidget-border);
-    border: 1px solid var(--vscode-pickerGroup-border);
-   */
+    width: calc(100% - 40px);
+    height: calc(100% - 40px);
+    margin: 20px 0;
+
+    display: flex;
+    flex-direction: column;
+
     border: 1px solid var(--vscode-panel-border);
     background: var(--vscode-panel-background);
 }
 
 .novem--vis--plot {
-    height: calc(100% - 110px);
+    flex: 1 1 auto;
+    min-height: 0; /* allow the flex child to shrink below content size */
 
     display: flex;
     flex-direction: column;
     width: 100%;
     margin: 0;
     padding: 20px;
-    overflow: hidden;
-    overflow-y: scroll;
+    overflow: auto;
 
     align-items: center;
     justify-content: center;
 }
 .novem--vis--profile {
+    flex: 0 0 auto;
     border-top: 1px solid var(--vscode-panel-border);
     height: 110px;
     padding: 20px;
