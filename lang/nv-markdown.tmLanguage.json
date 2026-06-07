@@ -1,43 +1,211 @@
 {
     "name": "Novem Markdown",
     "scopeName": "source.nv_markdown",
-    "fileTypes": ["nvm"],
+    "fileTypes": ["nvm", "nvmd"],
     "patterns": [
-        {
-            "begin": "\\{\\{\\s*(vis|visualisations|callout|paragraph|para|preview|author)",
-            "end": "\\}\\}",
-            "name": "keyword.section.nv_markdown",
-            "patterns": [
-                {
-                    "match": "\\{\\{",
-                    "name": "punctuation.definition.section.begin.nv_markdown"
-                },
-                {
-                    "match": "(vis|visualisations|callout|paragraph|para|preview|author)",
-                    "name": "support.function.section.nv_markdown"
-                },
-                {
-                    "begin": "(?<=\\{\\{\\s*(vis|visualisations|callout|paragraph|para|preview|author)\\s*)",
-                    "end": "(?=\\}\\})",
-                    "contentName": "source.yaml",
-                    "patterns": [
-                        {
-                            "include": "source.yaml"
-                        }
-                    ]
-                },
-                {
-                    "match": "\\}\\}",
-                    "name": "punctuation.definition.section.end.nv_markdown "
+        { "include": "#frontmatter" },
+        { "include": "#comment" },
+        { "include": "#html-block" },
+        { "include": "#section-tag" },
+        { "include": "#heading-config" },
+        { "include": "#inline" },
+        { "include": "text.html.markdown" }
+    ],
+    "repository": {
+        "frontmatter": {
+            "comment": "YAML front matter at the very top of the document (--- ... ---).",
+            "begin": "\\A(-{3})\\s*$",
+            "beginCaptures": {
+                "1": { "name": "punctuation.definition.frontmatter.begin.nv_markdown" }
+            },
+            "end": "^(-{3})\\s*$",
+            "endCaptures": {
+                "1": { "name": "punctuation.definition.frontmatter.end.nv_markdown" }
+            },
+            "name": "meta.frontmatter.nv_markdown",
+            "contentName": "meta.embedded.block.yaml",
+            "patterns": [{ "include": "source.yaml" }]
+        },
+
+        "comment": {
+            "comment": "React-style block comment {{/* ... */}} — dropped by visparse.",
+            "begin": "\\{\\{/\\*",
+            "end": "\\*/\\}\\}",
+            "name": "comment.block.nv_markdown"
+        },
+
+        "html-block": {
+            "comment": "{{ html }} ... {{ /html }} wraps a sanitized raw-HTML island.",
+            "begin": "(\\{\\{)\\s*(html)\\s*(\\}\\})",
+            "beginCaptures": {
+                "1": { "name": "punctuation.definition.tag.begin.nv_markdown" },
+                "2": { "name": "entity.name.tag.section.nv_markdown" },
+                "3": { "name": "punctuation.definition.tag.end.nv_markdown" }
+            },
+            "end": "(\\{\\{)\\s*(/)\\s*(html)\\s*(\\}\\})",
+            "endCaptures": {
+                "1": { "name": "punctuation.definition.tag.begin.nv_markdown" },
+                "2": { "name": "punctuation.definition.tag.close.nv_markdown" },
+                "3": { "name": "entity.name.tag.section.nv_markdown" },
+                "4": { "name": "punctuation.definition.tag.end.nv_markdown" }
+            },
+            "name": "meta.section.html.nv_markdown",
+            "contentName": "meta.embedded.block.html",
+            "patterns": [{ "include": "text.html.basic" }]
+        },
+
+        "section-tag": {
+            "comment": "Novem section tags in every form: open {{ name }}, close {{ /name }}, self-close {{ name /}}, inline-with-attrs {{ name k: v }}. The body between the name and the closing braces is the (YAML / inline comma) config block.",
+            "begin": "(\\{\\{)\\s*(/)?\\s*([A-Za-z][\\w-]*)",
+            "beginCaptures": {
+                "1": { "name": "punctuation.definition.tag.begin.nv_markdown" },
+                "2": { "name": "punctuation.definition.tag.close.nv_markdown" },
+                "3": { "name": "entity.name.tag.section.nv_markdown" }
+            },
+            "end": "(/)?(\\}\\})",
+            "endCaptures": {
+                "1": { "name": "punctuation.definition.tag.selfclose.nv_markdown" },
+                "2": { "name": "punctuation.definition.tag.end.nv_markdown" }
+            },
+            "name": "meta.section.nv_markdown",
+            "contentName": "meta.embedded.block.yaml",
+            "patterns": [{ "include": "source.yaml" }]
+        },
+
+        "heading-config": {
+            "comment": "Trailing element config on a heading line, e.g. `# Title {colspan:all; clr,fg,red-500}`.",
+            "match": "^(#{1,6})\\s+(.*?)\\s*(\\{[^}\\n]+\\})\\s*$",
+            "name": "markup.heading.nv_markdown",
+            "captures": {
+                "1": { "name": "punctuation.definition.heading.markdown" },
+                "2": { "name": "entity.name.section.markdown" },
+                "3": {
+                    "name": "meta.section-config.nv_markdown",
+                    "patterns": [{ "include": "#config-body" }]
                 }
+            }
+        },
+
+        "inline": {
+            "patterns": [
+                { "include": "#span-section" },
+                { "include": "#pageref" },
+                { "include": "#var-ref" },
+                { "include": "#math-block" },
+                { "include": "#math-inline" },
+                { "include": "#underline" },
+                { "include": "#superscript" },
+                { "include": "#subscript" }
             ]
         },
-        {
-            "match": "\\{\\{\\s*/(vis|visualisations|callout|paragraph|para|preview|author)\\s*\\}\\}",
-            "name": "keyword.section.end.nv_markdown"
+
+        "span-section": {
+            "comment": "Inline span section: [[type,opt1,opt2: content]] e.g. [[ftn: text]], [[clr,fg,red-500: text]].",
+            "begin": "(\\[\\[)\\s*([^:\\]\\n]+?)\\s*(:)",
+            "beginCaptures": {
+                "1": { "name": "punctuation.definition.span.begin.nv_markdown" },
+                "2": { "name": "entity.name.tag.span.nv_markdown" },
+                "3": { "name": "punctuation.separator.span.nv_markdown" }
+            },
+            "end": "(\\]\\])",
+            "endCaptures": {
+                "1": { "name": "punctuation.definition.span.end.nv_markdown" }
+            },
+            "name": "meta.span.nv_markdown",
+            "patterns": [{ "include": "#inline" }]
         },
-        {
-            "include": "text.html.markdown"
+
+        "pageref": {
+            "comment": "Page reference: {pageref##Header}, {pageref##(Header)}, {pageref##[label](Header)}.",
+            "match": "(\\{)(pageref)(#+)([^}\\n]+?)(\\})",
+            "captures": {
+                "1": { "name": "punctuation.definition.template-expression.begin.nv_markdown" },
+                "2": { "name": "support.function.pageref.nv_markdown" },
+                "3": { "name": "punctuation.separator.pageref.nv_markdown" },
+                "4": { "name": "markup.underline.link.nv_markdown" },
+                "5": { "name": "punctuation.definition.template-expression.end.nv_markdown" }
+            }
+        },
+
+        "var-ref": {
+            "comment": "Variable reference: {/u/<user>/<type>/<id>/v/<name>} (type one of p g m d r j).",
+            "match": "(\\{)(/[^{}\\n]*?/v/[^{}\\n]+?)(\\})",
+            "captures": {
+                "1": { "name": "punctuation.definition.template-expression.begin.nv_markdown" },
+                "2": { "name": "variable.other.novem-ref.nv_markdown" },
+                "3": { "name": "punctuation.definition.template-expression.end.nv_markdown" }
+            }
+        },
+
+        "underline": {
+            "comment": "Novem underline: single-underscore _text_ (not __bold__, not snake_case).",
+            "match": "(?<!\\w)(_)(?!_)(?=\\S)([^_\\n]+?)(_)(?!\\w)",
+            "name": "markup.underline.nv_markdown",
+            "captures": {
+                "1": { "name": "punctuation.definition.underline.nv_markdown" },
+                "3": { "name": "punctuation.definition.underline.nv_markdown" }
+            }
+        },
+
+        "superscript": {
+            "comment": "Superscript: ^text^.",
+            "match": "(\\^)(?=\\S)([^\\^\\n]+?)(\\^)",
+            "name": "markup.superscript.nv_markdown",
+            "captures": {
+                "1": { "name": "punctuation.definition.superscript.nv_markdown" },
+                "3": { "name": "punctuation.definition.superscript.nv_markdown" }
+            }
+        },
+
+        "subscript": {
+            "comment": "Subscript: single-tilde ~text~ (not ~~strikethrough~~).",
+            "match": "(?<!~)(~)(?!~)(?=\\S)([^~\\n]+?)(~)(?!~)",
+            "name": "markup.subscript.nv_markdown",
+            "captures": {
+                "1": { "name": "punctuation.definition.subscript.nv_markdown" },
+                "3": { "name": "punctuation.definition.subscript.nv_markdown" }
+            }
+        },
+
+        "math-block": {
+            "comment": "Block math $$ ... $$ (requires `latex: true` in front matter to render).",
+            "begin": "(\\$\\$)",
+            "beginCaptures": {
+                "1": { "name": "punctuation.definition.math.begin.nv_markdown" }
+            },
+            "end": "(\\$\\$)",
+            "endCaptures": {
+                "1": { "name": "punctuation.definition.math.end.nv_markdown" }
+            },
+            "name": "markup.math.block.nv_markdown",
+            "contentName": "meta.embedded.math"
+        },
+
+        "math-inline": {
+            "comment": "Inline math $ ... $ (requires `latex: true`; no surrounding whitespace).",
+            "match": "(\\$)(?![\\s$])([^$\\n]+?)(?<!\\s)(\\$)",
+            "name": "markup.math.inline.nv_markdown",
+            "captures": {
+                "1": { "name": "punctuation.definition.math.begin.nv_markdown" },
+                "3": { "name": "punctuation.definition.math.end.nv_markdown" }
+            }
+        },
+
+        "config-body": {
+            "comment": "Highlight a {...} config payload (heading config / element attributes).",
+            "patterns": [
+                {
+                    "match": "[{}]",
+                    "name": "punctuation.definition.section-config.nv_markdown"
+                },
+                {
+                    "match": "([\\w-]+)\\s*(:)",
+                    "captures": {
+                        "1": { "name": "entity.other.attribute-name.nv_markdown" },
+                        "2": { "name": "punctuation.separator.key-value.nv_markdown" }
+                    }
+                }
+            ]
         }
-    ]
+    }
 }
