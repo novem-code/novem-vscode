@@ -21,6 +21,10 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
     private statusMessage: string | null = null;
     private hasLoaded = false;
 
+    // Top-level resource nodes by id, captured on each root fetch so a single
+    // resource's subtree can be refreshed without rebuilding the whole tree.
+    private rootNodes = new Map<string, MyTreeItem>();
+
     refresh(): void {
         console.log(`Refreshing ${this.getType()} provider`);
         // Bust the memoised GraphQL aggregate so the next root fetch is fresh.
@@ -28,6 +32,21 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
         // which call refresh() to surface/remove a resource.
         this.api.invalidateVisCache();
         this._onDidChangeTreeData.fire();
+    }
+
+    /**
+     * Re-fetch a single resource's subtree (its files/folders) — used after we
+     * mutate its config so structural changes (e.g. a new config/custom folder)
+     * appear without rebuilding the whole tree or re-fetching the root list.
+     * Falls back to a full refresh if the node isn't currently rendered.
+     */
+    refreshResource(visId: string): void {
+        const node = this.rootNodes.get(visId);
+        if (node) {
+            this._onDidChangeTreeData.fire(node);
+        } else {
+            this.refresh();
+        }
     }
 
     setStatus(message: string): void {
@@ -112,6 +131,13 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
                     );
 
                 items.push(...rootItems);
+
+                // Track top-level nodes so refreshResource() can re-fetch a
+                // single resource's subtree.
+                this.rootNodes.clear();
+                for (const node of rootItems) {
+                    this.rootNodes.set(node.name, node);
+                }
 
                 // Add a "Create New..." button at the bottom (only when there are items;
                 // empty views use viewsWelcome instead)

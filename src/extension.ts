@@ -26,29 +26,29 @@ let docsProvider: InstanceType<typeof DocsProvider>;
 let jobsProvider: InstanceType<typeof JobsProvider> | null = null;
 let reposProvider: InstanceType<typeof ReposProvider> | null = null;
 
-// Refresh a single resource type's tree. Used after we mutate a resource's
-// config (e.g. plot type -> custom) so structural changes — new folders like
-// config/custom, and the updated type/icon in the root list — show without a
-// manual sidebar refresh. (External changes still need live events; later.)
-function refreshTreeForType(visType: string): void {
+// Re-fetch a single resource's subtree after we mutate its config (e.g. a plot
+// type change can restructure the resource — new folders, etc.). Refreshing
+// just the node keeps the rest of the tree (and the root list) untouched.
+// External changes still need live events; handled later.
+function refreshVisNode(visType: string, visId: string): void {
     switch (visType) {
         case 'plots':
-            plotsProvider?.refresh();
+            plotsProvider?.refreshResource(visId);
             break;
         case 'mails':
-            mailsProvider?.refresh();
+            mailsProvider?.refreshResource(visId);
             break;
         case 'grids':
-            gridsProvider?.refresh();
+            gridsProvider?.refreshResource(visId);
             break;
         case 'docs':
-            docsProvider?.refresh();
+            docsProvider?.refreshResource(visId);
             break;
         case 'jobs':
-            jobsProvider?.refresh();
+            jobsProvider?.refreshResource(visId);
             break;
         case 'repos':
-            reposProvider?.refresh();
+            reposProvider?.refreshResource(visId);
             break;
     }
 }
@@ -108,16 +108,13 @@ export async function activate(context: vscode.ExtensionContext) {
     // fetches the single opened file from the API on demand, writeFile pushes it
     // back on save. No disk mirror or recursive prefetch.
     //
-    // On save, a config change can restructure a resource (changing a plot's
-    // type to custom adds a config/custom folder) and changes its type in the
-    // root list, so refetch that tree. Skip config/custom/* — those are content
-    // edits (custom.js/css/deps), not structural, and save frequently.
+    // On save, a config change can restructure a resource (a plot type change
+    // can add/remove folders, etc.), so re-fetch just that resource's subtree.
+    // filePath is /<id>/<...>; the config segment is the trigger.
     const fsProvider = new NovemFSProvider(novemApi, (visType, filePath) => {
-        const isConfig = /(^|\/)config(\/|$)/.test(filePath);
-        const isCustomContent = /(^|\/)config\/custom\//.test(filePath);
-        if (isConfig && !isCustomContent) {
-            refreshTreeForType(visType);
-        }
+        if (!/(^|\/)config(\/|$)/.test(filePath)) return;
+        const visId = filePath.split('/').filter(Boolean)[0];
+        if (visId) refreshVisNode(visType, visId);
     });
     const fsRegistration = vscode.workspace.registerFileSystemProvider('novem', fsProvider, {
         isCaseSensitive: true,
