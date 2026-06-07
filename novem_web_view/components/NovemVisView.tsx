@@ -53,7 +53,7 @@ const NovemVisView = (props: VisViewProps) => {
     const target = <div className="nv-target" id={TARGET_ID} />;
 
     return (
-        <div className="nv-frame">
+        <div className={`nv-frame nv-frame--${variant}`}>
             <NovemVisChrome
                 fetchedData={fetchedData}
                 title={title}
