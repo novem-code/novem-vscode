@@ -319,6 +319,16 @@ suite('typeToIcon utility', () => {
         assert.strictEqual(typeToIcon('unknown'), 'graph');
     });
 
+    test('returns "table" for grids type', () => {
+        assert.strictEqual(typeToIcon('dashboard', 'grids'), 'table');
+        assert.strictEqual(typeToIcon('any', 'grids'), 'table');
+    });
+
+    test('returns "book" for docs type', () => {
+        assert.strictEqual(typeToIcon('doc', 'docs'), 'book');
+        assert.strictEqual(typeToIcon('any', 'docs'), 'book');
+    });
+
     test('handles undefined inputs', () => {
         assert.strictEqual(typeToIcon(''), 'graph');
         assert.strictEqual(typeToIcon('anything'), 'graph');
