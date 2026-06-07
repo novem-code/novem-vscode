@@ -14,28 +14,6 @@ export function avatarStyle(avatarUrl?: string): CSSProperties {
     return avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : {};
 }
 
-export const enforceStyles = () => {
-    const isDark = document.body.classList.contains('vscode-dark');
-
-    if (isDark) {
-        document.documentElement.setAttribute('data-dark-mode', '');
-    } else {
-        document.documentElement.removeAttribute('data-dark-mode');
-    }
-
-    const iframes = document.getElementsByTagName('iframe');
-    for (const iframe of iframes) {
-        let elem = iframe.contentDocument?.documentElement;
-        try {
-            if (isDark) {
-                elem?.setAttribute('data-dark-mode', '');
-            } else {
-                elem?.removeAttribute('data-dark-mode');
-            }
-        } catch (e) {}
-    }
-};
-
 export function writeCSP() {
     const str =
         'connect-src https://www.gravatar.com ' +

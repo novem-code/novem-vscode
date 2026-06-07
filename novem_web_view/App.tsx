@@ -10,7 +10,6 @@ import {
     NovemViewProfile,
 } from './components';
 
-import { enforceStyles } from './utils';
 import { ViewData, FetchedData, VscodeApi } from './types';
 
 const MainContent = (props: { vsapi: VscodeApi }) => {
@@ -28,17 +27,6 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
 
     const { visId, uri, shortname, route, token, apiRoot } = viewData;
     const [fetchedData, setFetchedData] = useState<FetchedData | null>(null);
-
-    useEffect(() => {
-        enforceStyles();
-
-        const observer = new MutationObserver(() => enforceStyles());
-        observer.observe(document.body, {
-            attributes: true,
-            attributeFilter: ['class'],
-        });
-        return () => observer.disconnect();
-    }, []);
 
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {

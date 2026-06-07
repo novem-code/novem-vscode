@@ -4,122 +4,106 @@
     box-sizing: border-box;
 }
 
-/* Add any additional styles you need */
+html,
 body {
-    display: flex;
-    flex-direction: column;
-    height: 100vh; /* Use viewport height to set the body height */
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
+    height: 100%;
 }
 
-#root {
-    flex: 1; /* Allow iframe to take up all available space */
-    width: 100%;
-    margin: 0px;
-
-    display: flex;
-    flex-direction: column;
-
-    align-items: center;
-
-    overflow: auto;
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size, 13px);
+    color: var(--vscode-foreground);
+    background: var(--vscode-editor-background);
 }
 
 /*
- * The vis container is a definite-height flex column so the render target
- * (.novem--vis--innerhold / .novem--vis--scroll) gets a resolvable height that
- * tracks the panel. vislib attaches a ResizeObserver to the target and
- * re-renders from its computed width/height (see vislib events/resize.ts), so
- * the target MUST actually resize for plots/grids to reflow — a percentage
- * chain hung off a min/max-height parent didn't reliably resolve.
+ * #root is the single scroll container for the preview. The chrome header is
+ * sticky inside it, so content scrolls underneath the header and the scrollbar
+ * spans the full height — reading as native editor chrome.
  */
-.novem--vis--hold {
-    width: calc(100% - 40px);
-    height: calc(100% - 40px);
-    margin: 20px 0;
-
-    display: flex;
-    flex-direction: column;
-
-    border: 1px solid var(--vscode-panel-border);
-    background: var(--vscode-panel-background);
+#root {
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
-.novem--vis--plot {
+/* Native-looking scrollbar using the workbench scrollbar tokens. */
+#root::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+}
+#root::-webkit-scrollbar-thumb {
+    background: var(--vscode-scrollbarSlider-background);
+}
+#root::-webkit-scrollbar-thumb:hover {
+    background: var(--vscode-scrollbarSlider-hoverBackground);
+}
+#root::-webkit-scrollbar-thumb:active {
+    background: var(--vscode-scrollbarSlider-activeBackground);
+}
+
+/* ---- Vis frame ------------------------------------------------------- */
+
+.nv-frame {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--vscode-editor-background);
+}
+
+.nv-body {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+/*
+ * 'fill' — a single chart that should occupy the panel. The target gets a
+ * definite height (flex child of the viewport-tall frame), so vislib's
+ * ResizeObserver reflows it when the panel resizes.
+ */
+.nv-body--fill {
     flex: 1 1 auto;
-    min-height: 0; /* allow the flex child to shrink below content size */
-
-    display: flex;
-    flex-direction: column;
+    min-height: 0;
+    padding: 12px;
+}
+.nv-body--fill .nv-target {
+    flex: 1 1 auto;
+    min-height: 0;
     width: 100%;
-    margin: 0;
-    padding: 20px;
-    overflow: auto;
+}
 
+/*
+ * 'flow' — content grows with its natural (or scaled) height and scrolls under
+ * the sticky chrome via #root. Used by grids, docs and mails.
+ */
+.nv-body--flow {
+    flex: 1 0 auto;
+    padding: 12px;
+}
+.nv-body--flow .nv-target {
+    width: 100%;
+}
+
+/* Mails render at a fixed comfortable width, centred. */
+.nv-body--mail {
     align-items: center;
-    justify-content: center;
 }
-.novem--vis--profile {
-    flex: 0 0 auto;
-    border-top: 1px solid var(--vscode-panel-border);
-    height: 110px;
-    padding: 20px;
-}
-.novem--vis--profile .img {
-    float: left;
-    width: 60px;
-    height: 60px;
-    margin: 0.25rem;
-    border-radius: 50%;
-    border: 1px solid var(--vscode-editorHoverWidget-border);
-    /* Neutral placeholder shown only when the creator has no avatar; the real
-       avatar is layered on via an inline background-image (see avatarStyle). */
-    background-color: var(--vscode-editor-inactiveSelectionBackground, #eee);
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-}
-
-.vscode-dark .novem--vis--profile .img {
-    background-color: var(--vscode-editor-inactiveSelectionBackground, #404040);
-}
-
-.novem--vis--profile .details {
-    float: left;
-    height: 3.5rem;
-    margin: 0.25rem;
-    margin-left: 10px;
-    font-weight: 300;
-    font-size: 0.8rem;
-    padding-top: 0.6rem;
-    max-width: calc(100% - 85px);
-}
-.novem--vis--profile .name {
-    height: 1.2rem;
-    line-height: 1.2rem;
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.novem--vis--profile .author {
-    height: 1.2rem;
-    line-height: 1.2rem;
-    font-weight: 400;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.novem--vis--profile .author .username {
-    color: #666;
-    font-weight: 400;
-}
-
-.novem--vis--innerhold {
+.nv-body--mail .nv-target {
     width: 100%;
-    height: 100%;
-    text-align: center;
+    max-width: var(--nv-mail-width, 900px);
+}
+.nv-mail--size-xs {
+    --nv-mail-width: 500px;
+}
+.nv-mail--size-small {
+    --nv-mail-width: 700px;
+}
+.nv-mail--size-medium {
+    --nv-mail-width: 900px;
+}
+.nv-mail--size-large {
+    --nv-mail-width: 1100px;
 }

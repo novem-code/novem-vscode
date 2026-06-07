@@ -1,52 +1,16 @@
 import React from 'react';
 
 import { NovemLoading } from '.';
+import NovemVisView from './NovemVisView';
 
 import { FetchedData, ViewData } from '../types';
-import { useNsRegistration } from '../ns';
-import { avatarStyle } from '../utils';
-
-const NovemPlotRender = (props: { viewData: ViewData }) => {
-    useNsRegistration('p', props.viewData, 'novem--vis--target');
-
-    return <div className="novem--vis--innerhold" id={`novem--vis--target`}></div>;
-};
-
-const NovemPlotProfile = (props: { fetchedData: FetchedData }) => {
-    const { fetchedData } = props;
-
-    const visualizationName = fetchedData.about?.name ?? 'Your placeholder chart';
-    const authorName = fetchedData.creator?.name ?? 'Novem Placeholder';
-    const authorUsername = fetchedData.creator?.username ?? 'novem_placeholder';
-    const avatarUrl = fetchedData.creator?.avatar;
-
-    return (
-        <div className="novem--vis--profile">
-            <div className="img" style={avatarStyle(avatarUrl)}></div>
-            <div className="details">
-                <div className="name">{visualizationName}</div>
-                <div className="author">
-                    {authorName}
-                    <span className="username"> @{authorUsername}</span>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 const NovemViewPlot = (props: { fetchedData?: FetchedData; viewData: ViewData }) => {
     const { fetchedData, viewData } = props;
 
     if (!fetchedData) return <NovemLoading />;
 
-    return (
-        <div className="novem--vis--hold">
-            <div className="novem--vis--plot">
-                <NovemPlotRender viewData={viewData} />
-            </div>
-            <NovemPlotProfile fetchedData={fetchedData} />
-        </div>
-    );
+    return <NovemVisView type="p" variant="fill" fetchedData={fetchedData} viewData={viewData} />;
 };
 
 export default NovemViewPlot;
