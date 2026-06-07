@@ -57,6 +57,25 @@ body {
     display: flex;
     flex-direction: column;
     width: 100%;
+
+    /*
+     * The drawing area below the header follows the per-vis light/dark toggle.
+     * When the toggle matches the editor (the common 'system' case) we use the
+     * real editor background so the whole preview reads as one native VSCode
+     * surface. When the user forces the opposite mode, fall back to VSCode's
+     * default editor background for that mode — i.e. dark looks like the editor
+     * does in dark mode. `data-dark-mode` (the applied vis theme) lives on
+     * <html>; the vscode-* theme class lives on <body>.
+     */
+    background: var(--vscode-editor-background);
+}
+html[data-dark-mode] body.vscode-light .nv-body,
+html[data-dark-mode] body.vscode-high-contrast-light .nv-body {
+    background: #1e1e1e;
+}
+html:not([data-dark-mode]) body.vscode-dark .nv-body,
+html:not([data-dark-mode]) body.vscode-high-contrast .nv-body {
+    background: #ffffff;
 }
 
 /*
@@ -106,4 +125,15 @@ body {
 }
 .nv-mail--size-large {
     --nv-mail-width: 1100px;
+}
+
+/*
+ * A subtle frame around the plot and mail drawing areas to delineate the
+ * rendered surface from the surrounding chrome. Grids fill the panel and docs
+ * have their own page edges, so they don't need it.
+ */
+.nv-body--plot .nv-target,
+.nv-body--mail .nv-target {
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 4px;
 }

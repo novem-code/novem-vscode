@@ -19,6 +19,7 @@ const NovemViewPlot = (props: {
         <NovemVisView
             type="p"
             variant="fill"
+            bodyClassName="nv-body--plot"
             fetchedData={fetchedData}
             viewData={viewData}
             refreshKey={refreshKey}
