@@ -1,11 +1,20 @@
-# pnpm configuration for the extension.
-#
+# pnpm blocks dependency lifecycle (build) scripts by default for supply-chain
+# safety, failing the install if an un-approved package wants to run one.
+# esbuild's install script sets up the native binary the SPA bundler needs, so
+# allow it (matches the convention in gaia's pnpm-workspace.yaml files). Keep
+# this list minimal and intentional.
+allowBuilds:
+  esbuild: true
+
+onlyBuiltDependencies:
+  - esbuild
+
 # minimumReleaseAge: only install package versions that have been public for at
 # least this many minutes (10080 = 7 days). Supply-chain hardening — a freshly
 # published (possibly compromised) version won't be pulled in until it has aged.
 minimumReleaseAge: 10080
 
 # Flat node_modules (like npm / Yarn Classic). Required so the VSCode
-# extension-host test runner can resolve dependencies such as `mocha`; pnpm's
-# default symlinked layout is not resolvable by that runner.
+# extension-host test runner resolves deps such as `mocha`; pnpm's default
+# symlinked layout is not resolvable there.
 nodeLinker: hoisted
