@@ -196,19 +196,14 @@ async function confirmDeletion(name: string, noun: string): Promise<boolean> {
 
 type ViewableType = 'plots' | 'mails' | 'grids' | 'docs';
 
-// Fetch the list of a user's visualisations for a given type.
-const listVisForUser = (api: NovemApi, type: ViewableType, username: string): Promise<any> => {
-    switch (type) {
-        case 'plots':
-            return api.getPlotsForUser(username);
-        case 'mails':
-            return api.getMailsForUser(username);
-        case 'grids':
-            return api.getGridsForUser(username);
-        case 'docs':
-            return api.getDocsForUser(username);
-    }
-};
+// The signed-in user's own resources of a given type (from the GraphQL `me`
+// aggregate). Used by the "View X" pickers for your own resources.
+const listSelfVis = (api: NovemApi, type: ViewableType, username: string): Promise<any[]> =>
+    api.getSelfVis(username).then(agg => agg[type]);
+
+// Another user's resources of a given type (from `users(username:)`).
+const listUserVis = (api: NovemApi, type: ViewableType, username: string): Promise<any[]> =>
+    api.getUserVis(username).then(agg => agg[type]);
 
 // Open a novem vis inside vscode
 const createViewFunction = (
@@ -225,7 +220,7 @@ const createViewFunction = (
 
     return async (item: MyTreeItem) => {
         // Let's grab our profile information
-        const visualisations = await listVisForUser(api, type, uname!);
+        const visualisations = await listSelfVis(api, type, uname!);
 
         const options = visualisations.map((item: VisInfo) => ({
             label: `$(${typeToIcon(item.type, type)}) ${item.name}`,
@@ -309,7 +304,7 @@ const createViewForUserFunction = (
         username = username?.slice(1);
 
         try {
-            visualisations = await listVisForUser(api, type, username!);
+            visualisations = await listUserVis(api, type, username!);
         } catch (error) {
             console.log('error', error);
             return;

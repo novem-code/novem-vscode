@@ -15,10 +15,54 @@ function visTypePath(visType: string): string {
     return VIS_TYPE_PREFIX[visType] ?? `/vis/${visType}`;
 }
 
+// A user's resources across every type, fetched in one GraphQL round trip.
+export interface VisAggregate {
+    plots: any[];
+    mails: any[];
+    grids: any[];
+    docs: any[];
+    jobs: any[];
+    repos: any[];
+}
+
+// Fields the sidebar + view pickers need per resource. The novem GraphQL
+// schema (gaia/janus) exposes these uniformly across plots/mails/grids/docs/
+// jobs/repos, so one selection works for all six.
+const VIS_LIST_FIELDS = 'id name shortname url type summary created';
+const AGG_SELECTION = (['plots', 'mails', 'grids', 'docs', 'jobs', 'repos'] as const)
+    .map(t => `${t} { ${VIS_LIST_FIELDS} }`)
+    .join('\n');
+
+const EMPTY_AGGREGATE = (): VisAggregate => ({
+    plots: [],
+    mails: [],
+    grids: [],
+    docs: [],
+    jobs: [],
+    repos: [],
+});
+
+// GraphQL returns `url`; downstream code (view picker) expects `uri`. Mirror it
+// and guarantee every list is an array.
+function normalizeAggregate(raw: Partial<Record<keyof VisAggregate, any[]>> | null): VisAggregate {
+    const out = EMPTY_AGGREGATE();
+    if (!raw) return out;
+    for (const key of Object.keys(out) as (keyof VisAggregate)[]) {
+        const items = Array.isArray(raw[key]) ? raw[key]! : [];
+        out[key] = items.map(item => ({ ...item, uri: item.uri ?? item.url }));
+    }
+    return out;
+}
+
 export default class NovemApi {
     private token: string;
     private apiRoot: string;
     private headers: { Authorization: string; Accept: string };
+
+    // Memoised aggregate fetches so the four/six tree providers loading on
+    // activation share a single GraphQL round trip instead of one each.
+    private selfVisCache?: Promise<VisAggregate>;
+    private userVisCache = new Map<string, Promise<VisAggregate>>();
 
     constructor(apiRoot: string, token: string) {
         this.apiRoot = apiRoot;
@@ -124,6 +168,108 @@ export default class NovemApi {
 
     async getProfile() {
         return await this.get<UserProfile>(`${this.apiRoot}/admin/profile/overview`);
+    }
+
+    // ── GraphQL aggregates ─────────────────────────────────────────────
+    //
+    // The sidebar lists (and the view pickers) use GraphQL to fetch every
+    // resource type in a single round trip. Per-resource details and file
+    // contents stay on REST (/i/, /vis/*, /code/*).
+
+    // The GraphQL endpoint sits at the API origin (NOT under /v1).
+    private gqlUrl(): string {
+        return `${new URL(this.apiRoot).origin}/gql`;
+    }
+
+    private async gql<T = any>(query: string, variables?: Record<string, unknown>): Promise<T> {
+        let response: Response;
+        try {
+            response = await fetch(this.gqlUrl(), {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${this.token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query, variables }),
+            });
+        } catch (error) {
+            throw new Error(
+                `GraphQL network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            );
+        }
+
+        if (!response.ok) {
+            throw new Error(`GraphQL HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const json = (await response.json()) as { data?: T; errors?: unknown };
+        if (json.errors) {
+            throw new Error(`GraphQL errors: ${JSON.stringify(json.errors)}`);
+        }
+        return json.data as T;
+    }
+
+    /**
+     * All of the authenticated user's own resources (including private),
+     * fetched via `me { ... }` in one call and memoised for the session.
+     * `username` is only used for the REST fallback if GraphQL is unavailable.
+     */
+    async getSelfVis(username: string): Promise<VisAggregate> {
+        if (!this.selfVisCache) {
+            this.selfVisCache = this.gql<{ me: any }>(`{ me { ${AGG_SELECTION} } }`)
+                .then(data => normalizeAggregate(data?.me))
+                .catch(async error => {
+                    console.error('GraphQL me{} failed, falling back to REST lists:', error);
+                    this.selfVisCache = undefined;
+                    return this.restAggregateFallback(username);
+                });
+        }
+        return this.selfVisCache;
+    }
+
+    /**
+     * Another user's resources (public / shared-with-you), via
+     * `users(username:) { ... }`. Memoised per username.
+     */
+    async getUserVis(username: string): Promise<VisAggregate> {
+        let cached = this.userVisCache.get(username);
+        if (!cached) {
+            cached = this.gql<{ users: any[] }>(
+                `query($u: String!) { users(username: $u) { ${AGG_SELECTION} } }`,
+                { u: username },
+            )
+                .then(data => normalizeAggregate(data?.users?.[0]))
+                .catch(async error => {
+                    console.error(
+                        `GraphQL users(${username}) failed, falling back to REST:`,
+                        error,
+                    );
+                    this.userVisCache.delete(username);
+                    return this.restAggregateFallback(username);
+                });
+            this.userVisCache.set(username, cached);
+        }
+        return cached;
+    }
+
+    /** Clear memoised aggregates (called on refresh / profile switch). */
+    invalidateVisCache(): void {
+        this.selfVisCache = undefined;
+        this.userVisCache.clear();
+    }
+
+    // REST fallback so a GraphQL hiccup never blanks the sidebar.
+    private async restAggregateFallback(username: string): Promise<VisAggregate> {
+        const safe = (p: Promise<any>) => p.then(r => (Array.isArray(r) ? r : [])).catch(() => []);
+        const [plots, mails, grids, docs, jobs, repos] = await Promise.all([
+            safe(this.getPlotsForUser(username)),
+            safe(this.getMailsForUser(username)),
+            safe(this.getGridsForUser(username)),
+            safe(this.getDocsForUser(username)),
+            safe(this.getJobsForUser(username)),
+            safe(this.getReposForUser(username)),
+        ]);
+        return { plots, mails, grids, docs, jobs, repos };
     }
 
     async getApiRoot() {

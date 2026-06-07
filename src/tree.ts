@@ -23,6 +23,10 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
 
     refresh(): void {
         console.log(`Refreshing ${this.getType()} provider`);
+        // Bust the memoised GraphQL aggregate so the next root fetch is fresh.
+        // Covers every refresh path: the refresh commands, and create/delete
+        // which call refresh() to surface/remove a resource.
+        this.api.invalidateVisCache();
         this._onDidChangeTreeData.fire();
     }
 
@@ -195,34 +199,36 @@ function makeProvider(
     };
 }
 
+// Root lists come from the single memoised GraphQL aggregate (api.getSelfVis);
+// children (files inside a resource) stay on REST and load lazily.
 export const PlotsProvider = makeProvider(
     'plots',
-    (api, u) => api.getPlotsForUser(u),
+    (api, u) => api.getSelfVis(u).then(a => a.plots),
     (api, id, path) => api.getDetailsForVis('plots', id, path),
 );
 export const MailsProvider = makeProvider(
     'mails',
-    (api, u) => api.getMailsForUser(u),
+    (api, u) => api.getSelfVis(u).then(a => a.mails),
     (api, id, path) => api.getDetailsForVis('mails', id, path),
 );
 export const GridsProvider = makeProvider(
     'grids',
-    (api, u) => api.getGridsForUser(u),
+    (api, u) => api.getSelfVis(u).then(a => a.grids),
     (api, id, path) => api.getDetailsForVis('grids', id, path),
 );
 export const DocsProvider = makeProvider(
     'docs',
-    (api, u) => api.getDocsForUser(u),
+    (api, u) => api.getSelfVis(u).then(a => a.docs),
     (api, id, path) => api.getDetailsForVis('docs', id, path),
 );
 export const JobsProvider = makeProvider(
     'jobs',
-    (api, u) => api.getJobsForUser(u),
+    (api, u) => api.getSelfVis(u).then(a => a.jobs),
     (api, id, path) => api.getDetailsForJob(id, path),
 );
 export const ReposProvider = makeProvider(
     'repos',
-    (api, u) => api.getReposForUser(u),
+    (api, u) => api.getSelfVis(u).then(a => a.repos),
     (api, id, path) => api.getDetailsForRepo(id, path),
 );
 
