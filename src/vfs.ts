@@ -14,9 +14,11 @@ export class NovemFSProvider implements vscode.FileSystemProvider {
         this._onDidChangeFile.event;
 
     private api: NovemApi;
+    private onDidWrite?: (visType: string, path: string) => void;
 
-    constructor(api: NovemApi) {
+    constructor(api: NovemApi, onDidWrite?: (visType: string, path: string) => void) {
         this.api = api;
+        this.onDidWrite = onDidWrite;
     }
 
     async readFile(uri: vscode.Uri): Promise<Uint8Array> {
@@ -30,6 +32,11 @@ export class NovemFSProvider implements vscode.FileSystemProvider {
         options: { create: boolean; overwrite: boolean },
     ): Promise<void> {
         await this.api.writeFile(uri.authority, uri.path, new TextDecoder().decode(content));
+        // uri.authority is the vis type (plots/mails/grids/docs/jobs/repos),
+        // uri.path is /<id>/<...>. Let listeners react to config changes that
+        // alter a resource's structure (e.g. plot type -> custom adds a
+        // config/custom folder).
+        this.onDidWrite?.(uri.authority, uri.path);
     }
 
     // Stub implementations for other required methods
