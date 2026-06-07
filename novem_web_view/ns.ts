@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 import { ViewData } from './types';
 import { enforceStyles } from './utils';
@@ -76,36 +76,23 @@ export function getCurrentTheme(): 'light' | 'dark' {
     return 'light';
 }
 
-/** Track the active VSCode theme, updating when the user switches themes. */
-function useVscodeTheme(): 'light' | 'dark' {
-    const [theme, setTheme] = useState<'light' | 'dark'>(getCurrentTheme);
-
-    useEffect(() => {
-        const update = () => setTheme(getCurrentTheme());
-        const observer = new MutationObserver(update);
-        observer.observe(document.body, {
-            attributes: true,
-            attributeFilter: ['class'],
-        });
-        update();
-        return () => observer.disconnect();
-    }, []);
-
-    return theme;
-}
-
 /**
- * Load ns.js, register the visualisation into `targetId`, and re-register
- * whenever the editor theme changes so the rendered vis tracks light/dark.
+ * Load ns.js and register the visualisation into `targetId` exactly once.
  *
- * Docs are deliberately excluded from the `ns-config-theme` hint: vislib reads
- * a doc's own theme (built-in / +org / custom) from its config, and forcing
- * "light"/"dark" would clobber it and leave the doc unstyled (see gaia
- * webapp usePlotRegistration).
+ * We deliberately do NOT re-register when the editor theme changes. Live
+ * light/dark switching is handled by `enforceStyles()` (wired to a body-class
+ * MutationObserver in App.tsx), which toggles `data-dark-mode` on the document
+ * and any iframes — vislib re-styles from that via CSS, no re-render needed.
+ * This mirrors gaia/webapp, which sets `ns-config-theme` once at register time
+ * and never re-registers on a light/dark toggle. Re-registering instead made
+ * grids vanish and docs re-append all their pages.
+ *
+ * Docs are excluded from the `ns-config-theme` hint: vislib reads a doc's own
+ * theme (built-in / +org / custom) from its config, and forcing "light"/"dark"
+ * would clobber it and leave the doc unstyled (see gaia usePlotRegistration).
  */
 export function useNsRegistration(type: NsType, viewData: ViewData, targetId: string) {
     const { shortname, token, apiRoot } = viewData;
-    const theme = useVscodeTheme();
 
     useEffect(() => {
         if (!shortname || !token || !apiRoot) return;
@@ -120,9 +107,10 @@ export function useNsRegistration(type: NsType, viewData: ViewData, targetId: st
 
             setupNs(token, apiRoot);
 
+            // Initial theme hint only; live toggles flow through enforceStyles.
             const el = document.getElementById(targetId);
             if (el && type !== 'd') {
-                el.setAttribute('ns-config-theme', theme);
+                el.setAttribute('ns-config-theme', getCurrentTheme());
             }
 
             ns.register(type, shortname, targetId);
@@ -135,10 +123,10 @@ export function useNsRegistration(type: NsType, viewData: ViewData, targetId: st
         return () => {
             cancelled = true;
             // Drop the registration so in-flight render callbacks don't draw
-            // into a detached node, and so the theme re-register starts clean.
+            // into a node React is unmounting.
             if (registered) {
                 window.ns?.unregister?.(shortname, targetId);
             }
         };
-    }, [type, shortname, token, apiRoot, targetId, theme]);
+    }, [type, shortname, token, apiRoot, targetId]);
 }

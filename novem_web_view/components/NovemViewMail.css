@@ -63,21 +63,18 @@
     margin-bottom: 20px;
     margin-right: 20px;
     border-radius: 50%;
-    border: 1px solid var(--img-border);
-    background: #eee;
-
-    border: 1px solid var(--vscode-textBlockQuote-border);
-    border: 1px solid var(--vscode-editorHoverWidget-border);
     border: 1px solid #9f9f9f;
+    /* Neutral placeholder shown only when the sender has no avatar; the real
+       avatar is layered on via an inline background-image (see avatarStyle). */
+    background-color: var(--vscode-editor-inactiveSelectionBackground, #eee);
     background-size: cover;
-    background-image: url(https://www.gravatar.com/avatar/0ab3454…?d=robohash&r=g);
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 .vscode-dark .novem--vis--profile--mail .img {
-    background: #404040;
+    background-color: var(--vscode-editor-inactiveSelectionBackground, #404040);
     border: 1px solid #777;
-    background-size: cover;
-    background-image: url(https://www.gravatar.com/avatar/7ce8d54…?d=robohash&r=g&s=120);
 }
 
 .novem--vis--profile--mail .holder {

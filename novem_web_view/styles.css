@@ -67,15 +67,16 @@ body {
     margin: 0.25rem;
     border-radius: 50%;
     border: 1px solid var(--vscode-editorHoverWidget-border);
-    background: #eee;
+    /* Neutral placeholder shown only when the creator has no avatar; the real
+       avatar is layered on via an inline background-image (see avatarStyle). */
+    background-color: var(--vscode-editor-inactiveSelectionBackground, #eee);
     background-size: cover;
-    background-image: url(https://www.gravatar.com/avatar/7ce8d54…?d=robohash&r=g&s=120);
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 .vscode-dark .novem--vis--profile .img {
-    background: #404040;
-    background-size: cover;
-    background-image: url(https://www.gravatar.com/avatar/7ce8d54…?d=robohash&r=g&s=120);
+    background-color: var(--vscode-editor-inactiveSelectionBackground, #404040);
 }
 
 .novem--vis--profile .details {
