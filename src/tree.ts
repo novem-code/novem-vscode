@@ -19,7 +19,9 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
         this._onDidChangeTreeData.event;
 
     private statusMessage: string | null = null;
-    private rootLoadPromise: Promise<vscode.TreeItem[]> | null = null;
+    private rootItems: vscode.TreeItem[] | null = null;
+    private rootLoadPromise: Promise<void> | null = null;
+    private treeView: vscode.TreeView<vscode.TreeItem> | null = null;
 
     // Top-level resource nodes by id, captured on each root fetch so a single
     // resource's subtree can be refreshed without rebuilding the whole tree.
@@ -31,8 +33,11 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
         // Covers every refresh path: the refresh commands, and create/delete
         // which call refresh() to surface/remove a resource.
         this.api.invalidateVisCache();
+        this.rootItems = null;
         this.rootLoadPromise = null;
+        this.rootNodes.clear();
         this.setRootLoadVerified(false);
+        this.updateTreeViewMessage();
         this._onDidChangeTreeData.fire();
     }
 
@@ -61,6 +66,21 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
         this._onDidChangeTreeData.fire();
     }
 
+    attachTreeView(treeView: vscode.TreeView<vscode.TreeItem>): void {
+        this.treeView = treeView;
+        this.updateTreeViewMessage();
+    }
+
+    primeRootItems(response: any[]): void {
+        const { items, rootNodes } = this.buildRootTreeItems(response);
+        this.rootItems = items;
+        this.rootNodes = rootNodes;
+        this.rootLoadPromise = null;
+        this.setRootLoadVerified(true);
+        this.updateTreeViewMessage();
+        this._onDidChangeTreeData.fire();
+    }
+
     async getTreeItem(element: vscode.TreeItem): Promise<vscode.TreeItem> {
         return element;
     }
@@ -79,135 +99,181 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
         repos: { command: 'novem.createNovemRepo', label: 'Create New Repo...' },
     };
 
-    private getRootTreeItems(username: string): Promise<vscode.TreeItem[]> {
-        if (!this.rootLoadPromise) {
-            this.setRootLoadVerified(false);
-            const rootLoad = this.fetchRootTreeItems(username).finally(() => {
-                if (this.rootLoadPromise === rootLoad) {
-                    this.rootLoadPromise = null;
-                    this.setRootLoadVerified(true);
-                }
-            });
-            this.rootLoadPromise = rootLoad;
+    private getRootTreeItems(username: string): vscode.TreeItem[] {
+        if (this.rootItems) {
+            return this.withStatusItem(this.rootItems);
         }
 
-        return this.rootLoadPromise;
+        if (!this.rootLoadPromise) {
+            this.setRootLoadVerified(false);
+            let rootLoad: Promise<void>;
+            rootLoad = this.fetchRootTreeItems(username)
+                .then(({ items, rootNodes }) => {
+                    if (this.rootLoadPromise === rootLoad) {
+                        this.rootItems = items;
+                        this.rootNodes = rootNodes;
+                    }
+                })
+                .finally(() => {
+                    if (this.rootLoadPromise === rootLoad) {
+                        this.rootLoadPromise = null;
+                        this.setRootLoadVerified(true);
+                        this.updateTreeViewMessage();
+                        this._onDidChangeTreeData.fire();
+                    }
+                });
+            this.rootLoadPromise = rootLoad;
+            this.updateTreeViewMessage();
+        }
+
+        return [this.createLoadingItem()];
+    }
+
+    private updateTreeViewMessage(): void {
+        if (!this.treeView) return;
+        this.treeView.message = this.rootItems ? undefined : 'Loading...';
     }
 
     private setRootLoadVerified(value: boolean): void {
         void vscode.commands.executeCommand('setContext', `novem.${this.getType()}Loaded`, value);
     }
 
-    private async fetchRootTreeItems(username: string): Promise<vscode.TreeItem[]> {
+    private createLoadingItem(): vscode.TreeItem {
+        const loadingItem = new vscode.TreeItem('Loading...');
+        loadingItem.iconPath = new vscode.ThemeIcon('loading~spin');
+        return loadingItem;
+    }
+
+    private buildRootTreeItems(response: any[]): {
+        items: vscode.TreeItem[];
+        rootNodes: Map<string, MyTreeItem>;
+    } {
+        const items: vscode.TreeItem[] = [];
+        const rootNodes = new Map<string, MyTreeItem>();
+
+        const rootItems = (Array.isArray(response) ? response : [])
+            .sort((a: any, b: any) => {
+                const aId = a.id || a.name;
+                const bId = b.id || b.name;
+                return aId.localeCompare(bId);
+            })
+            .map(
+                (each: any) =>
+                    new MyTreeItem(
+                        this,
+                        each.id || each.name,
+                        'dir',
+                        each.permissions || ['r', 'w', 'd'],
+                        this.getType(),
+                        '',
+                        each.type || (this.getType() === 'jobs' ? 'job' : 'repo'),
+                    ),
+            );
+
+        items.push(...rootItems);
+
+        // Track top-level nodes so refreshResource() can re-fetch a
+        // single resource's subtree.
+        for (const node of rootItems) {
+            rootNodes.set(node.name, node);
+        }
+
+        // Add a "Create New..." button at the bottom (only when there are items;
+        // empty views use viewsWelcome instead)
+        if (rootItems.length > 0) {
+            const createInfo = BaseNovemProvider.CREATE_COMMANDS[this.getType()];
+            if (createInfo) {
+                const createItem = new vscode.TreeItem(createInfo.label);
+                createItem.iconPath = new vscode.ThemeIcon('add');
+                createItem.command = {
+                    command: createInfo.command,
+                    title: createInfo.label,
+                };
+                items.push(createItem);
+            }
+        }
+
+        return { items, rootNodes };
+    }
+
+    private withStatusItem(items: vscode.TreeItem[]): vscode.TreeItem[] {
+        if (!this.statusMessage) {
+            return items;
+        }
+
+        const statusItem = new vscode.TreeItem(this.statusMessage);
+        statusItem.iconPath = new vscode.ThemeIcon('loading~spin');
+        return [statusItem, ...items];
+    }
+
+    private async fetchRootTreeItems(
+        username: string,
+    ): Promise<{ items: vscode.TreeItem[]; rootNodes: Map<string, MyTreeItem> }> {
         try {
             console.log(`Fetching root items for ${this.getType()}`);
             const response = await this.getRootItems(username);
 
-            const items: vscode.TreeItem[] = [];
+            return this.buildRootTreeItems(response);
+        } catch (error) {
+            console.error(`Error loading ${this.getType()}:`, error);
+            return {
+                items: [new vscode.TreeItem(`Error loading ${this.getType()}`)],
+                rootNodes: new Map(),
+            };
+        }
+    }
 
-            if (this.statusMessage) {
-                const statusItem = new vscode.TreeItem(this.statusMessage);
-                statusItem.iconPath = new vscode.ThemeIcon('loading~spin');
-                items.push(statusItem);
-            }
+    private async fetchChildTreeItems(element: MyTreeItem): Promise<vscode.TreeItem[]> {
+        function splitWithLimit(str: string, delimiter: string, limit: number): string[] {
+            const parts = str.split(delimiter);
+            const selected = parts.slice(0, limit);
+            selected.push(parts.slice(limit).join(delimiter));
+            return selected;
+        }
 
-            const rootItems = (Array.isArray(response) ? response : [])
+        const [_, visId, path] = splitWithLimit(element.path, '/', 2);
+
+        try {
+            console.log(`Fetching child items for ${this.getType()} - ${visId}/${path || ''}`);
+            const response = await this.getChildItems(visId, path);
+
+            return response
+                .filter((each: any) => ['file', 'dir', 'link'].includes(each.type))
                 .sort((a: any, b: any) => {
-                    const aId = a.id || a.name;
-                    const bId = b.id || b.name;
-                    return aId.localeCompare(bId);
+                    const aIsDir = a.type === 'dir';
+                    const bIsDir = b.type === 'dir';
+
+                    if (aIsDir && !bIsDir) return -1;
+                    if (!aIsDir && bIsDir) return 1;
+
+                    return a.name.localeCompare(b.name);
                 })
                 .map(
                     (each: any) =>
                         new MyTreeItem(
                             this,
-                            each.id || each.name,
-                            'dir',
-                            each.permissions || ['r', 'w', 'd'],
+                            each.name,
+                            each.type,
+                            each.permissions,
                             this.getType(),
+                            element.path,
                             '',
-                            each.type || (this.getType() === 'jobs' ? 'job' : 'repo'),
                         ),
                 );
-
-            items.push(...rootItems);
-
-            // Track top-level nodes so refreshResource() can re-fetch a
-            // single resource's subtree.
-            this.rootNodes.clear();
-            for (const node of rootItems) {
-                this.rootNodes.set(node.name, node);
-            }
-
-            // Add a "Create New..." button at the bottom (only when there are items;
-            // empty views use viewsWelcome instead)
-            if (rootItems.length > 0) {
-                const createInfo = BaseNovemProvider.CREATE_COMMANDS[this.getType()];
-                if (createInfo) {
-                    const createItem = new vscode.TreeItem(createInfo.label);
-                    createItem.iconPath = new vscode.ThemeIcon('add');
-                    createItem.command = {
-                        command: createInfo.command,
-                        title: createInfo.label,
-                    };
-                    items.push(createItem);
-                }
-            }
-
-            return items;
         } catch (error) {
-            console.error(`Error loading ${this.getType()}:`, error);
+            console.error(`Error loading ${this.getType()} children:`, error);
             return [new vscode.TreeItem(`Error loading ${this.getType()}`)];
         }
     }
 
-    async getChildren(element?: MyTreeItem): Promise<vscode.TreeItem[]> {
+    getChildren(element?: MyTreeItem): vscode.ProviderResult<vscode.TreeItem[]> {
         const profile = this.context.globalState.get('userProfile') as UserProfile;
 
         if (!element) {
             return this.getRootTreeItems(profile.user_info.username!);
         } else {
-            function splitWithLimit(str: string, delimiter: string, limit: number): string[] {
-                const parts = str.split(delimiter);
-                const selected = parts.slice(0, limit);
-                selected.push(parts.slice(limit).join(delimiter));
-                return selected;
-            }
-
-            const [_, visId, path] = splitWithLimit(element.path, '/', 2);
             if (element.type !== 'dir') throw new Error('Invalid type');
-
-            try {
-                console.log(`Fetching child items for ${this.getType()} - ${visId}/${path || ''}`);
-                const response = await this.getChildItems(visId, path);
-
-                return response
-                    .filter((each: any) => ['file', 'dir', 'link'].includes(each.type))
-                    .sort((a: any, b: any) => {
-                        const aIsDir = a.type === 'dir';
-                        const bIsDir = b.type === 'dir';
-
-                        if (aIsDir && !bIsDir) return -1;
-                        if (!aIsDir && bIsDir) return 1;
-
-                        return a.name.localeCompare(b.name);
-                    })
-                    .map(
-                        (each: any) =>
-                            new MyTreeItem(
-                                this,
-                                each.name,
-                                each.type,
-                                each.permissions,
-                                this.getType(),
-                                element ? element.path : '',
-                                '',
-                            ),
-                    );
-            } catch (error) {
-                console.error(`Error loading ${this.getType()} children:`, error);
-                return [new vscode.TreeItem(`Error loading ${this.getType()}`)];
-            }
+            return this.fetchChildTreeItems(element);
         }
     }
 }
@@ -232,8 +298,10 @@ function makeProvider(
     };
 }
 
-// Root lists come from the single memoised GraphQL aggregate (api.getSelfVis);
-// children (files inside a resource) stay on REST and load lazily.
+// Vis root lists come from the single memoised GraphQL aggregate
+// (api.getSelfVis); children (files inside a resource) stay on REST and load
+// lazily. Jobs/repos keep the direct code list endpoints because those are
+// fast and independent of the vis aggregate.
 export const PlotsProvider = makeProvider(
     'plots',
     (api, u) => api.getSelfVis(u).then(a => a.plots),
@@ -256,12 +324,12 @@ export const DocsProvider = makeProvider(
 );
 export const JobsProvider = makeProvider(
     'jobs',
-    (api, u) => api.getSelfVis(u).then(a => a.jobs),
+    (api, u) => api.getJobsForUser(u),
     (api, id, path) => api.getDetailsForJob(id, path),
 );
 export const ReposProvider = makeProvider(
     'repos',
-    (api, u) => api.getSelfVis(u).then(a => a.repos),
+    (api, u) => api.getReposForUser(u),
     (api, id, path) => api.getDetailsForRepo(id, path),
 );
 

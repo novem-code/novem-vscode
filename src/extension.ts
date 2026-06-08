@@ -16,7 +16,7 @@ import {
 import { setupCommands, setupAuthCommands } from './commands';
 
 import { NovemFSProvider } from './vfs';
-import NovemApi from './novem-api';
+import NovemApi, { type VisAggregate } from './novem-api';
 import { NovemUriHandler } from './oauth';
 
 let plotsProvider: InstanceType<typeof PlotsProvider>;
@@ -25,6 +25,42 @@ let gridsProvider: InstanceType<typeof GridsProvider>;
 let docsProvider: InstanceType<typeof DocsProvider>;
 let jobsProvider: InstanceType<typeof JobsProvider> | null = null;
 let reposProvider: InstanceType<typeof ReposProvider> | null = null;
+
+type RootProvider = { primeRootItems(items: any[]): void };
+type NovemTreeProvider = vscode.TreeDataProvider<vscode.TreeItem> & {
+    attachTreeView(treeView: vscode.TreeView<vscode.TreeItem>): void;
+};
+
+function registerNovemTreeView(
+    context: vscode.ExtensionContext,
+    viewId: string,
+    provider: NovemTreeProvider,
+): void {
+    const treeView = vscode.window.createTreeView(viewId, { treeDataProvider: provider });
+    provider.attachTreeView(treeView);
+    context.subscriptions.push(treeView);
+}
+
+function primeProviderRoot(
+    aggregatePromise: Promise<VisAggregate | null>,
+    key: keyof VisAggregate,
+    provider: RootProvider | null | undefined,
+): void {
+    if (!provider) return;
+    void aggregatePromise.then(aggregate => {
+        if (aggregate) provider.primeRootItems(aggregate[key]);
+    });
+}
+
+function primeProviderRootItems(
+    itemsPromise: Promise<any[] | null>,
+    provider: RootProvider | null | undefined,
+): void {
+    if (!provider) return;
+    void itemsPromise.then(items => {
+        if (items) provider.primeRootItems(items);
+    });
+}
 
 // Re-fetch a single resource's subtree after we mutate its config (e.g. a plot
 // type change can restructure the resource — new folders, etc.). Refreshing
@@ -88,6 +124,19 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     const novemApi = new NovemApi(config.api_root!, config.token!);
+    const preloadUsername = config.username ?? '';
+    const selfVisPromise = novemApi.getSelfVis(preloadUsername).catch(error => {
+        console.error('Error preloading Novem sidebar root lists:', error);
+        return null;
+    });
+    const jobsRootPromise = novemApi.getJobsForUser(preloadUsername).catch(error => {
+        console.error('Error preloading Novem jobs root list:', error);
+        return null;
+    });
+    const reposRootPromise = novemApi.getReposForUser(preloadUsername).catch(error => {
+        console.error('Error preloading Novem repos root list:', error);
+        return null;
+    });
 
     // Let's grab our profile information
     let profile: UserProfile;
@@ -143,43 +192,26 @@ export async function activate(context: vscode.ExtensionContext) {
     gridsProvider = new GridsProvider(novemApi, context);
     docsProvider = new DocsProvider(novemApi, context);
 
-    context.subscriptions.push(
-        vscode.window.registerTreeDataProvider('novem-plots', plotsProvider),
-        vscode.window.registerTreeDataProvider('novem-mails', mailsProvider),
-        vscode.window.registerTreeDataProvider('novem-grids', gridsProvider),
-        vscode.window.registerTreeDataProvider('novem-docs', docsProvider),
-    );
+    registerNovemTreeView(context, 'novem-plots', plotsProvider);
+    registerNovemTreeView(context, 'novem-mails', mailsProvider);
+    registerNovemTreeView(context, 'novem-grids', gridsProvider);
+    registerNovemTreeView(context, 'novem-docs', docsProvider);
 
-    // Check if jobs and repos endpoints are available by querying /code
-    try {
-        const codeRoot = await novemApi.getCodeRoot();
-        const hasJobs = codeRoot.some((item: any) => item.name === 'jobs');
-        const hasRepos = codeRoot.some((item: any) => item.name === 'repos');
+    primeProviderRoot(selfVisPromise, 'plots', plotsProvider);
+    primeProviderRoot(selfVisPromise, 'mails', mailsProvider);
+    primeProviderRoot(selfVisPromise, 'grids', gridsProvider);
+    primeProviderRoot(selfVisPromise, 'docs', docsProvider);
 
-        if (hasJobs) {
-            jobsProvider = new JobsProvider(novemApi, context);
-            context.subscriptions.push(
-                vscode.window.registerTreeDataProvider('novem-jobs', jobsProvider),
-            );
-            vscode.commands.executeCommand('setContext', 'novem.hasJobs', true);
-        } else {
-            vscode.commands.executeCommand('setContext', 'novem.hasJobs', false);
-        }
+    jobsProvider = new JobsProvider(novemApi, context);
+    reposProvider = new ReposProvider(novemApi, context);
 
-        if (hasRepos) {
-            reposProvider = new ReposProvider(novemApi, context);
-            context.subscriptions.push(
-                vscode.window.registerTreeDataProvider('novem-repos', reposProvider),
-            );
-            vscode.commands.executeCommand('setContext', 'novem.hasRepos', true);
-        } else {
-            vscode.commands.executeCommand('setContext', 'novem.hasRepos', false);
-        }
-    } catch (error) {
-        console.error('Error checking for jobs/repos endpoints:', error);
-        vscode.commands.executeCommand('setContext', 'novem.hasJobs', false);
-        vscode.commands.executeCommand('setContext', 'novem.hasRepos', false);
-    }
+    registerNovemTreeView(context, 'novem-jobs', jobsProvider);
+    registerNovemTreeView(context, 'novem-repos', reposProvider);
+
+    primeProviderRootItems(jobsRootPromise, jobsProvider);
+    primeProviderRootItems(reposRootPromise, reposProvider);
+    vscode.commands.executeCommand('setContext', 'novem.hasJobs', true);
+    vscode.commands.executeCommand('setContext', 'novem.hasRepos', true);
 
     const sbi = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
 

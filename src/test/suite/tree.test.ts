@@ -25,6 +25,15 @@ function labelOf(item: vscode.TreeItem): string {
     return typeof label === 'string' ? label : (label?.label ?? '');
 }
 
+function waitForTreeRefresh(provider: BaseNovemProvider): Promise<void> {
+    return new Promise(resolve => {
+        const disposable = provider.onDidChangeTreeData(() => {
+            disposable.dispose();
+            resolve();
+        });
+    });
+}
+
 class TestTreeProvider extends BaseNovemProvider {
     rootCalls = 0;
     lastUsername: string | undefined;
@@ -52,35 +61,45 @@ class TestTreeProvider extends BaseNovemProvider {
 }
 
 suite('BaseNovemProvider root loading', () => {
-    test('first root request resolves real items instead of a synthetic loading node', async () => {
+    test('shows a loading node before replacing it with cached root items', async () => {
         const pendingRoots = deferred<any[]>();
         const provider = new TestTreeProvider(fakeContext('alice'), pendingRoots.promise);
 
-        const childrenPromise = provider.getChildren();
+        const refresh = waitForTreeRefresh(provider);
+        const loadingChildren = (await provider.getChildren())!;
         await Promise.resolve();
 
         assert.strictEqual(provider.rootCalls, 1);
         assert.strictEqual(provider.lastUsername, 'alice');
+        assert.deepStrictEqual(loadingChildren.map(labelOf), ['Loading...']);
 
         pendingRoots.resolve([{ id: 'z-plot' }, { id: 'a-plot' }]);
-        const children = await childrenPromise;
+        await refresh;
+
+        const children = (await provider.getChildren())!;
 
         assert.deepStrictEqual(children.map(labelOf), ['a-plot', 'z-plot', 'Create New Plot...']);
         assert.ok(!children.some(item => labelOf(item) === 'Loading...'));
+        assert.strictEqual(provider.rootCalls, 1);
     });
 
     test('coalesces concurrent root requests', async () => {
         const pendingRoots = deferred<any[]>();
         const provider = new TestTreeProvider(fakeContext('alice'), pendingRoots.promise);
 
-        const first = provider.getChildren();
-        const second = provider.getChildren();
+        const refresh = waitForTreeRefresh(provider);
+        const first = (await provider.getChildren())!;
+        const second = (await provider.getChildren())!;
         await Promise.resolve();
 
+        assert.deepStrictEqual(first.map(labelOf), ['Loading...']);
+        assert.deepStrictEqual(second.map(labelOf), ['Loading...']);
         assert.strictEqual(provider.rootCalls, 1);
 
         pendingRoots.resolve([{ id: 'plot' }]);
-        const [firstChildren, secondChildren] = await Promise.all([first, second]);
+        await refresh;
+        const firstChildren = (await provider.getChildren())!;
+        const secondChildren = (await provider.getChildren())!;
 
         assert.deepStrictEqual(firstChildren.map(labelOf), ['plot', 'Create New Plot...']);
         assert.deepStrictEqual(secondChildren.map(labelOf), ['plot', 'Create New Plot...']);
