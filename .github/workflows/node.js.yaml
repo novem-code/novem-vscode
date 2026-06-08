@@ -1,11 +1,13 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# Clean install (pnpm) + build + test across Node.js versions.
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+#
+# Actions are pinned to commit SHAs (see .github/workflows/CLAUDE.md).
 
 name: Node.js CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
     branches: "*"
 
@@ -13,7 +15,6 @@ permissions:
   contents: read
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -22,11 +23,20 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: yarn install
-    - run: xvfb-run -a yarn test
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      # pnpm must be set up before setup-node so its cache: 'pnpm' can find the
+      # store. Version comes from package.json "packageManager".
+      - name: Install pnpm
+        uses: pnpm/action-setup@5d445ecbfcb90fdf1556a629d018c79e97ff973b # v6.0.6
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+      # nodeLinker: hoisted (pnpm-workspace.yaml) gives a flat node_modules so the
+      # VSCode extension-host test runner resolves deps like mocha.
+      - run: pnpm install --frozen-lockfile
+      # Build the webview SPA bundle (esbuild) so webview breakage is caught here;
+      # `pnpm test` then compiles the extension, lints, and runs the suite.
+      - run: pnpm run build:spa:prod
+      - run: xvfb-run -a pnpm test
