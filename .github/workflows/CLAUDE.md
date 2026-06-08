@@ -29,7 +29,7 @@ workflows; prefer the same SHAs gaia uses for shared actions.
 | `actions/checkout` | `de0fac2e` | v6.0.2 |
 | `actions/setup-node` | `6044e13b` | v6.2.0 |
 | `actions/create-github-app-token` | `1b10c78c` | v3.1.1 |
-| `pnpm/action-setup` | `5d445ecb` | v6.0.6 (added pnpm 11 support) |
+| `pnpm/action-setup` | `0e279bb9` | v6.0.8 (self-updates to the packageManager-pinned pnpm; v6.0.6 ran bundled pnpm 11 and broke the Node 20 leg) |
 
 The reusable `novem-code/github-actions/.github/workflows/discord_*.yml@v2`
 calls are org-internal and pinned to the `@v2` tag by convention.
