@@ -25,7 +25,7 @@
         "dataviz"
     ],
     "main": "./out/src/extension.js",
-    "packageManager": "pnpm@11.5.0",
+    "packageManager": "pnpm@10.34.1",
     "icon": "img/novem_icon_medium.png",
     "galleryBanner": {
         "color": "#D4FB38",
