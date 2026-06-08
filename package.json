@@ -529,32 +529,32 @@
             {
                 "view": "novem-plots",
                 "contents": "[$(graph) Create Your First Plot](command:novem.createNovemPlot)",
-                "when": "novem.loggedIn"
+                "when": "novem.loggedIn && novem.plotsLoaded"
             },
             {
                 "view": "novem-mails",
                 "contents": "[$(mail) Create Your First E-Mail](command:novem.createNovemMail)",
-                "when": "novem.loggedIn"
+                "when": "novem.loggedIn && novem.mailsLoaded"
             },
             {
                 "view": "novem-grids",
                 "contents": "[$(table) Create Your First Grid](command:novem.createNovemGrid)",
-                "when": "novem.loggedIn"
+                "when": "novem.loggedIn && novem.gridsLoaded"
             },
             {
                 "view": "novem-docs",
                 "contents": "[$(book) Create Your First Document](command:novem.createNovemDoc)",
-                "when": "novem.loggedIn"
+                "when": "novem.loggedIn && novem.docsLoaded"
             },
             {
                 "view": "novem-jobs",
                 "contents": "[$(run) Create Your First Job](command:novem.createNovemJob)",
-                "when": "novem.loggedIn"
+                "when": "novem.loggedIn && novem.jobsLoaded"
             },
             {
                 "view": "novem-repos",
                 "contents": "[$(repo) Create Your First Repo](command:novem.createNovemRepo)",
-                "when": "novem.loggedIn"
+                "when": "novem.loggedIn && novem.reposLoaded"
             },
             {
                 "view": "novem-login",

@@ -19,7 +19,7 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
         this._onDidChangeTreeData.event;
 
     private statusMessage: string | null = null;
-    private hasLoaded = false;
+    private rootLoadPromise: Promise<vscode.TreeItem[]> | null = null;
 
     // Top-level resource nodes by id, captured on each root fetch so a single
     // resource's subtree can be refreshed without rebuilding the whole tree.
@@ -31,6 +31,8 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
         // Covers every refresh path: the refresh commands, and create/delete
         // which call refresh() to surface/remove a resource.
         this.api.invalidateVisCache();
+        this.rootLoadPromise = null;
+        this.setRootLoadVerified(false);
         this._onDidChangeTreeData.fire();
     }
 
@@ -59,15 +61,6 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
         this._onDidChangeTreeData.fire();
     }
 
-    private async loadInitial(username: string): Promise<void> {
-        try {
-            await this.getRootItems(username);
-        } finally {
-            this.hasLoaded = true;
-            this._onDidChangeTreeData.fire();
-        }
-    }
-
     async getTreeItem(element: vscode.TreeItem): Promise<vscode.TreeItem> {
         return element;
     }
@@ -86,79 +79,93 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
         repos: { command: 'novem.createNovemRepo', label: 'Create New Repo...' },
     };
 
+    private getRootTreeItems(username: string): Promise<vscode.TreeItem[]> {
+        if (!this.rootLoadPromise) {
+            this.setRootLoadVerified(false);
+            const rootLoad = this.fetchRootTreeItems(username).finally(() => {
+                if (this.rootLoadPromise === rootLoad) {
+                    this.rootLoadPromise = null;
+                    this.setRootLoadVerified(true);
+                }
+            });
+            this.rootLoadPromise = rootLoad;
+        }
+
+        return this.rootLoadPromise;
+    }
+
+    private setRootLoadVerified(value: boolean): void {
+        void vscode.commands.executeCommand('setContext', `novem.${this.getType()}Loaded`, value);
+    }
+
+    private async fetchRootTreeItems(username: string): Promise<vscode.TreeItem[]> {
+        try {
+            console.log(`Fetching root items for ${this.getType()}`);
+            const response = await this.getRootItems(username);
+
+            const items: vscode.TreeItem[] = [];
+
+            if (this.statusMessage) {
+                const statusItem = new vscode.TreeItem(this.statusMessage);
+                statusItem.iconPath = new vscode.ThemeIcon('loading~spin');
+                items.push(statusItem);
+            }
+
+            const rootItems = (Array.isArray(response) ? response : [])
+                .sort((a: any, b: any) => {
+                    const aId = a.id || a.name;
+                    const bId = b.id || b.name;
+                    return aId.localeCompare(bId);
+                })
+                .map(
+                    (each: any) =>
+                        new MyTreeItem(
+                            this,
+                            each.id || each.name,
+                            'dir',
+                            each.permissions || ['r', 'w', 'd'],
+                            this.getType(),
+                            '',
+                            each.type || (this.getType() === 'jobs' ? 'job' : 'repo'),
+                        ),
+                );
+
+            items.push(...rootItems);
+
+            // Track top-level nodes so refreshResource() can re-fetch a
+            // single resource's subtree.
+            this.rootNodes.clear();
+            for (const node of rootItems) {
+                this.rootNodes.set(node.name, node);
+            }
+
+            // Add a "Create New..." button at the bottom (only when there are items;
+            // empty views use viewsWelcome instead)
+            if (rootItems.length > 0) {
+                const createInfo = BaseNovemProvider.CREATE_COMMANDS[this.getType()];
+                if (createInfo) {
+                    const createItem = new vscode.TreeItem(createInfo.label);
+                    createItem.iconPath = new vscode.ThemeIcon('add');
+                    createItem.command = {
+                        command: createInfo.command,
+                        title: createInfo.label,
+                    };
+                    items.push(createItem);
+                }
+            }
+
+            return items;
+        } catch (error) {
+            console.error(`Error loading ${this.getType()}:`, error);
+            return [new vscode.TreeItem(`Error loading ${this.getType()}`)];
+        }
+    }
+
     async getChildren(element?: MyTreeItem): Promise<vscode.TreeItem[]> {
         const profile = this.context.globalState.get('userProfile') as UserProfile;
 
         if (!element) {
-            // Show a loading spinner before the first load completes
-            // (prevents viewsWelcome from flashing during data fetch)
-            if (!this.hasLoaded) {
-                this.loadInitial(profile.user_info.username!);
-                const loadingItem = new vscode.TreeItem('Loading...');
-                loadingItem.iconPath = new vscode.ThemeIcon('loading~spin');
-                return [loadingItem];
-            }
-
-            try {
-                console.log(`Fetching root items for ${this.getType()}`);
-                const response = await this.getRootItems(profile.user_info.username!);
-
-                const items: vscode.TreeItem[] = [];
-
-                if (this.statusMessage) {
-                    const statusItem = new vscode.TreeItem(this.statusMessage);
-                    statusItem.iconPath = new vscode.ThemeIcon('loading~spin');
-                    items.push(statusItem);
-                }
-
-                const rootItems = (Array.isArray(response) ? response : [])
-                    .sort((a: any, b: any) => {
-                        const aId = a.id || a.name;
-                        const bId = b.id || b.name;
-                        return aId.localeCompare(bId);
-                    })
-                    .map(
-                        (each: any) =>
-                            new MyTreeItem(
-                                this,
-                                each.id || each.name,
-                                'dir',
-                                each.permissions || ['r', 'w', 'd'],
-                                this.getType(),
-                                '',
-                                each.type || (this.getType() === 'jobs' ? 'job' : 'repo'),
-                            ),
-                    );
-
-                items.push(...rootItems);
-
-                // Track top-level nodes so refreshResource() can re-fetch a
-                // single resource's subtree.
-                this.rootNodes.clear();
-                for (const node of rootItems) {
-                    this.rootNodes.set(node.name, node);
-                }
-
-                // Add a "Create New..." button at the bottom (only when there are items;
-                // empty views use viewsWelcome instead)
-                if (rootItems.length > 0) {
-                    const createInfo = BaseNovemProvider.CREATE_COMMANDS[this.getType()];
-                    if (createInfo) {
-                        const createItem = new vscode.TreeItem(createInfo.label);
-                        createItem.iconPath = new vscode.ThemeIcon('add');
-                        createItem.command = {
-                            command: createInfo.command,
-                            title: createInfo.label,
-                        };
-                        items.push(createItem);
-                    }
-                }
-
-                return items;
-            } catch (error) {
-                console.error(`Error loading ${this.getType()}:`, error);
-                return [new vscode.TreeItem(`Error loading ${this.getType()}`)];
-            }
+            return this.getRootTreeItems(profile.user_info.username!);
         } else {
             function splitWithLimit(str: string, delimiter: string, limit: number): string[] {
                 const parts = str.split(delimiter);
