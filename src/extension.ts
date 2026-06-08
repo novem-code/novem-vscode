@@ -1,12 +1,13 @@
 import * as vscode from 'vscode';
 import * as https from 'https';
-import * as path from 'path';
 
 // Import the functions from config.ts
 import { getCurrentConfig, UserProfile, getActiveProfile } from './config';
 import {
     PlotsProvider,
     MailsProvider,
+    GridsProvider,
+    DocsProvider,
     JobsProvider,
     ReposProvider,
     NovemDummyProvider,
@@ -15,15 +16,78 @@ import {
 import { setupCommands, setupAuthCommands } from './commands';
 
 import { NovemFSProvider } from './vfs';
-import NovemApi from './novem-api';
-import { NovemCache } from './cache';
+import NovemApi, { type VisAggregate } from './novem-api';
 import { NovemUriHandler } from './oauth';
 
 let plotsProvider: InstanceType<typeof PlotsProvider>;
 let mailsProvider: InstanceType<typeof MailsProvider>;
+let gridsProvider: InstanceType<typeof GridsProvider>;
+let docsProvider: InstanceType<typeof DocsProvider>;
 let jobsProvider: InstanceType<typeof JobsProvider> | null = null;
 let reposProvider: InstanceType<typeof ReposProvider> | null = null;
-let novemCache: NovemCache | null = null;
+
+type RootProvider = { primeRootItems(items: any[]): void };
+type NovemTreeProvider = vscode.TreeDataProvider<vscode.TreeItem> & {
+    attachTreeView(treeView: vscode.TreeView<vscode.TreeItem>): void;
+};
+
+function registerNovemTreeView(
+    context: vscode.ExtensionContext,
+    viewId: string,
+    provider: NovemTreeProvider,
+): void {
+    const treeView = vscode.window.createTreeView(viewId, { treeDataProvider: provider });
+    provider.attachTreeView(treeView);
+    context.subscriptions.push(treeView);
+}
+
+function primeProviderRoot(
+    aggregatePromise: Promise<VisAggregate | null>,
+    key: keyof VisAggregate,
+    provider: RootProvider | null | undefined,
+): void {
+    if (!provider) return;
+    void aggregatePromise.then(aggregate => {
+        if (aggregate) provider.primeRootItems(aggregate[key]);
+    });
+}
+
+function primeProviderRootItems(
+    itemsPromise: Promise<any[] | null>,
+    provider: RootProvider | null | undefined,
+): void {
+    if (!provider) return;
+    void itemsPromise.then(items => {
+        if (items) provider.primeRootItems(items);
+    });
+}
+
+// Re-fetch a single resource's subtree after we mutate its config (e.g. a plot
+// type change can restructure the resource — new folders, etc.). Refreshing
+// just the node keeps the rest of the tree (and the root list) untouched.
+// External changes still need live events; handled later.
+function refreshVisNode(visType: string, visId: string): void {
+    switch (visType) {
+        case 'plots':
+            plotsProvider?.refreshResource(visId);
+            break;
+        case 'mails':
+            mailsProvider?.refreshResource(visId);
+            break;
+        case 'grids':
+            gridsProvider?.refreshResource(visId);
+            break;
+        case 'docs':
+            docsProvider?.refreshResource(visId);
+            break;
+        case 'jobs':
+            jobsProvider?.refreshResource(visId);
+            break;
+        case 'repos':
+            reposProvider?.refreshResource(visId);
+            break;
+    }
+}
 
 function showLoggedOut(context: vscode.ExtensionContext) {
     vscode.commands.executeCommand('setContext', 'novem.loggedIn', false);
@@ -60,6 +124,19 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     const novemApi = new NovemApi(config.api_root!, config.token!);
+    const preloadUsername = config.username ?? '';
+    const selfVisPromise = novemApi.getSelfVis(preloadUsername).catch(error => {
+        console.error('Error preloading Novem sidebar root lists:', error);
+        return null;
+    });
+    const jobsRootPromise = novemApi.getJobsForUser(preloadUsername).catch(error => {
+        console.error('Error preloading Novem jobs root list:', error);
+        return null;
+    });
+    const reposRootPromise = novemApi.getReposForUser(preloadUsername).catch(error => {
+        console.error('Error preloading Novem repos root list:', error);
+        return null;
+    });
 
     // Let's grab our profile information
     let profile: UserProfile;
@@ -76,21 +153,18 @@ export async function activate(context: vscode.ExtensionContext) {
 
     setupCommands(context, novemApi);
 
-    // Set up local file cache
-    const cacheDir = path.join(context.globalStorageUri.fsPath, 'novem-cache');
-    novemCache = new NovemCache(cacheDir, novemApi);
-
-    // If the user/profile changed since last activation, clear the entire cache
-    const currentCacheIdentity = `${config.api_root}:${profile.user_info.username}`;
-    const previousCacheIdentity = context.globalState.get<string>('novemCacheIdentity');
-    if (previousCacheIdentity && previousCacheIdentity !== currentCacheIdentity) {
-        novemCache.reset();
-    }
-    context.globalState.update('novemCacheIdentity', currentCacheIdentity);
-
-    novemCache.activate(context);
-
-    const fsProvider = new NovemFSProvider(novemApi, novemCache);
+    // Files are served live through the novem:// FileSystemProvider — readFile
+    // fetches the single opened file from the API on demand, writeFile pushes it
+    // back on save. No disk mirror or recursive prefetch.
+    //
+    // On save, a config change can restructure a resource (a plot type change
+    // can add/remove folders, etc.), so re-fetch just that resource's subtree.
+    // filePath is /<id>/<...>; the config segment is the trigger.
+    const fsProvider = new NovemFSProvider(novemApi, (visType, filePath) => {
+        if (!/(^|\/)config(\/|$)/.test(filePath)) return;
+        const visId = filePath.split('/').filter(Boolean)[0];
+        if (visId) refreshVisNode(visType, visId);
+    });
     const fsRegistration = vscode.workspace.registerFileSystemProvider('novem', fsProvider, {
         isCaseSensitive: true,
     });
@@ -101,18 +175,8 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand(
             'novem.openFile',
             async (uri: vscode.Uri, type: string, languageId?: string) => {
-                if (!novemCache) return;
-
-                // Cache the entire resource directory on first access
-                await novemCache.ensureResourceCached(uri.authority, uri.path.split('/')[1]);
-
-                // Fetch the specific file (may be newer than directory cache)
-                await novemCache.cacheFile(uri.authority, uri.path);
-
-                // Open the cached local file
-                const localPath = novemCache.getLocalPath(uri.authority, uri.path);
-                const fileUri = vscode.Uri.file(localPath);
-                let doc = await vscode.workspace.openTextDocument(fileUri);
+                // Open the novem:// URI directly; the FS provider reads it live.
+                let doc = await vscode.workspace.openTextDocument(uri);
 
                 if (languageId) {
                     doc = await vscode.languages.setTextDocumentLanguage(doc, languageId);
@@ -123,52 +187,31 @@ export async function activate(context: vscode.ExtensionContext) {
         ),
     );
 
-    // Intercept saves on cached files and push to novem API
-    context.subscriptions.push(
-        vscode.workspace.onDidSaveTextDocument(async doc => {
-            if (!novemCache) return;
-            await novemCache.pushFile(doc.uri.fsPath, doc.getText());
-        }),
-    );
-
     plotsProvider = new PlotsProvider(novemApi, context);
     mailsProvider = new MailsProvider(novemApi, context);
+    gridsProvider = new GridsProvider(novemApi, context);
+    docsProvider = new DocsProvider(novemApi, context);
 
-    context.subscriptions.push(
-        vscode.window.registerTreeDataProvider('novem-plots', plotsProvider),
-        vscode.window.registerTreeDataProvider('novem-mails', mailsProvider),
-    );
+    registerNovemTreeView(context, 'novem-plots', plotsProvider);
+    registerNovemTreeView(context, 'novem-mails', mailsProvider);
+    registerNovemTreeView(context, 'novem-grids', gridsProvider);
+    registerNovemTreeView(context, 'novem-docs', docsProvider);
 
-    // Check if jobs and repos endpoints are available by querying /code
-    try {
-        const codeRoot = await novemApi.getCodeRoot();
-        const hasJobs = codeRoot.some((item: any) => item.name === 'jobs');
-        const hasRepos = codeRoot.some((item: any) => item.name === 'repos');
+    primeProviderRoot(selfVisPromise, 'plots', plotsProvider);
+    primeProviderRoot(selfVisPromise, 'mails', mailsProvider);
+    primeProviderRoot(selfVisPromise, 'grids', gridsProvider);
+    primeProviderRoot(selfVisPromise, 'docs', docsProvider);
 
-        if (hasJobs) {
-            jobsProvider = new JobsProvider(novemApi, context);
-            context.subscriptions.push(
-                vscode.window.registerTreeDataProvider('novem-jobs', jobsProvider),
-            );
-            vscode.commands.executeCommand('setContext', 'novem.hasJobs', true);
-        } else {
-            vscode.commands.executeCommand('setContext', 'novem.hasJobs', false);
-        }
+    jobsProvider = new JobsProvider(novemApi, context);
+    reposProvider = new ReposProvider(novemApi, context);
 
-        if (hasRepos) {
-            reposProvider = new ReposProvider(novemApi, context);
-            context.subscriptions.push(
-                vscode.window.registerTreeDataProvider('novem-repos', reposProvider),
-            );
-            vscode.commands.executeCommand('setContext', 'novem.hasRepos', true);
-        } else {
-            vscode.commands.executeCommand('setContext', 'novem.hasRepos', false);
-        }
-    } catch (error) {
-        console.error('Error checking for jobs/repos endpoints:', error);
-        vscode.commands.executeCommand('setContext', 'novem.hasJobs', false);
-        vscode.commands.executeCommand('setContext', 'novem.hasRepos', false);
-    }
+    registerNovemTreeView(context, 'novem-jobs', jobsProvider);
+    registerNovemTreeView(context, 'novem-repos', reposProvider);
+
+    primeProviderRootItems(jobsRootPromise, jobsProvider);
+    primeProviderRootItems(reposRootPromise, reposProvider);
+    vscode.commands.executeCommand('setContext', 'novem.hasJobs', true);
+    vscode.commands.executeCommand('setContext', 'novem.hasRepos', true);
 
     const sbi = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
 
@@ -185,4 +228,4 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() {}
 
 // Export them if needed
-export { plotsProvider, mailsProvider, jobsProvider, reposProvider, novemCache };
+export { plotsProvider, mailsProvider, gridsProvider, docsProvider, jobsProvider, reposProvider };

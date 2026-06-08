@@ -26,7 +26,8 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Install pnpm
-        uses: pnpm/action-setup@5d445ecbfcb90fdf1556a629d018c79e97ff973b # v6.0.6
+        # v6.0.7+ honors the packageManager-pinned pnpm (10.x); see node.js.yaml.
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
 
       - name: Set up Node.js
         uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0

@@ -6,7 +6,33 @@
         <title>Novem Web View</title>
     </head>
     <body>
-        <div id="root"></div>
+        <!--
+            Static branded skeleton, shown from first paint until bundle.js
+            evaluates and React mounts into #root (which replaces these children).
+            It reuses the .nv-skel-* classes from bundle.css — a render-blocking
+            stylesheet — so it's styled immediately and is visually identical to
+            the React <NovemLoading/> skeleton that takes over. No blank flash.
+        -->
+        <div id="root">
+            <div class="nv-frame nv-frame--fill" aria-busy="true">
+                <header class="nv-chrome">
+                    <div class="nv-skel-avatar nv-skel-block"></div>
+                    <div class="nv-skel-meta">
+                        <div class="nv-skel-title nv-skel-block"></div>
+                        <div class="nv-skel-sub nv-skel-block"></div>
+                    </div>
+                    <div class="nv-skel-actions">
+                        <div class="nv-skel-chip nv-skel-block"></div>
+                        <div class="nv-skel-btn nv-skel-block"></div>
+                    </div>
+                </header>
+                <div class="nv-skel-body nv-skel-body--fill">
+                    <div class="nv-skel-content">
+                        <div class="nv-skel-spinner" role="img" aria-label="Loading"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <script rel="preload" src="https://novem.io/s/ns.js"></script>
     </body>
 </html>

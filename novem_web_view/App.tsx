@@ -2,9 +2,15 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 
-import { NovemViewMail, NovemViewPlot, NovemViewProfile } from './components';
+import {
+    NovemViewMail,
+    NovemViewPlot,
+    NovemViewGrid,
+    NovemViewDoc,
+    NovemViewProfile,
+    NovemLoading,
+} from './components';
 
-import { enforceStyles } from './utils';
 import { ViewData, FetchedData, VscodeApi } from './types';
 
 const MainContent = (props: { vsapi: VscodeApi }) => {
@@ -23,16 +29,11 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
     const { visId, uri, shortname, route, token, apiRoot } = viewData;
     const [fetchedData, setFetchedData] = useState<FetchedData | null>(null);
 
-    useEffect(() => {
-        enforceStyles();
-
-        const observer = new MutationObserver(() => enforceStyles());
-        observer.observe(document.body, {
-            attributes: true,
-            attributeFilter: ['class'],
-        });
-        return () => observer.disconnect();
-    }, []);
+    // Bumped by the chrome refresh button. Re-fetches the resource metadata
+    // (name/avatar may have changed) AND re-registers the vis (via the
+    // refreshKey passed down to useNsRegistration).
+    const [refreshKey, setRefreshKey] = useState(0);
+    const onRefresh = () => setRefreshKey(k => k + 1);
 
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
@@ -85,24 +86,25 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
                 }
             }
         })();
-    }, [token, apiRoot, shortname]);
+    }, [token, apiRoot, shortname, refreshKey]);
+
+    const viewProps = {
+        fetchedData: fetchedData || undefined,
+        viewData,
+        refreshKey,
+        onRefresh,
+    };
 
     return (
         <Routes>
-            <Route
-                path="/plots"
-                element={
-                    <NovemViewPlot fetchedData={fetchedData || undefined} viewData={viewData} />
-                }
-            />
-            <Route
-                path="/mails"
-                element={
-                    <NovemViewMail fetchedData={fetchedData || undefined} viewData={viewData} />
-                }
-            />
+            <Route path="/plots" element={<NovemViewPlot {...viewProps} />} />
+            <Route path="/mails" element={<NovemViewMail {...viewProps} />} />
+            <Route path="/grids" element={<NovemViewGrid {...viewProps} />} />
+            <Route path="/docs" element={<NovemViewDoc {...viewProps} />} />
             <Route path="/profile" Component={NovemViewProfile} />
-            <Route path="/" element={<div>Hello World from Novem Web View!</div>} />
+            {/* Initial route before the extension posts its 'navigate' message —
+                show the branded skeleton so there's no "Hello World" flash. */}
+            <Route path="/" element={<NovemLoading />} />
         </Routes>
     );
 };
@@ -115,7 +117,9 @@ const App = () => {
         vscode.postMessage({ command: 'contentReady' }, '*');
     }, []);
 
-    if (!vscodeApi) return null;
+    // Keep the branded skeleton on screen while we acquire the VS Code API,
+    // rather than flashing a blank panel.
+    if (!vscodeApi) return <NovemLoading />;
 
     return (
         <Router>

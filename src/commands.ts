@@ -112,7 +112,14 @@ export function setupAuthCommands(context: vscode.ExtensionContext) {
     );
 }
 
-import { mailsProvider, plotsProvider, jobsProvider, reposProvider, novemCache } from './extension';
+import {
+    mailsProvider,
+    plotsProvider,
+    gridsProvider,
+    docsProvider,
+    jobsProvider,
+    reposProvider,
+} from './extension';
 import NovemApi from './novem-api';
 
 async function openCustomPlotFiles(plotName: string): Promise<void> {
@@ -187,11 +194,22 @@ async function confirmDeletion(name: string, noun: string): Promise<boolean> {
     return true;
 }
 
+type ViewableType = 'plots' | 'mails' | 'grids' | 'docs';
+
+// The signed-in user's own resources of a given type (from the GraphQL `me`
+// aggregate). Used by the "View X" pickers for your own resources.
+const listSelfVis = (api: NovemApi, type: ViewableType, username: string): Promise<any[]> =>
+    api.getSelfVis(username).then(agg => agg[type]);
+
+// Another user's resources of a given type (from `users(username:)`).
+const listUserVis = (api: NovemApi, type: ViewableType, username: string): Promise<any[]> =>
+    api.getUserVis(username).then(agg => agg[type]);
+
 // Open a novem vis inside vscode
 const createViewFunction = (
     context: vscode.ExtensionContext,
     api: NovemApi,
-    type: 'plots' | 'mails',
+    type: ViewableType,
 ) => {
     const profile = context.globalState.get('userProfile') as UserProfile;
     const conf = context.globalState.get('userConfig') as UserConfig;
@@ -202,9 +220,7 @@ const createViewFunction = (
 
     return async (item: MyTreeItem) => {
         // Let's grab our profile information
-        const visualisations = await (type === 'plots'
-            ? api.getPlotsForUser(uname!)
-            : api.getMailsForUser(uname!));
+        const visualisations = await listSelfVis(api, type, uname!);
 
         const options = visualisations.map((item: VisInfo) => ({
             label: `$(${typeToIcon(item.type, type)}) ${item.name}`,
@@ -261,7 +277,7 @@ const createViewFunction = (
 const createViewForUserFunction = (
     context: vscode.ExtensionContext,
     api: NovemApi,
-    type: 'plots' | 'mails',
+    type: ViewableType,
 ) => {
     const profile = context.globalState.get('userProfile') as UserProfile;
     const conf = context.globalState.get('userConfig') as UserConfig;
@@ -288,9 +304,7 @@ const createViewForUserFunction = (
         username = username?.slice(1);
 
         try {
-            visualisations = await (type === 'plots'
-                ? api.getPlotsForUser(username!)
-                : api.getMailsForUser(username!));
+            visualisations = await listUserVis(api, type, username!);
         } catch (error) {
             console.log('error', error);
             return;
@@ -398,6 +412,18 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
     );
     context.subscriptions.push(
         vscode.commands.registerCommand(
+            'novem.viewNovemGrid',
+            createViewFunction(context, api, 'grids'),
+        ),
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.viewNovemDoc',
+            createViewFunction(context, api, 'docs'),
+        ),
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
             'novem.viewNovemPlotForUser',
             createViewForUserFunction(context, api, 'plots'),
         ),
@@ -406,6 +432,18 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
         vscode.commands.registerCommand(
             'novem.viewNovemMailForUser',
             createViewForUserFunction(context, api, 'mails'),
+        ),
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.viewNovemGridForUser',
+            createViewForUserFunction(context, api, 'grids'),
+        ),
+    );
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.viewNovemDocForUser',
+            createViewForUserFunction(context, api, 'docs'),
         ),
     );
 
@@ -525,15 +563,89 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemPlots', async () => {
-            novemCache?.invalidateAndRefresh('plots');
             plotsProvider.refresh();
         }),
     );
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemMails', async () => {
-            novemCache?.invalidateAndRefresh('mails');
             mailsProvider.refresh();
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.createNovemGrid', async () => {
+            const gridId = await promptForId(
+                'Please provide the grid id to create:',
+                'test_grid_1',
+            );
+            if (!gridId) return;
+
+            try {
+                await api.createGrid(gridId);
+            } catch (error) {
+                console.log('error', error);
+                vscode.window.showErrorMessage(`Failed to create new grid ${gridId}`);
+                return;
+            }
+
+            gridsProvider.refresh();
+
+            vscode.window.showInformationMessage(`New grid ${gridId} created`);
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.deleteNovemGrid', async (item: MyTreeItem) => {
+            if (!(await confirmDeletion(item.name, 'grid'))) return;
+            await api.deleteGrid(item.name);
+            await closeEditorsForItem('grids', item.name);
+            vscode.window.showWarningMessage(`Deleted "${item.name}"`);
+            item.parent.refresh();
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.refreshNovemGrids', async () => {
+            gridsProvider.refresh();
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.createNovemDoc', async () => {
+            const docId = await promptForId(
+                'Please provide the document id to create:',
+                'test_doc_1',
+            );
+            if (!docId) return;
+
+            try {
+                await api.createDoc(docId);
+            } catch (error) {
+                console.log('error', error);
+                vscode.window.showErrorMessage(`Failed to create new document ${docId}`);
+                return;
+            }
+
+            docsProvider.refresh();
+
+            vscode.window.showInformationMessage(`New document ${docId} created`);
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.deleteNovemDoc', async (item: MyTreeItem) => {
+            if (!(await confirmDeletion(item.name, 'document'))) return;
+            await api.deleteDoc(item.name);
+            await closeEditorsForItem('docs', item.name);
+            vscode.window.showWarningMessage(`Deleted "${item.name}"`);
+            item.parent.refresh();
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.refreshNovemDocs', async () => {
+            docsProvider.refresh();
         }),
     );
 
@@ -575,7 +687,6 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemJobs', async () => {
-            novemCache?.invalidateAndRefresh('jobs');
             jobsProvider?.refresh();
         }),
     );
@@ -618,7 +729,6 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemRepos', async () => {
-            novemCache?.invalidateAndRefresh('repos');
             reposProvider?.refresh();
         }),
     );

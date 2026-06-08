@@ -5,9 +5,7 @@ import NovemVisView from './NovemVisView';
 
 import { FetchedData, ViewData } from '../types';
 
-const MAIL_SIZES = ['xs', 'small', 'medium', 'large'] as const;
-
-const NovemViewMail = (props: {
+const NovemViewDoc = (props: {
     fetchedData?: FetchedData;
     viewData: ViewData;
     refreshKey: number;
@@ -17,24 +15,20 @@ const NovemViewMail = (props: {
 
     if (!fetchedData) return <NovemLoading variant="flow" />;
 
-    const rawSize = String(fetchedData.config?.size ?? 'medium');
-    const size = (MAIL_SIZES as readonly string[]).includes(rawSize) ? rawSize : 'medium';
-
-    // Mails surface their subject as the title; fall back to the resource name.
-    const subject = fetchedData.config?.subject as string | undefined;
-
+    // Docs render their page stack scaled to the panel width (scale) and flow +
+    // scroll under the chrome. vislib reads a doc's own theme, so the theme hint
+    // is intentionally skipped for type 'd' in useNsRegistration.
     return (
         <NovemVisView
-            type="m"
+            type="d"
             variant="flow"
+            scale
             fetchedData={fetchedData}
             viewData={viewData}
-            title={subject || fetchedData.about?.name}
-            bodyClassName={`nv-body--mail nv-mail--size-${size}`}
             refreshKey={refreshKey}
             onRefresh={onRefresh}
         />
     );
 };
 
-export default NovemViewMail;
+export default NovemViewDoc;

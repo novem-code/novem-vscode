@@ -25,7 +25,7 @@
         "dataviz"
     ],
     "main": "./out/src/extension.js",
-    "packageManager": "pnpm@11.5.0",
+    "packageManager": "pnpm@10.34.1",
     "icon": "img/novem_icon_medium.png",
     "galleryBanner": {
         "color": "#D4FB38",
@@ -85,6 +85,50 @@
             {
                 "command": "novem.viewNovemMail",
                 "title": "View Mail"
+            },
+            {
+                "command": "novem.viewNovemGrid",
+                "title": "View Grid"
+            },
+            {
+                "command": "novem.viewNovemGridForUser",
+                "title": "View Grid for User"
+            },
+            {
+                "command": "novem.viewNovemDoc",
+                "title": "View Document"
+            },
+            {
+                "command": "novem.viewNovemDocForUser",
+                "title": "View Document for User"
+            },
+            {
+                "command": "novem.createNovemGrid",
+                "title": "Create Grid",
+                "icon": "$(new-folder)"
+            },
+            {
+                "command": "novem.refreshNovemGrids",
+                "title": "Refresh Grids",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "novem.deleteNovemGrid",
+                "title": "Delete Grid"
+            },
+            {
+                "command": "novem.createNovemDoc",
+                "title": "Create Document",
+                "icon": "$(new-folder)"
+            },
+            {
+                "command": "novem.refreshNovemDocs",
+                "title": "Refresh Documents",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "novem.deleteNovemDoc",
+                "title": "Delete Document"
             },
             {
                 "command": "novem.createNovemPlot",
@@ -206,7 +250,7 @@
                     "command": "novem.viewNovemPlot",
                     "when": "view == novem-plots && viewItem =~ /^plot-top/",
                     "title": "View Plot",
-                    "group": "1_show"
+                    "group": "0_view"
                 },
                 {
                     "command": "novem.editCustomPlot",
@@ -218,7 +262,7 @@
                     "command": "novem.viewNovemMail",
                     "when": "view == novem-mails && viewItem == mail-top",
                     "title": "View Mail",
-                    "group": "1_show"
+                    "group": "0_view"
                 },
                 {
                     "command": "novem.sendMail",
@@ -227,9 +271,33 @@
                     "group": "1_show"
                 },
                 {
+                    "command": "novem.viewNovemGrid",
+                    "when": "view == novem-grids && viewItem == grid-top",
+                    "title": "View Grid",
+                    "group": "0_view"
+                },
+                {
+                    "command": "novem.viewNovemDoc",
+                    "when": "view == novem-docs && viewItem == doc-top",
+                    "title": "View Document",
+                    "group": "0_view"
+                },
+                {
                     "command": "novem.deleteNovemPlot",
                     "when": "view == novem-plots && viewItem =~ /^plot-top/",
                     "title": "Delete Plot",
+                    "group": "4_manipulate"
+                },
+                {
+                    "command": "novem.deleteNovemGrid",
+                    "when": "view == novem-grids && viewItem == grid-top",
+                    "title": "Delete Grid",
+                    "group": "4_manipulate"
+                },
+                {
+                    "command": "novem.deleteNovemDoc",
+                    "when": "view == novem-docs && viewItem == doc-top",
+                    "title": "Delete Document",
                     "group": "4_manipulate"
                 },
                 {
@@ -294,6 +362,26 @@
                     "group": "navigation"
                 },
                 {
+                    "command": "novem.createNovemGrid",
+                    "when": "view == novem-grids",
+                    "group": "navigation"
+                },
+                {
+                    "command": "novem.refreshNovemGrids",
+                    "when": "view == novem-grids",
+                    "group": "navigation"
+                },
+                {
+                    "command": "novem.createNovemDoc",
+                    "when": "view == novem-docs",
+                    "group": "navigation"
+                },
+                {
+                    "command": "novem.refreshNovemDocs",
+                    "when": "view == novem-docs",
+                    "group": "navigation"
+                },
+                {
                     "command": "novem.createNovemJob",
                     "when": "view == novem-jobs",
                     "group": "navigation"
@@ -346,6 +434,14 @@
                 },
                 {
                     "command": "novem.deleteNovemPlot",
+                    "when": "false"
+                },
+                {
+                    "command": "novem.deleteNovemGrid",
+                    "when": "false"
+                },
+                {
+                    "command": "novem.deleteNovemDoc",
                     "when": "false"
                 },
                 {
@@ -403,6 +499,16 @@
                     "when": "novem.loggedIn"
                 },
                 {
+                    "id": "novem-grids",
+                    "name": "Grids",
+                    "when": "novem.loggedIn"
+                },
+                {
+                    "id": "novem-docs",
+                    "name": "Documents",
+                    "when": "novem.loggedIn"
+                },
+                {
                     "id": "novem-jobs",
                     "name": "Jobs",
                     "when": "novem.loggedIn && novem.hasJobs"
@@ -423,22 +529,32 @@
             {
                 "view": "novem-plots",
                 "contents": "[$(graph) Create Your First Plot](command:novem.createNovemPlot)",
-                "when": "novem.loggedIn"
+                "when": "novem.loggedIn && novem.plotsLoaded"
             },
             {
                 "view": "novem-mails",
                 "contents": "[$(mail) Create Your First E-Mail](command:novem.createNovemMail)",
-                "when": "novem.loggedIn"
+                "when": "novem.loggedIn && novem.mailsLoaded"
+            },
+            {
+                "view": "novem-grids",
+                "contents": "[$(table) Create Your First Grid](command:novem.createNovemGrid)",
+                "when": "novem.loggedIn && novem.gridsLoaded"
+            },
+            {
+                "view": "novem-docs",
+                "contents": "[$(book) Create Your First Document](command:novem.createNovemDoc)",
+                "when": "novem.loggedIn && novem.docsLoaded"
             },
             {
                 "view": "novem-jobs",
                 "contents": "[$(run) Create Your First Job](command:novem.createNovemJob)",
-                "when": "novem.loggedIn"
+                "when": "novem.loggedIn && novem.jobsLoaded"
             },
             {
                 "view": "novem-repos",
                 "contents": "[$(repo) Create Your First Repo](command:novem.createNovemRepo)",
-                "when": "novem.loggedIn"
+                "when": "novem.loggedIn && novem.reposLoaded"
             },
             {
                 "view": "novem-login",

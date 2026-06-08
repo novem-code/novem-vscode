@@ -29,6 +29,10 @@ function getThemeColor(colorId: string): string | undefined {
     return vscode.workspace.getConfiguration('workbench').get(`colorCustomizations.${colorId}`);
 }
 
+// Preview panels currently open, keyed by resource. Lets a repeat "view"
+// reveal the existing panel instead of opening a duplicate.
+const openPanels = new Map<string, vscode.WebviewPanel>();
+
 export function createNovemBrowser(
     type: string,
     visId: string,
@@ -38,9 +42,25 @@ export function createNovemBrowser(
     apiRoot?: string,
     username?: string,
 ) {
+    // shortname is globally unique per resource; fall back to type/user/id.
+    const key = shortname || `${type}:${username ?? ''}:${visId}`;
+
+    const existing = openPanels.get(key);
+    if (existing) {
+        existing.reveal(existing.viewColumn);
+        return;
+    }
+
     const panel = vscode.window.createWebviewPanel(shortname, visId, vscode.ViewColumn.One, {
         enableScripts: true,
         retainContextWhenHidden: true,
+    });
+
+    openPanels.set(key, panel);
+    panel.onDidDispose(() => {
+        if (openPanels.get(key) === panel) {
+            openPanels.delete(key);
+        }
     });
 
     // Set the HTML content of the WebView panel

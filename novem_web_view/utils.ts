@@ -1,24 +1,18 @@
-export const enforceStyles = () => {
-    const isDark = document.body.classList.contains('vscode-dark');
+import type { CSSProperties } from 'react';
 
-    if (isDark) {
-        document.documentElement.setAttribute('data-dark-mode', '');
-    } else {
-        document.documentElement.removeAttribute('data-dark-mode');
-    }
-
-    const iframes = document.getElementsByTagName('iframe');
-    for (const iframe of iframes) {
-        let elem = iframe.contentDocument?.documentElement;
-        try {
-            if (isDark) {
-                elem?.setAttribute('data-dark-mode', '');
-            } else {
-                elem?.removeAttribute('data-dark-mode');
-            }
-        } catch (e) {}
-    }
-};
+/**
+ * Background-image style for a profile avatar.
+ *
+ * The novem avatar endpoint (e.g. https://api.novem.io/v1/u/<user>/img) returns
+ * a ready-to-use image and ignores sizing query params, so we use the URL
+ * verbatim — matching how gaia/webapp renders avatars. The previous code
+ * appended "&s=160" with no "?", producing a malformed URL that 404'd. Returns
+ * an empty style when no avatar is set so the CSS fallback (grey circle) shows
+ * instead of url(undefined).
+ */
+export function avatarStyle(avatarUrl?: string): CSSProperties {
+    return avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : {};
+}
 
 export function writeCSP() {
     const str =

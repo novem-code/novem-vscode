@@ -146,8 +146,10 @@ export function parseConfig(
 }
 
 // helpful icon lookup: https://microsoft.github.io/vscode-codicons/dist/codicon.html
-export function typeToIcon(visType: string, type?: 'mails' | 'plots') {
+export function typeToIcon(visType: string, type?: 'mails' | 'plots' | 'grids' | 'docs') {
     if (type === 'mails') return 'mail';
+    if (type === 'grids') return 'table';
+    if (type === 'docs') return 'book';
 
     // Use a consistent chart icon for all plot types
     return 'graph';

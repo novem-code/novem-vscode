@@ -4,114 +4,137 @@
     box-sizing: border-box;
 }
 
-/* Add any additional styles you need */
+html,
 body {
-    display: flex;
-    flex-direction: column;
-    height: 100vh; /* Use viewport height to set the body height */
+    height: 100%;
+}
+
+body {
     margin: 0;
     padding: 0;
-    overflow: hidden;
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size, 13px);
+    color: var(--vscode-foreground);
+    background: var(--vscode-editor-background);
 }
 
+/*
+ * #root is the single scroll container for the preview. The chrome header is
+ * sticky inside it, so content scrolls underneath the header and the scrollbar
+ * spans the full height — reading as native editor chrome.
+ */
 #root {
-    flex: 1; /* Allow iframe to take up all available space */
-    width: 100%;
-    margin: 0px;
-
-    display: flex;
-    flex-direction: column;
-
-    align-items: center;
-
-    overflow: auto;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
-.novem--vis--hold {
-    min-width: calc(100% - 40px);
-    min-height: calc(100vh - 40px);
-    max-height: calc(100vh - 40px);
-    margin-top: 20px;
+/* Native-looking scrollbar using the workbench scrollbar tokens. */
+#root::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+}
+#root::-webkit-scrollbar-thumb {
+    background: var(--vscode-scrollbarSlider-background);
+}
+#root::-webkit-scrollbar-thumb:hover {
+    background: var(--vscode-scrollbarSlider-hoverBackground);
+}
+#root::-webkit-scrollbar-thumb:active {
+    background: var(--vscode-scrollbarSlider-activeBackground);
+}
+
+/* ---- Vis frame ------------------------------------------------------- */
+
+.nv-frame {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--vscode-editor-background);
+}
+
+/*
+ * 'fill' frame gets a definite height (= #root's 100vh) so the flex chain down
+ * to the target resolves a real height. vislib's loading `.holder` is
+ * height:100%, so without a definite height the spinner + enter-animation
+ * origin collapse to the top. A single chart fills the panel, so no scroll is
+ * lost. 'flow' keeps min-height so docs/mails/grid content can grow + scroll.
+ */
+.nv-frame--fill {
+    height: 100%;
+}
+
+.nv-body {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
     /*
-    border: 1px solid var(--vscode-checkbox-selectBorder);
-    border: 1px solid var(--vscode-editorHoverWidget-border);
-    border: 1px solid var(--vscode-pickerGroup-border);
-   */
-    border: 1px solid var(--vscode-panel-border);
-    background: var(--vscode-panel-background);
+     * The drawing area below the header follows the per-vis light/dark toggle.
+     * When the toggle matches the editor (the common 'system' case) we use the
+     * real editor background so the whole preview reads as one native VSCode
+     * surface. When the user forces the opposite mode, fall back to VSCode's
+     * default editor background for that mode — i.e. dark looks like the editor
+     * does in dark mode. `data-dark-mode` (the applied vis theme) lives on
+     * <html>; the vscode-* theme class lives on <body>.
+     */
+    background: var(--vscode-editor-background);
+}
+html[data-dark-mode] body.vscode-light .nv-body,
+html[data-dark-mode] body.vscode-high-contrast-light .nv-body {
+    background: #1e1e1e;
+}
+html:not([data-dark-mode]) body.vscode-dark .nv-body,
+html:not([data-dark-mode]) body.vscode-high-contrast .nv-body {
+    background: #ffffff;
 }
 
-.novem--vis--plot {
-    height: calc(100% - 110px);
-
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    margin: 0;
-    padding: 20px;
-    overflow: hidden;
-    overflow-y: scroll;
-
-    align-items: center;
-    justify-content: center;
+/*
+ * 'fill' — a single chart that should occupy the panel. The target gets a
+ * definite height (flex child of the viewport-tall frame), so vislib's
+ * ResizeObserver reflows it when the panel resizes.
+ */
+.nv-body--fill {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 12px;
 }
-.novem--vis--profile {
-    border-top: 1px solid var(--vscode-panel-border);
-    height: 110px;
-    padding: 20px;
-}
-.novem--vis--profile .img {
-    float: left;
-    width: 60px;
-    height: 60px;
-    margin: 0.25rem;
-    border-radius: 50%;
-    border: 1px solid var(--vscode-editorHoverWidget-border);
-    background: #eee;
-    background-size: cover;
-    background-image: url(https://www.gravatar.com/avatar/7ce8d54…?d=robohash&r=g&s=120);
-}
-
-.vscode-dark .novem--vis--profile .img {
-    background: #404040;
-    background-size: cover;
-    background-image: url(https://www.gravatar.com/avatar/7ce8d54…?d=robohash&r=g&s=120);
-}
-
-.novem--vis--profile .details {
-    float: left;
-    height: 3.5rem;
-    margin: 0.25rem;
-    margin-left: 10px;
-    font-weight: 300;
-    font-size: 0.8rem;
-    padding-top: 0.6rem;
-    max-width: calc(100% - 85px);
-}
-.novem--vis--profile .name {
-    height: 1.2rem;
-    line-height: 1.2rem;
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.novem--vis--profile .author {
-    height: 1.2rem;
-    line-height: 1.2rem;
-    font-weight: 400;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.novem--vis--profile .author .username {
-    color: #666;
-    font-weight: 400;
-}
-
-.novem--vis--innerhold {
+.nv-body--fill .nv-target {
+    flex: 1 1 auto;
+    min-height: 0;
     width: 100%;
     height: 100%;
-    text-align: center;
+}
+
+/*
+ * 'flow' — content grows with its natural (or scaled) height and scrolls under
+ * the sticky chrome via #root. Used by grids, docs and mails.
+ */
+.nv-body--flow {
+    flex: 1 0 auto;
+    padding: 12px;
+}
+.nv-body--flow .nv-target {
+    width: 100%;
+}
+
+/* Mails render at a fixed comfortable width, centred. */
+.nv-body--mail {
+    align-items: center;
+}
+.nv-body--mail .nv-target {
+    width: 100%;
+    max-width: var(--nv-mail-width, 900px);
+}
+.nv-mail--size-xs {
+    --nv-mail-width: 500px;
+}
+.nv-mail--size-small {
+    --nv-mail-width: 700px;
+}
+.nv-mail--size-medium {
+    --nv-mail-width: 900px;
+}
+.nv-mail--size-large {
+    --nv-mail-width: 1100px;
 }

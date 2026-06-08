@@ -18,6 +18,9 @@ async function build() {
       '.tsx': 'tsx',
       '.ts': 'ts',
       '.css': 'css',
+      // Vendored loading GIFs are inlined as data: URIs into bundle.css, so the
+      // animation ships in-bundle (no external fetch / CSP / webview-URI plumbing).
+      '.gif': 'dataurl',
     },
     define: {
       'global': 'window',

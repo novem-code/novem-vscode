@@ -1,0 +1,158 @@
+/*
+ * Preview chrome header — sticks to the top of the scroll container so content
+ * scrolls underneath it. Styled entirely from --vscode-* tokens so it reads as
+ * native VSCode editor chrome.
+ */
+.nv-chrome {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+
+    background: var(--vscode-editor-background);
+    border-bottom: 1px solid var(--vscode-panel-border);
+    /* Keep the header opaque while content scrolls beneath it. */
+    backdrop-filter: none;
+}
+
+.nv-chrome__avatar {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    margin-left: 4px; /* a touch of offset from the edge */
+    border-radius: 50%;
+    background-color: var(--vscode-editor-inactiveSelectionBackground);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.nv-chrome__meta {
+    flex: 1 1 auto;
+    min-width: 0; /* allow ellipsis */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1.25;
+}
+
+.nv-chrome__title {
+    font-weight: 600;
+    color: var(--vscode-foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nv-chrome__author {
+    font-size: calc(var(--vscode-font-size, 13px) - 1px);
+    color: var(--vscode-descriptionForeground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nv-chrome__username {
+    opacity: 0.85;
+}
+
+.nv-chrome__actions {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.nv-chrome__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 5px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--vscode-icon-foreground, var(--vscode-foreground));
+    cursor: pointer;
+}
+
+.nv-chrome__btn:hover {
+    background: var(--vscode-toolbar-hoverBackground);
+}
+
+.nv-chrome__btn:active {
+    background: var(--vscode-toolbar-activeBackground, var(--vscode-toolbar-hoverBackground));
+}
+
+.nv-chrome__btn:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
+}
+
+.nv-chrome__btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* 3-way theme toggle: segmented control with a sliding thumb (gaia layout),
+   styled from --vscode-* tokens so it reads as native VSCode chrome. */
+.nv-theme {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 2px;
+    border-radius: 6px;
+    background: var(--vscode-editorWidget-background, rgba(128, 128, 128, 0.1));
+    border: 1px solid var(--vscode-widget-border, transparent);
+}
+
+.nv-theme__thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 24px;
+    height: 22px;
+    border-radius: 4px;
+    background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.25));
+    transition: transform 0.15s ease-in-out;
+    pointer-events: none;
+}
+
+.nv-theme__seg {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--vscode-descriptionForeground);
+    cursor: pointer;
+}
+
+.nv-theme__seg:hover {
+    color: var(--vscode-foreground);
+}
+
+.nv-theme__seg--active {
+    color: var(--vscode-foreground);
+}
+
+.nv-theme__seg:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
+}
+
+.nv-theme__seg svg {
+    width: 14px;
+    height: 14px;
+}
