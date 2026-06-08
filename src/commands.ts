@@ -176,29 +176,84 @@ const EDIT_FILES: Record<string, (name: string) => VisFileSpec[]> = {
     ],
 };
 
-interface RecipientCounts {
-    to: number;
-    cc: number;
-    bcc: number;
+export interface RecipientField {
+    groups: string[];
+    addresses: string[];
+}
+
+export interface RecipientSummary {
+    to: RecipientField;
+    cc: RecipientField;
+    bcc: RecipientField;
+}
+
+// Entries prefixed with '+' are org- or user-groups that expand server-side
+// (e.g. '+dnb~all_hands'). Their real member count isn't knowable from here,
+// so we surface them as a distinct class instead of pretending each is one
+// "recipient".
+export function classifyRecipientField(raw: string | undefined | null): RecipientField {
+    if (!raw || typeof raw !== 'string') return { groups: [], addresses: [] };
+    const groups: string[] = [];
+    const addresses: string[] = [];
+    for (const entry of raw.split('\n').map(s => s.trim()).filter(s => s.length > 0)) {
+        if (entry.startsWith('+')) groups.push(entry);
+        else addresses.push(entry);
+    }
+    return { groups, addresses };
 }
 
 // Mail recipient fields are newline-separated text. A missing field (404)
 // surfaces as undefined from readFile and means "no recipients of that kind".
-async function countMailRecipients(api: NovemApi, mailName: string): Promise<RecipientCounts> {
-    const countField = async (field: 'to' | 'cc' | 'bcc'): Promise<number> => {
+async function readMailRecipients(api: NovemApi, mailName: string): Promise<RecipientSummary> {
+    const read = async (field: 'to' | 'cc' | 'bcc'): Promise<RecipientField> => {
         const content = await api.readFile('mails', `/${mailName}/recipients/${field}`);
-        if (!content || typeof content !== 'string') return 0;
-        return content
-            .split('\n')
-            .map(s => s.trim())
-            .filter(s => s.length > 0).length;
+        return classifyRecipientField(content as string | null | undefined);
     };
-    const [to, cc, bcc] = await Promise.all([
-        countField('to'),
-        countField('cc'),
-        countField('bcc'),
-    ]);
+    const [to, cc, bcc] = await Promise.all([read('to'), read('cc'), read('bcc')]);
     return { to, cc, bcc };
+}
+
+function pluralize(n: number, singular: string, plural: string): string {
+    return `${n} ${n === 1 ? singular : plural}`;
+}
+
+export function recipientTotals(summary: RecipientSummary): {
+    groups: number;
+    addresses: number;
+    entries: number;
+} {
+    const fields = [summary.to, summary.cc, summary.bcc];
+    const groups = fields.reduce((n, f) => n + f.groups.length, 0);
+    const addresses = fields.reduce((n, f) => n + f.addresses.length, 0);
+    return { groups, addresses, entries: groups + addresses };
+}
+
+export function recipientSummaryTitle(name: string, summary: RecipientSummary): string {
+    const { groups, addresses, entries } = recipientTotals(summary);
+    if (groups === 0) {
+        return `Send "${name}" to ${pluralize(addresses, 'address', 'addresses')}.`;
+    }
+    if (addresses === 0) {
+        return `Send "${name}" to ${pluralize(groups, 'group', 'groups')}.`;
+    }
+    return (
+        `Send "${name}" to ${pluralize(entries, 'entry', 'entries')} ` +
+        `(${pluralize(addresses, 'address', 'addresses')}, ` +
+        `${pluralize(groups, 'group', 'groups')}).`
+    );
+}
+
+export function recipientSummaryDetail(summary: RecipientSummary): string {
+    const lines: string[] = [];
+    const formatField = (label: string, field: RecipientField): void => {
+        const all = [...field.addresses, ...field.groups];
+        if (all.length === 0) return;
+        lines.push(`${label}: ${all.join(', ')}`);
+    };
+    formatField('To', summary.to);
+    formatField('Cc', summary.cc);
+    formatField('Bcc', summary.bcc);
+    return lines.join('\n');
 }
 
 async function closeEditorsForItem(visType: string, itemName: string): Promise<void> {
@@ -992,9 +1047,9 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('novem.sendMail', async (item: MyTreeItem) => {
-            let counts: RecipientCounts;
+            let summary: RecipientSummary;
             try {
-                counts = await countMailRecipients(api, item.name);
+                summary = await readMailRecipients(api, item.name);
             } catch (error) {
                 console.error('Error fetching mail recipients:', error);
                 vscode.window.showErrorMessage(
@@ -1002,19 +1057,17 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
                 );
                 return;
             }
-            const total = counts.to + counts.cc + counts.bcc;
-            if (total === 0) {
+            if (recipientTotals(summary).entries === 0) {
                 vscode.window.showWarningMessage(
                     `"${item.name}" has no recipients — set to / cc / bcc before sending.`,
                 );
                 return;
             }
-            const noun = total === 1 ? 'recipient' : 'recipients';
             const confirm = await vscode.window.showWarningMessage(
-                `Send "${item.name}" to ${total} ${noun}.`,
+                recipientSummaryTitle(item.name, summary),
                 {
                     modal: true,
-                    detail: `To: ${counts.to}, cc: ${counts.cc}, bcc: ${counts.bcc}`,
+                    detail: recipientSummaryDetail(summary),
                 },
                 'Send',
             );
