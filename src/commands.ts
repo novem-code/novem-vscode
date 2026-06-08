@@ -195,7 +195,10 @@ export function classifyRecipientField(raw: string | undefined | null): Recipien
     if (!raw || typeof raw !== 'string') return { groups: [], addresses: [] };
     const groups: string[] = [];
     const addresses: string[] = [];
-    for (const entry of raw.split('\n').map(s => s.trim()).filter(s => s.length > 0)) {
+    for (const entry of raw
+        .split('\n')
+        .map(s => s.trim())
+        .filter(s => s.length > 0)) {
         if (entry.startsWith('+')) groups.push(entry);
         else addresses.push(entry);
     }
@@ -243,12 +246,22 @@ export function recipientSummaryTitle(name: string, summary: RecipientSummary): 
     );
 }
 
+const RECIPIENT_PREVIEW_LIMIT = 10;
+
 export function recipientSummaryDetail(summary: RecipientSummary): string {
     const lines: string[] = [];
     const formatField = (label: string, field: RecipientField): void => {
-        const all = [...field.addresses, ...field.groups];
+        // Groups first in the preview: they're the high-leverage class, so
+        // capping the list shouldn't hide them behind a wall of addresses.
+        const all = [...field.groups, ...field.addresses];
         if (all.length === 0) return;
-        lines.push(`${label}: ${all.join(', ')}`);
+        if (all.length <= RECIPIENT_PREVIEW_LIMIT) {
+            lines.push(`${label}: ${all.join(', ')}`);
+            return;
+        }
+        const shown = all.slice(0, RECIPIENT_PREVIEW_LIMIT).join(', ');
+        const more = all.length - RECIPIENT_PREVIEW_LIMIT;
+        lines.push(`${label}: ${shown}, …and ${more} more`);
     };
     formatField('To', summary.to);
     formatField('Cc', summary.cc);
