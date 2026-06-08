@@ -6,6 +6,7 @@ interface CapturedCall {
     url: string;
     method?: string;
     body?: unknown;
+    headers?: Record<string, string>;
 }
 
 let calls: CapturedCall[];
@@ -16,9 +17,9 @@ function installFakeFetch(jsonValue: unknown = []) {
     originalFetch = globalThis.fetch;
     (globalThis as { fetch: unknown }).fetch = async (
         url: string,
-        opts: { method?: string; body?: unknown } = {},
+        opts: { method?: string; body?: unknown; headers?: Record<string, string> } = {},
     ) => {
-        calls.push({ url, method: opts.method, body: opts.body });
+        calls.push({ url, method: opts.method, body: opts.body, headers: opts.headers });
         return {
             ok: true,
             status: 200,
@@ -26,6 +27,29 @@ function installFakeFetch(jsonValue: unknown = []) {
             json: async () => jsonValue,
             text: async () =>
                 typeof jsonValue === 'string' ? jsonValue : JSON.stringify(jsonValue),
+        } as unknown as Response;
+    };
+}
+
+// Mutating endpoints often respond with HTTP 2xx and an empty body. The
+// makeRequest helper used to JSON.parse('') and throw; we now treat empty
+// bodies as "no payload". This helper lets tests reproduce that response.
+function installEmptyBodyFetch() {
+    calls = [];
+    originalFetch = globalThis.fetch;
+    (globalThis as { fetch: unknown }).fetch = async (
+        url: string,
+        opts: { method?: string; body?: unknown; headers?: Record<string, string> } = {},
+    ) => {
+        calls.push({ url, method: opts.method, body: opts.body, headers: opts.headers });
+        return {
+            ok: true,
+            status: 204,
+            statusText: 'No Content',
+            json: async () => {
+                throw new SyntaxError('Unexpected end of JSON input');
+            },
+            text: async () => '',
         } as unknown as Response;
     };
 }
@@ -108,12 +132,12 @@ suite('NovemApi grid/doc endpoints', () => {
         assert.strictEqual(calls[1].method, 'PUT');
     });
 
-    test('deleteGrid / deleteDoc DELETE the right path', async () => {
-        await api.deleteGrid('g1');
+    test('deleteResource DELETEs grids and docs at the right path', async () => {
+        await api.deleteResource('grids', 'g1');
         assert.strictEqual(calls[0].url, `${API_ROOT}/vis/grids/g1`);
         assert.strictEqual(calls[0].method, 'DELETE');
 
-        await api.deleteDoc('d1');
+        await api.deleteResource('docs', 'd1');
         assert.strictEqual(calls[1].url, `${API_ROOT}/vis/docs/d1`);
         assert.strictEqual(calls[1].method, 'DELETE');
     });
@@ -225,5 +249,87 @@ suite('NovemApi GraphQL aggregate', () => {
             'fell back to REST /u/sen/p',
         );
         assert.deepStrictEqual(agg.plots, []);
+    });
+});
+
+suite('NovemApi resource-action endpoints', () => {
+    let api: NovemApi;
+
+    setup(() => {
+        installFakeFetch([]);
+        api = new NovemApi(API_ROOT, 'test-token');
+    });
+    teardown(() => restoreFetch());
+
+    // Walk every visType so a future addition (or removal) to VIS_TYPE_PREFIX
+    // can't quietly skip a type. Each pair drives one rename + one delete call.
+    const visTypes: Array<[string, string]> = [
+        ['plots', '/vis/plots'],
+        ['mails', '/vis/mails'],
+        ['grids', '/vis/grids'],
+        ['docs', '/vis/docs'],
+        ['jobs', '/code/jobs'],
+        ['repos', '/code/repos'],
+    ];
+
+    for (const [visType, prefix] of visTypes) {
+        test(`renameResource PATCHes ${visType} as text/plain`, async () => {
+            await api.renameResource(visType, 'old_id', 'new_id');
+            assert.strictEqual(calls[0].url, `${API_ROOT}${prefix}/old_id`);
+            assert.strictEqual(calls[0].method, 'PATCH');
+            assert.strictEqual(calls[0].body, 'new_id');
+            assert.strictEqual(calls[0].headers?.['Content-Type'], 'text/plain');
+        });
+
+        test(`deleteResource DELETEs ${visType}/<id>`, async () => {
+            await api.deleteResource(visType, 'x');
+            assert.strictEqual(calls[0].url, `${API_ROOT}${prefix}/x`);
+            assert.strictEqual(calls[0].method, 'DELETE');
+        });
+    }
+
+    test('sendMail POSTs /status=sending', async () => {
+        await api.sendMail('demo');
+        assert.strictEqual(calls[0].url, `${API_ROOT}/vis/mails/demo/status`);
+        assert.strictEqual(calls[0].method, 'POST');
+        assert.strictEqual(calls[0].body, 'sending');
+        assert.strictEqual(calls[0].headers?.['Content-Type'], 'text/plain');
+    });
+
+    test('testMail POSTs /status=testing', async () => {
+        await api.testMail('demo');
+        assert.strictEqual(calls[0].url, `${API_ROOT}/vis/mails/demo/status`);
+        assert.strictEqual(calls[0].method, 'POST');
+        assert.strictEqual(calls[0].body, 'testing');
+        assert.strictEqual(calls[0].headers?.['Content-Type'], 'text/plain');
+    });
+
+    test('runJob POSTs /data with an empty JSON body', async () => {
+        await api.runJob('my_job');
+        assert.strictEqual(calls[0].url, `${API_ROOT}/code/jobs/my_job/data`);
+        assert.strictEqual(calls[0].method, 'POST');
+        assert.strictEqual(calls[0].body, '{}');
+        assert.strictEqual(calls[0].headers?.['Content-Type'], 'application/json');
+    });
+});
+
+suite('NovemApi empty-body tolerance', () => {
+    // Regression: PATCH and POST against the Novem API often return HTTP 2xx
+    // with an empty body. makeRequest used to JSON.parse('') and throw
+    // "Unexpected end of JSON input"; it should now resolve to undefined.
+    teardown(() => restoreFetch());
+
+    test('rename succeeds when the server returns an empty 2xx body', async () => {
+        installEmptyBodyFetch();
+        const api = new NovemApi(API_ROOT, 'tok');
+        const result = await api.renameResource('mails', 'old', 'new');
+        assert.strictEqual(result, undefined);
+    });
+
+    test('sendMail succeeds when the server returns an empty 2xx body', async () => {
+        installEmptyBodyFetch();
+        const api = new NovemApi(API_ROOT, 'tok');
+        const result = await api.sendMail('demo');
+        assert.strictEqual(result, undefined);
     });
 });

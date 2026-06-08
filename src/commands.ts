@@ -122,19 +122,19 @@ import {
 } from './extension';
 import NovemApi from './novem-api';
 
-async function openCustomPlotFiles(plotName: string): Promise<void> {
-    const filesToOpen = [
-        { path: `/${plotName}/config/custom/custom.js`, lang: 'javascript' },
-        { path: `/${plotName}/config/custom/custom.css`, lang: 'css' },
-        { path: `/${plotName}/data`, lang: 'plaintext' },
-    ];
-    for (const file of filesToOpen) {
+interface VisFileSpec {
+    path: string;
+    lang: string;
+}
+
+async function openVisFiles(visType: string, files: VisFileSpec[]): Promise<void> {
+    for (const file of files) {
         try {
             await vscode.commands.executeCommand(
                 'novem.openFile',
                 vscode.Uri.from({
                     scheme: 'novem',
-                    authority: 'plots',
+                    authority: visType,
                     path: file.path,
                 }),
                 'file',
@@ -144,6 +144,61 @@ async function openCustomPlotFiles(plotName: string): Promise<void> {
             // File may not exist — skip silently
         }
     }
+}
+
+async function openCustomPlotFiles(plotName: string): Promise<void> {
+    await openVisFiles('plots', [
+        { path: `/${plotName}/config/custom/custom.js`, lang: 'javascript' },
+        { path: `/${plotName}/config/custom/custom.css`, lang: 'css' },
+        { path: `/${plotName}/data`, lang: 'plaintext' },
+    ]);
+}
+
+// Per-type singular nouns used in confirmation prompts and notifications.
+const NOUNS: Record<string, string> = {
+    plots: 'plot',
+    mails: 'mail',
+    grids: 'grid',
+    docs: 'document',
+    jobs: 'job',
+    repos: 'repo',
+};
+
+// Files that "Edit" opens for each resource. Plots are special — the spec
+// depends on plot type (only custom has editable JS/CSS), so they are dispatched
+// inline in editResource instead.
+const EDIT_FILES: Record<string, (name: string) => VisFileSpec[]> = {
+    mails: name => [{ path: `/${name}/content`, lang: 'nv_markdown' }],
+    docs: name => [{ path: `/${name}/content`, lang: 'nv_markdown' }],
+    grids: name => [
+        { path: `/${name}/layout`, lang: 'nv_markdown' },
+        { path: `/${name}/mapping`, lang: 'nv_markdown' },
+    ],
+};
+
+interface RecipientCounts {
+    to: number;
+    cc: number;
+    bcc: number;
+}
+
+// Mail recipient fields are newline-separated text. A missing field (404)
+// surfaces as undefined from readFile and means "no recipients of that kind".
+async function countMailRecipients(api: NovemApi, mailName: string): Promise<RecipientCounts> {
+    const countField = async (field: 'to' | 'cc' | 'bcc'): Promise<number> => {
+        const content = await api.readFile('mails', `/${mailName}/recipients/${field}`);
+        if (!content || typeof content !== 'string') return 0;
+        return content
+            .split('\n')
+            .map(s => s.trim())
+            .filter(s => s.length > 0).length;
+    };
+    const [to, cc, bcc] = await Promise.all([
+        countField('to'),
+        countField('cc'),
+        countField('bcc'),
+    ]);
+    return { to, cc, bcc };
 }
 
 async function closeEditorsForItem(visType: string, itemName: string): Promise<void> {
@@ -171,6 +226,26 @@ async function promptForId(
         prompt,
         placeHolder: placeholder,
         validateInput: (inputValue: string) => (!pattern.test(inputValue) ? message : undefined),
+    });
+}
+
+async function promptForRename(currentName: string, visType: string): Promise<string | undefined> {
+    // Jobs and repos accept hyphens in IDs; visualisations don't. Mirror the
+    // create-prompt validation so a rename can't produce an ID the API would
+    // later reject.
+    const allowHyphens = visType === 'jobs' || visType === 'repos';
+    const pattern = allowHyphens ? /^[a-z0-9_-]+$/ : /^[a-z0-9_]+$/;
+    const message = allowHyphens
+        ? 'Only lowercase ASCII characters, underscores, and hyphens are allowed!'
+        : 'Only lowercase ASCII characters and underscores are allowed!';
+    return vscode.window.showInputBox({
+        prompt: `Rename "${currentName}" to:`,
+        value: currentName,
+        validateInput: (inputValue: string) => {
+            if (!pattern.test(inputValue)) return message;
+            if (inputValue === currentName) return 'New name must differ from current name';
+            return undefined;
+        },
     });
 }
 
@@ -546,22 +621,6 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('novem.deleteNovemPlot', async (item: MyTreeItem) => {
-            if (!(await confirmDeletion(item.name, 'visualisation'))) return;
-            await api.deletePlot(item.name);
-            await closeEditorsForItem('plots', item.name);
-            vscode.window.showWarningMessage(`Deleted "${item.name}"`);
-            item.parent.refresh();
-        }),
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('novem.editCustomPlot', async (item: MyTreeItem) => {
-            await openCustomPlotFiles(item.name);
-        }),
-    );
-
-    context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemPlots', async () => {
             plotsProvider.refresh();
         }),
@@ -596,16 +655,6 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('novem.deleteNovemGrid', async (item: MyTreeItem) => {
-            if (!(await confirmDeletion(item.name, 'grid'))) return;
-            await api.deleteGrid(item.name);
-            await closeEditorsForItem('grids', item.name);
-            vscode.window.showWarningMessage(`Deleted "${item.name}"`);
-            item.parent.refresh();
-        }),
-    );
-
-    context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemGrids', async () => {
             gridsProvider.refresh();
         }),
@@ -630,16 +679,6 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             docsProvider.refresh();
 
             vscode.window.showInformationMessage(`New document ${docId} created`);
-        }),
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('novem.deleteNovemDoc', async (item: MyTreeItem) => {
-            if (!(await confirmDeletion(item.name, 'document'))) return;
-            await api.deleteDoc(item.name);
-            await closeEditorsForItem('docs', item.name);
-            vscode.window.showWarningMessage(`Deleted "${item.name}"`);
-            item.parent.refresh();
         }),
     );
 
@@ -676,16 +715,6 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
     );
 
     context.subscriptions.push(
-        vscode.commands.registerCommand('novem.deleteNovemJob', async (item: MyTreeItem) => {
-            if (!(await confirmDeletion(item.name, 'job'))) return;
-            await api.deleteJob(item.name);
-            await closeEditorsForItem('jobs', item.name);
-            vscode.window.showWarningMessage(`Deleted "${item.name}"`);
-            item.parent.refresh();
-        }),
-    );
-
-    context.subscriptions.push(
         vscode.commands.registerCommand('novem.refreshNovemJobs', async () => {
             jobsProvider?.refresh();
         }),
@@ -714,16 +743,6 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             reposProvider?.refresh();
 
             vscode.window.showInformationMessage(`New repo ${repoId} created`);
-        }),
-    );
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('novem.deleteNovemRepo', async (item: MyTreeItem) => {
-            if (!(await confirmDeletion(item.name, 'repo'))) return;
-            await api.deleteRepo(item.name);
-            await closeEditorsForItem('repos', item.name);
-            vscode.window.showWarningMessage(`Deleted "${item.name}"`);
-            item.parent.refresh();
         }),
     );
 
@@ -914,6 +933,126 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
                     `Failed to delete ${itemType} "${item.name}": ${error}`,
                 );
             }
+        }),
+    );
+
+    // Unified top-level resource verbs: rename / delete / edit dispatch on
+    // item.visType, replacing the per-type deleteNovem* / editCustomPlot
+    // commands that previously duplicated this logic six ways.
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.renameResource', async (item: MyTreeItem) => {
+            const noun = NOUNS[item.visType] ?? 'resource';
+            const newName = await promptForRename(item.name, item.visType);
+            if (!newName) return;
+            try {
+                await api.renameResource(item.visType, item.name, newName);
+            } catch (error) {
+                console.error('Error renaming resource:', error);
+                vscode.window.showErrorMessage(`Failed to rename ${noun} "${item.name}": ${error}`);
+                return;
+            }
+            await closeEditorsForItem(item.visType, item.name);
+            vscode.window.showInformationMessage(`Renamed ${noun} "${item.name}" to "${newName}"`);
+            item.parent.refresh();
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.deleteResource', async (item: MyTreeItem) => {
+            const noun = NOUNS[item.visType] ?? 'resource';
+            if (!(await confirmDeletion(item.name, noun))) return;
+            try {
+                await api.deleteResource(item.visType, item.name);
+            } catch (error) {
+                console.error('Error deleting resource:', error);
+                vscode.window.showErrorMessage(`Failed to delete ${noun} "${item.name}": ${error}`);
+                return;
+            }
+            await closeEditorsForItem(item.visType, item.name);
+            vscode.window.showWarningMessage(`Deleted "${item.name}"`);
+            item.parent.refresh();
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.editResource', async (item: MyTreeItem) => {
+            // Plots are special: only "custom" plots have editable JS/CSS, so
+            // the file set depends on the plot kind (carried on iconType).
+            if (item.visType === 'plots') {
+                if (item.iconType === 'custom') {
+                    await openCustomPlotFiles(item.name);
+                }
+                return;
+            }
+            const builder = EDIT_FILES[item.visType];
+            if (!builder) return;
+            await openVisFiles(item.visType, builder(item.name));
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.sendMail', async (item: MyTreeItem) => {
+            let counts: RecipientCounts;
+            try {
+                counts = await countMailRecipients(api, item.name);
+            } catch (error) {
+                console.error('Error fetching mail recipients:', error);
+                vscode.window.showErrorMessage(
+                    `Failed to read recipients for "${item.name}": ${error}`,
+                );
+                return;
+            }
+            const total = counts.to + counts.cc + counts.bcc;
+            if (total === 0) {
+                vscode.window.showWarningMessage(
+                    `"${item.name}" has no recipients — set to / cc / bcc before sending.`,
+                );
+                return;
+            }
+            const noun = total === 1 ? 'recipient' : 'recipients';
+            const confirm = await vscode.window.showWarningMessage(
+                `Send "${item.name}" to ${total} ${noun}.`,
+                {
+                    modal: true,
+                    detail: `To: ${counts.to}, cc: ${counts.cc}, bcc: ${counts.bcc}`,
+                },
+                'Send',
+            );
+            if (confirm !== 'Send') return;
+            try {
+                await api.sendMail(item.name);
+            } catch (error) {
+                console.error('Error sending mail:', error);
+                vscode.window.showErrorMessage(`Failed to send mail "${item.name}": ${error}`);
+                return;
+            }
+            vscode.window.showInformationMessage(`Mail "${item.name}" queued for sending`);
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.testMail', async (item: MyTreeItem) => {
+            try {
+                await api.testMail(item.name);
+            } catch (error) {
+                console.error('Error sending test mail:', error);
+                vscode.window.showErrorMessage(`Failed to send test mail "${item.name}": ${error}`);
+                return;
+            }
+            vscode.window.showInformationMessage(`Test mail "${item.name}" sent to your address`);
+        }),
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('novem.runJob', async (item: MyTreeItem) => {
+            try {
+                await api.runJob(item.name);
+            } catch (error) {
+                console.error('Error running job:', error);
+                vscode.window.showErrorMessage(`Failed to run job "${item.name}": ${error}`);
+                return;
+            }
+            vscode.window.showInformationMessage(`Job "${item.name}" triggered`);
         }),
     );
 }

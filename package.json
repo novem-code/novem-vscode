@@ -113,10 +113,6 @@
                 "icon": "$(refresh)"
             },
             {
-                "command": "novem.deleteNovemGrid",
-                "title": "Delete Grid"
-            },
-            {
                 "command": "novem.createNovemDoc",
                 "title": "Create Document",
                 "icon": "$(new-folder)"
@@ -127,10 +123,6 @@
                 "icon": "$(refresh)"
             },
             {
-                "command": "novem.deleteNovemDoc",
-                "title": "Delete Document"
-            },
-            {
                 "command": "novem.createNovemPlot",
                 "title": "Create Plot",
                 "icon": "$(new-folder)"
@@ -139,10 +131,6 @@
                 "command": "novem.refreshNovemPlots",
                 "title": "Refresh Plots",
                 "icon": "$(refresh)"
-            },
-            {
-                "command": "novem.deleteNovemPlot",
-                "title": "Delete Plot"
             },
             {
                 "command": "novem.createNovemMail",
@@ -156,7 +144,11 @@
             },
             {
                 "command": "novem.sendMail",
-                "title": "Send Mail"
+                "title": "Send"
+            },
+            {
+                "command": "novem.testMail",
+                "title": "Test"
             },
             {
                 "command": "novem.createNovemJob",
@@ -169,8 +161,8 @@
                 "icon": "$(refresh)"
             },
             {
-                "command": "novem.deleteNovemJob",
-                "title": "Delete Job"
+                "command": "novem.runJob",
+                "title": "Run"
             },
             {
                 "command": "novem.createNovemRepo",
@@ -183,13 +175,22 @@
                 "icon": "$(refresh)"
             },
             {
-                "command": "novem.deleteNovemRepo",
-                "title": "Delete Repo"
+                "command": "novem.cloneNovemRepo",
+                "title": "Clone",
+                "icon": "$(repo-clone)"
             },
             {
-                "command": "novem.cloneNovemRepo",
-                "title": "Clone Repo",
-                "icon": "$(repo-clone)"
+                "command": "novem.renameResource",
+                "title": "Rename"
+            },
+            {
+                "command": "novem.deleteResource",
+                "title": "Delete"
+            },
+            {
+                "command": "novem.editResource",
+                "title": "Edit",
+                "icon": "$(edit)"
             },
             {
                 "command": "novem.login",
@@ -220,11 +221,6 @@
                 "icon": "$(refresh)"
             },
             {
-                "command": "novem.editCustomPlot",
-                "title": "Edit Custom Plot",
-                "icon": "$(edit)"
-            },
-            {
                 "command": "novem.createNodeInDirectory",
                 "title": "Create Node",
                 "icon": "$(add)"
@@ -249,80 +245,92 @@
                 {
                     "command": "novem.viewNovemPlot",
                     "when": "view == novem-plots && viewItem =~ /^plot-top/",
-                    "title": "View Plot",
+                    "title": "View",
                     "group": "0_view"
-                },
-                {
-                    "command": "novem.editCustomPlot",
-                    "when": "view == novem-plots && viewItem == plot-top-custom",
-                    "title": "Edit Custom Plot",
-                    "group": "1_show"
                 },
                 {
                     "command": "novem.viewNovemMail",
                     "when": "view == novem-mails && viewItem == mail-top",
-                    "title": "View Mail",
+                    "title": "View",
                     "group": "0_view"
-                },
-                {
-                    "command": "novem.sendMail",
-                    "when": "view == novem-mails && viewItem == mail-top",
-                    "title": "Send Mail",
-                    "group": "1_show"
                 },
                 {
                     "command": "novem.viewNovemGrid",
                     "when": "view == novem-grids && viewItem == grid-top",
-                    "title": "View Grid",
+                    "title": "View",
                     "group": "0_view"
                 },
                 {
                     "command": "novem.viewNovemDoc",
                     "when": "view == novem-docs && viewItem == doc-top",
-                    "title": "View Document",
+                    "title": "View",
                     "group": "0_view"
                 },
                 {
-                    "command": "novem.deleteNovemPlot",
-                    "when": "view == novem-plots && viewItem =~ /^plot-top/",
-                    "title": "Delete Plot",
-                    "group": "4_manipulate"
-                },
-                {
-                    "command": "novem.deleteNovemGrid",
-                    "when": "view == novem-grids && viewItem == grid-top",
-                    "title": "Delete Grid",
-                    "group": "4_manipulate"
-                },
-                {
-                    "command": "novem.deleteNovemDoc",
-                    "when": "view == novem-docs && viewItem == doc-top",
-                    "title": "Delete Document",
-                    "group": "4_manipulate"
-                },
-                {
-                    "command": "novem.deleteNovemJob",
+                    "command": "novem.runJob",
                     "when": "view == novem-jobs && viewItem == job-top",
-                    "title": "Delete Job",
-                    "group": "4_manipulate"
+                    "title": "Run",
+                    "group": "0_view"
                 },
                 {
-                    "command": "novem.deleteNovemRepo",
-                    "when": "view == novem-repos && viewItem == repo-top",
-                    "title": "Delete Repo",
-                    "group": "4_manipulate"
+                    "command": "novem.editResource",
+                    "when": "view == novem-plots && viewItem == plot-top-custom",
+                    "title": "Edit",
+                    "group": "1_show"
+                },
+                {
+                    "command": "novem.editResource",
+                    "when": "view == novem-mails && viewItem == mail-top",
+                    "title": "Edit",
+                    "group": "1_show"
+                },
+                {
+                    "command": "novem.editResource",
+                    "when": "view == novem-grids && viewItem == grid-top",
+                    "title": "Edit",
+                    "group": "1_show"
+                },
+                {
+                    "command": "novem.editResource",
+                    "when": "view == novem-docs && viewItem == doc-top",
+                    "title": "Edit",
+                    "group": "1_show"
+                },
+                {
+                    "command": "novem.testMail",
+                    "when": "view == novem-mails && viewItem == mail-top",
+                    "title": "Test",
+                    "group": "1_show"
+                },
+                {
+                    "command": "novem.sendMail",
+                    "when": "view == novem-mails && viewItem == mail-top",
+                    "title": "Send",
+                    "group": "1_show"
                 },
                 {
                     "command": "novem.cloneNovemRepo",
                     "when": "view == novem-repos && viewItem == repo-top",
-                    "title": "Clone Repo",
+                    "title": "Clone",
+                    "group": "1_show"
+                },
+                {
+                    "command": "novem.cloneNovemRepo",
+                    "when": "view == novem-repos && viewItem == repo-top",
+                    "title": "Clone",
                     "group": "inline"
                 },
                 {
-                    "command": "novem.cloneNovemRepo",
-                    "when": "view == novem-repos && viewItem == repo-top",
-                    "title": "Clone Repo",
-                    "group": "1_show"
+                    "command": "novem.renameResource",
+                    "when": "view =~ /^novem-/ && viewItem =~ /-top($|-)/",
+                    "title": "Rename",
+                    "group": "4_manipulate@1"
+                },
+                {
+                    "command": "novem.deleteResource",
+                    "when": "view =~ /^novem-/ && viewItem =~ /-top($|-)/",
+                    "title": "Delete",
+                    "group": "4_manipulate@2"
                 },
                 {
                     "command": "novem.createNodeInDirectory",
@@ -429,27 +437,31 @@
             ],
             "commandPalette": [
                 {
-                    "command": "novem.editCustomPlot",
+                    "command": "novem.renameResource",
                     "when": "false"
                 },
                 {
-                    "command": "novem.deleteNovemPlot",
+                    "command": "novem.deleteResource",
                     "when": "false"
                 },
                 {
-                    "command": "novem.deleteNovemGrid",
+                    "command": "novem.editResource",
                     "when": "false"
                 },
                 {
-                    "command": "novem.deleteNovemDoc",
+                    "command": "novem.sendMail",
                     "when": "false"
                 },
                 {
-                    "command": "novem.deleteNovemJob",
+                    "command": "novem.testMail",
                     "when": "false"
                 },
                 {
-                    "command": "novem.deleteNovemRepo",
+                    "command": "novem.runJob",
+                    "when": "false"
+                },
+                {
+                    "command": "novem.cloneNovemRepo",
                     "when": "false"
                 },
                 {
