@@ -79,7 +79,7 @@ export default class NovemApi {
     }
 
     private async makeRequest<T = any>(
-        method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+        method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
         url: string,
         options: {
             body?: any;
@@ -127,10 +127,16 @@ export default class NovemApi {
             }
         }
 
+        // Mutating endpoints (PATCH rename, POST /status, DELETE) often reply
+        // with HTTP 2xx and an empty body. Treat that as a successful response
+        // with no payload rather than failing on JSON.parse('').
+        const text = await response.text();
+        if (text.length === 0) {
+            return undefined as T;
+        }
         try {
-            return (await response.json()) as T;
+            return JSON.parse(text) as T;
         } catch (error) {
-            const text = await response.text().catch(() => '[Unable to read response]');
             console.error(
                 `JSON parsing error for ${url}:`,
                 error,
@@ -156,6 +162,13 @@ export default class NovemApi {
 
     private async put(url: string, data: any) {
         return this.makeRequest('PUT', url, { body: data });
+    }
+
+    private async patch(url: string, data: string, headers?: Record<string, string>) {
+        return this.makeRequest('PATCH', url, {
+            body: data,
+            headers: headers ?? { 'Content-Type': 'text/plain' },
+        });
     }
 
     private async delete(url: string) {
@@ -347,24 +360,37 @@ export default class NovemApi {
         else return await this.get(`${this.apiRoot}/code/repos/${repoId}`);
     }
 
-    async deletePlot(plotId: string) {
-        return await this.delete(`${this.apiRoot}/vis/plots/${plotId}`);
+    async deleteResource(visType: string, id: string) {
+        return await this.delete(`${this.apiRoot}${visTypePath(visType)}/${id}`);
     }
 
-    async deleteGrid(gridId: string) {
-        return await this.delete(`${this.apiRoot}/vis/grids/${gridId}`);
+    /**
+     * Rename a resource by PATCH-ing its top-level URI with the new name as
+     * a text/plain body. Mirrors the rename verb used by novem-tui.
+     */
+    async renameResource(visType: string, id: string, newName: string) {
+        return await this.patch(`${this.apiRoot}${visTypePath(visType)}/${id}`, newName);
     }
 
-    async deleteDoc(docId: string) {
-        return await this.delete(`${this.apiRoot}/vis/docs/${docId}`);
+    /** POST /status=sending to trigger an actual mail send. */
+    async sendMail(mailId: string) {
+        return await this.post(`${this.apiRoot}/vis/mails/${mailId}/status`, 'sending', {
+            'Content-Type': 'text/plain',
+        });
     }
 
-    async deleteJob(jobId: string) {
-        return await this.delete(`${this.apiRoot}/code/jobs/${jobId}`);
+    /** POST /status=testing to send the mail to its creator as a preview. */
+    async testMail(mailId: string) {
+        return await this.post(`${this.apiRoot}/vis/mails/${mailId}/status`, 'testing', {
+            'Content-Type': 'text/plain',
+        });
     }
 
-    async deleteRepo(repoId: string) {
-        return await this.delete(`${this.apiRoot}/code/repos/${repoId}`);
+    /** POST /data={} to trigger a job run. */
+    async runJob(jobId: string) {
+        return await this.post(`${this.apiRoot}/code/jobs/${jobId}/data`, '{}', {
+            'Content-Type': 'application/json',
+        });
     }
 
     async readFile(visType: string, path: string) {
