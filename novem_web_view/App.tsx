@@ -8,6 +8,7 @@ import {
     NovemViewGrid,
     NovemViewDoc,
     NovemViewProfile,
+    NovemLoading,
 } from './components';
 
 import { ViewData, FetchedData, VscodeApi } from './types';
@@ -101,7 +102,9 @@ const MainContent = (props: { vsapi: VscodeApi }) => {
             <Route path="/grids" element={<NovemViewGrid {...viewProps} />} />
             <Route path="/docs" element={<NovemViewDoc {...viewProps} />} />
             <Route path="/profile" Component={NovemViewProfile} />
-            <Route path="/" element={<div>Hello World from Novem Web View!</div>} />
+            {/* Initial route before the extension posts its 'navigate' message —
+                show the branded skeleton so there's no "Hello World" flash. */}
+            <Route path="/" element={<NovemLoading />} />
         </Routes>
     );
 };
@@ -114,7 +117,9 @@ const App = () => {
         vscode.postMessage({ command: 'contentReady' }, '*');
     }, []);
 
-    if (!vscodeApi) return null;
+    // Keep the branded skeleton on screen while we acquire the VS Code API,
+    // rather than flashing a blank panel.
+    if (!vscodeApi) return <NovemLoading />;
 
     return (
         <Router>

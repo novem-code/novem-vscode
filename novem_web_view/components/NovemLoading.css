@@ -1,0 +1,138 @@
+/*
+ * Branded loading skeleton. Mirrors the NovemVisView frame (sticky chrome
+ * header + body) so when the real content subs in there's no layout jump or
+ * unstyled "Loading!" flash. The header is a shimmer skeleton built from
+ * --vscode-* tokens (reads as native editor chrome); the body centres the
+ * vendored novem loading animation. The same .nv-skel-* classes are reused by
+ * the static pre-React shell in index.html, so the skeleton is continuous from
+ * first paint through hydration.
+ */
+
+/* Shimmer base — every placeholder block gets a moving highlight sweep. */
+.nv-skel-block {
+    position: relative;
+    overflow: hidden;
+    background: var(--vscode-editorWidget-background, rgba(128, 128, 128, 0.12));
+    border-radius: 4px;
+}
+
+.nv-skel-block::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, var(--vscode-foreground, #fff), transparent);
+    opacity: 0.07;
+    animation: nv-skel-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes nv-skel-shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* ---- Chrome header skeleton (matches NovemVisChrome geometry) -------- */
+
+.nv-skel-avatar {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    margin-left: 4px;
+    border-radius: 50%;
+}
+
+.nv-skel-meta {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+}
+
+.nv-skel-title {
+    height: 11px;
+    width: 38%;
+    max-width: 220px;
+}
+
+.nv-skel-sub {
+    height: 9px;
+    width: 24%;
+    max-width: 150px;
+}
+
+.nv-skel-actions {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nv-skel-chip {
+    width: 78px;
+    height: 26px;
+    border-radius: 6px;
+}
+
+.nv-skel-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 5px;
+}
+
+/* ---- Body — centred novem loading animation -------------------------- */
+
+/*
+ * The skeleton uses its OWN body class rather than .nv-body. .nv-body carries
+ * "forced opposite mode" overrides (styles.css) keyed on the *absence* of
+ * html[data-dark-mode] — which assume a loaded vis where useVisTheme has
+ * already set that attribute. During loading the attribute isn't set yet, so
+ * .nv-body would force a white background on a dark editor. The loading screen
+ * has no per-vis toggle, so it simply tracks the editor via
+ * --vscode-editor-background and stays in sync with theme changes.
+ */
+.nv-skel-body {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 12px;
+    background: var(--vscode-editor-background);
+}
+.nv-skel-body--fill {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.nv-skel-body--flow {
+    flex: 1 0 auto;
+}
+
+.nv-skel-content {
+    flex: 1 1 auto;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+/*
+ * The vendored novem loading GIFs, inlined as data: URIs by the esbuild .gif
+ * loader. Black mark for light editors, white for dark — keyed off the
+ * vscode-* body theme class (the only theme signal present while loading, since
+ * the per-vis data-dark-mode toggle is applied later, after data resolves).
+ */
+.nv-skel-spinner {
+    width: 72px;
+    height: 72px;
+    background-image: url('../assets/loading-black.gif');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+body.vscode-dark .nv-skel-spinner,
+body.vscode-high-contrast .nv-skel-spinner {
+    background-image: url('../assets/loading-white.gif');
+}

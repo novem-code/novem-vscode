@@ -13,7 +13,7 @@ const NovemViewPlot = (props: {
 }) => {
     const { fetchedData, viewData, refreshKey, onRefresh } = props;
 
-    if (!fetchedData) return <NovemLoading />;
+    if (!fetchedData) return <NovemLoading variant="fill" />;
 
     return (
         <NovemVisView

@@ -15,7 +15,7 @@ const NovemViewMail = (props: {
 }) => {
     const { fetchedData, viewData, refreshKey, onRefresh } = props;
 
-    if (!fetchedData) return <NovemLoading />;
+    if (!fetchedData) return <NovemLoading variant="flow" />;
 
     const rawSize = String(fetchedData.config?.size ?? 'medium');
     const size = (MAIL_SIZES as readonly string[]).includes(rawSize) ? rawSize : 'medium';

@@ -13,7 +13,7 @@ const NovemViewGrid = (props: {
 }) => {
     const { fetchedData, viewData, refreshKey, onRefresh } = props;
 
-    if (!fetchedData) return <NovemLoading />;
+    if (!fetchedData) return <NovemLoading variant="fill" />;
 
     // Grids must use 'fill' (definite container height), not 'flow'. vislib's
     // grid renderers are fixed-canvas, scale-to-fit: the dashboard grid sizes an

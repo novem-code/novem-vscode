@@ -13,7 +13,7 @@ const NovemViewDoc = (props: {
 }) => {
     const { fetchedData, viewData, refreshKey, onRefresh } = props;
 
-    if (!fetchedData) return <NovemLoading />;
+    if (!fetchedData) return <NovemLoading variant="flow" />;
 
     // Docs render their page stack scaled to the panel width (scale) and flow +
     // scroll under the chrome. vislib reads a doc's own theme, so the theme hint
