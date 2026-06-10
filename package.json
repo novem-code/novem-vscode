@@ -523,12 +523,12 @@
                 {
                     "id": "novem-jobs",
                     "name": "Jobs",
-                    "when": "novem.loggedIn && novem.hasJobs"
+                    "when": "novem.loggedIn"
                 },
                 {
                     "id": "novem-repos",
                     "name": "Repos",
-                    "when": "novem.loggedIn && novem.hasRepos"
+                    "when": "novem.loggedIn"
                 },
                 {
                     "id": "novem-login",
