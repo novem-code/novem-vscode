@@ -210,8 +210,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
     primeProviderRootItems(jobsRootPromise, jobsProvider);
     primeProviderRootItems(reposRootPromise, reposProvider);
-    vscode.commands.executeCommand('setContext', 'novem.hasJobs', true);
-    vscode.commands.executeCommand('setContext', 'novem.hasRepos', true);
 
     const sbi = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
 
