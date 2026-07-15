@@ -4,7 +4,7 @@
 charts, documents, emails and reports right from your code. With novem for VS
 Code you can browse, edit and preview your novem visuals from your editor.
 
-![email example](./img/mail_example.png)
+![Editing a novem e-mail in VS Code: the novem bar lists plots, e-mails and other resources, the content file is open with nv_markdown highlighting, and a live preview of the rendered mail is shown alongside](./img/mail_example.png)
 
 ## Installation
 
