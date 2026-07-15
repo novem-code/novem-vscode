@@ -54,6 +54,56 @@ jobs:
       - name: Bump package.json version
         run: npm version "$VERSION" --no-git-tag-version
 
+      - name: Update CHANGELOG.md
+        if: github.event_name == 'release'
+        env:
+          RELEASE_BODY: ${{ github.event.release.body }}
+          RELEASE_DATE: ${{ github.event.release.published_at }}
+        run: |
+          set -euo pipefail
+
+          # published_at looks like 2026-07-10T12:34:56Z; keep just the date.
+          DATE="${RELEASE_DATE%%T*}"
+          if [ -z "$DATE" ]; then
+            DATE="$(date -u +%Y-%m-%d)"
+          fi
+
+          if grep -q "^## \[$VERSION\]" CHANGELOG.md; then
+            echo "CHANGELOG.md already has an entry for $VERSION; skipping"
+            exit 0
+          fi
+
+          # Clean up GitHub's auto-generated release notes for the changelog:
+          #   - normalise CRLFs
+          #   - demote top-level "## " headings (e.g. "## What's Changed") to H3 so
+          #     they nest under the version heading
+          #   - strip the " by @user in <PR url>" attribution suffix from each line
+          # Fall back to a placeholder if there are no notes.
+          BODY="$(printf '%s' "$RELEASE_BODY" \
+            | sed 's/\r$//' \
+            | sed 's/^## /### /' \
+            | sed -E 's| by @[^ ]+ in https://[^ ]+$||')"
+          if [ -z "${BODY//[[:space:]]/}" ]; then
+            BODY="- No release notes provided."
+          fi
+
+          printf '## [%s] - %s\n\n%s\n' "$VERSION" "$DATE" "$BODY" > /tmp/new_entry.md
+
+          # Insert the new entry directly after the "## [Unreleased]" header.
+          awk '
+            /^## \[Unreleased\]/ && !inserted {
+              print
+              print ""
+              while ((getline line < "/tmp/new_entry.md") > 0) print line
+              inserted = 1
+              next
+            }
+            { print }
+          ' CHANGELOG.md > CHANGELOG.md.tmp
+          mv CHANGELOG.md.tmp CHANGELOG.md
+
+          echo "Updated CHANGELOG.md with $VERSION"
+
       - name: Commit version bump
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -64,7 +114,7 @@ jobs:
           # Explicitly set the remote URL with the app token
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
 
-          git add package.json pnpm-lock.yaml
+          git add package.json pnpm-lock.yaml CHANGELOG.md
 
           if ! git diff --cached --quiet; then
             git commit -m "Release v$VERSION"

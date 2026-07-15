@@ -9,6 +9,7 @@ When you have a clean `main` branch that you'd like to release:
 5. The workflow will automatically:
    - Extract version from tag
    - Bump `package.json` version
+   - Prepend the release notes to `CHANGELOG.md` under a `## [version] - date` heading
    - Commit and push changes to main
    - Publish to VS Code Marketplace
    - Send Discord notification
