@@ -4,6 +4,18 @@ All notable changes to the "novem-vscode" extension will be documented in this f
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-07-23
+
+### What's Changed
+* Harmonize right-click menus across all six resource types
+* README sweep: match current functionality
+* build(deps-dev): bump esbuild from 0.27.7 to 0.28.1
+* Maintain CHANGELOG.md on release
+* Refresh README screenshot with a current capture
+* Bump js-yaml to 4.2.0 (fix GHSA-h67p-54hq-rp68)
+
+**Full Changelog**: https://github.com/novem-code/novem-vscode/compare/v0.1.10...v0.1.11
+
 ## [0.1.10] - 2026-06-08
 
 ### What's Changed
