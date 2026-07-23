@@ -67,10 +67,6 @@
         ],
         "commands": [
             {
-                "command": "novem.profile",
-                "title": "novem: Profile"
-            },
-            {
                 "command": "novem.viewNovemPlot",
                 "title": "View Plot"
             },
