@@ -1,0 +1,85 @@
+# Adapted from novem-python's .github/dependabot.yml.
+#
+# Security fixes are NOT configured here: Dependabot security updates are a
+# repository setting (Settings -> Code security), and they are already enabled
+# for this repo. They open their own individual PRs as advisories land, ignore
+# `cooldown`, and don't count against `open-pull-requests-limit`. What this file
+# adds for them is the `labels` below -- plus the `ignore` rules, which do also
+# suppress security PRs for the dependencies they name.
+version: 2
+updates:
+  # GitHub Actions. Every action is pinned to a commit SHA with a trailing
+  # version comment (see .github/workflows/CLAUDE.md); Dependabot rewrites both.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # 7 days, matching the "only adopt versions at least ~1 week old" rule in
+    # .github/workflows/CLAUDE.md.
+    cooldown:
+      default-days: 7
+    labels:
+      - "dependencies"
+      - "github-actions"
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # npm dependencies (pnpm lockfile). Unlike novem-python we keep the default
+  # versioning-strategy: this extension bundles its dependencies into the .vsix
+  # instead of publishing version floors to downstream consumers, so letting
+  # Dependabot bump the carets in package.json keeps them honest about what CI
+  # actually tested.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # 7 days, matching `minimumReleaseAge: 10080` in pnpm-workspace.yaml -- pnpm
+    # refuses to install anything younger, so proposing it sooner would only
+    # produce a PR that can't install.
+    cooldown:
+      default-days: 7
+    labels:
+      - "dependencies"
+      - "javascript"
+    open-pull-requests-limit: 5
+    ignore:
+      # @types/vscode declares the API surface we may compile against, so it has
+      # to stay at or below the `engines.vscode` floor in package.json (^1.90.0).
+      # Bump the two together, by hand.
+      - dependency-name: "@types/vscode"
+      # @types/node tracks the oldest Node in the CI matrix (20.x); a major here
+      # would describe APIs that leg doesn't have.
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
+    # Grouped by what ships in the .vsix rather than by dependency-type: react &
+    # friends sit in devDependencies but esbuild bundles them into the webview,
+    # so `dependency-type: development` would misfile them. Majors are left
+    # ungrouped on purpose -- they arrive as individual, bisectable PRs.
+    groups:
+      npm-runtime:
+        patterns:
+          - "ini"
+          - "react"
+          - "react-dom"
+          - "react-router-dom"
+        update-types:
+          - "minor"
+          - "patch"
+      npm-tooling:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "ini"
+          - "react"
+          - "react-dom"
+          - "react-router-dom"
+        update-types:
+          - "minor"
+          - "patch"
