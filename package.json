@@ -608,6 +608,6 @@
         "typescript-eslint": "^8.60.0"
     },
     "dependencies": {
-        "ini": "^4.1.1"
+        "ini": "^7.0.0"
     }
 }
