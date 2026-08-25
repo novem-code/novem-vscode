@@ -333,3 +333,30 @@ suite('NovemApi empty-body tolerance', () => {
         assert.strictEqual(result, undefined);
     });
 });
+
+// Without a User-Agent the extension reaches the API as Node's bare `node`,
+// indistinguishable from generic API clients, so assert that every header
+// shape sends `novem-vscode/<version>`.
+suite('every request identifies the extension', () => {
+    const UA = /^novem-vscode\/\S+$/;
+
+    setup(() => installFakeFetch([]));
+    teardown(() => restoreFetch());
+
+    test('JSON REST requests carry the UA', async () => {
+        await new NovemApi(API_ROOT, 'tok').getGridsForUser('sen');
+        assert.match(calls[0].headers?.['User-Agent'] ?? '', UA);
+    });
+
+    test('non-JSON reads carry the UA (that branch rebuilds headers)', async () => {
+        installFakeFetch('file-contents');
+        await new NovemApi(API_ROOT, 'tok').readFile('grids', '/g/config/custom/custom.js');
+        assert.match(calls[0].headers?.['User-Agent'] ?? '', UA);
+    });
+
+    test('GraphQL requests carry the UA', async () => {
+        await new NovemApi(API_ROOT, 'tok').getUserVis('bob');
+        const gql = calls.find(c => c.url.endsWith('/gql'));
+        assert.match(gql?.headers?.['User-Agent'] ?? '', UA);
+    });
+});
