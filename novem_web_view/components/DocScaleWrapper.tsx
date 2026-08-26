@@ -1,34 +1,31 @@
 import React, { useRef, useEffect, useState, type ReactNode } from 'react';
 
 /**
- * Maximum possible page width across all doc formats — 16:9 pres slides are
- * 1280px wide (wider than landscape A4's 1122px). The inner div starts at
- * this width so the renderer has room to lay out the widest page at full
- * size without internal scaling; the actual widest wrapper is measured after
- * render and the inner div resized to match.
+ * Widest page across all doc formats — 16:9 pres slides at 1280px (wider than
+ * landscape A4's 1122px). The inner div is FIXED at this width plus gutter
+ * slack: ns.js derives its own docScale from the inner div's clientWidth, so
+ * feeding the measured content width back into it couples two scalers, and
+ * any few-pixel shave (scrollbar gutter, panel border) then ratchets the doc
+ * smaller on every pass. The slack keeps ns.js laying out at full size
+ * (docScale exactly 1) even after a gutter reservation.
  */
 const MAX_PAGE_WIDTH = 1280;
+const INNER_WIDTH = MAX_PAGE_WIDTH + 32;
 
 interface DocScaleWrapperProps {
     children: ReactNode;
 }
 
 /**
- * Renders children at full natural size (wide enough for any page orientation),
- * then scales the entire output to fit the available container width. Ported
- * from gaia/webapp so doc previews match the webapp's embedded/thread view: all
- * pages stacked, scaled to the panel width, scrolling vertically.
- *
- * After ns.js renders, the actual widest page wrapper is measured to determine
- * the effective content width. The inner div is then resized to match, so pages
- * sit flush-left inside it and all centering is handled by leftOffset.
+ * Renders children at full natural size, then scales the whole output to fit
+ * the container width: pages stacked, scrolling vertically. Landscape pages
+ * fill the width; portrait pages come out proportionally narrower.
  */
 export default function DocScaleWrapper({ children }: DocScaleWrapperProps) {
     const outerRef = useRef<HTMLDivElement>(null);
     const innerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(1);
     const [leftOffset, setLeftOffset] = useState(0);
-    const [innerWidth, setInnerWidth] = useState(MAX_PAGE_WIDTH);
     const [wrapperHeight, setWrapperHeight] = useState<number | undefined>(undefined);
 
     const measure = () => {
@@ -38,8 +35,8 @@ export default function DocScaleWrapper({ children }: DocScaleWrapperProps) {
 
         const availableWidth = outer.clientWidth;
 
-        // After ns.js renders, find the widest page wrapper to determine
-        // the actual content width. Falls back to MAX_PAGE_WIDTH before render.
+        // Widest rendered page = content width (only the scale factor uses
+        // it — never the inner div's width; see INNER_WIDTH above).
         let contentWidth = MAX_PAGE_WIDTH;
         const wrappers = inner.querySelectorAll('.novem--doc--page-wrapper');
         if (wrappers.length > 0) {
@@ -52,11 +49,11 @@ export default function DocScaleWrapper({ children }: DocScaleWrapperProps) {
         }
 
         const newScale = Math.min(availableWidth / contentWidth, 1);
-        const scaledWidth = contentWidth * newScale;
 
         setScale(newScale);
-        setInnerWidth(contentWidth);
-        setLeftOffset(Math.max(0, (availableWidth - scaledWidth) / 2));
+        // Pages center in the inner div (margin: auto), so center the inner;
+        // a negative offset clips only its empty side margins, symmetrically.
+        setLeftOffset((availableWidth - INNER_WIDTH * newScale) / 2);
         setWrapperHeight(inner.scrollHeight * newScale);
     };
 
@@ -99,7 +96,7 @@ export default function DocScaleWrapper({ children }: DocScaleWrapperProps) {
             <div
                 ref={innerRef}
                 style={{
-                    width: `${innerWidth}px`,
+                    width: `${INNER_WIDTH}px`,
                     position: 'absolute',
                     top: 0,
                     left: `${leftOffset}px`,
