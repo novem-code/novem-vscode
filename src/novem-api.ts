@@ -1,4 +1,5 @@
 import { UserProfile } from './config';
+import { userAgent } from './user-agent';
 
 // Maps each visType to its API path prefix.
 // Add new types here to extend support without touching call sites.
@@ -57,7 +58,7 @@ function normalizeAggregate(raw: Partial<Record<keyof VisAggregate, any[]>> | nu
 export default class NovemApi {
     private token: string;
     private apiRoot: string;
-    private headers: { Authorization: string; Accept: string };
+    private headers: { Authorization: string; Accept: string; 'User-Agent': string };
 
     // Memoised aggregate fetches so the four/six tree providers loading on
     // activation share a single GraphQL round trip instead of one each.
@@ -75,6 +76,7 @@ export default class NovemApi {
         this.headers = {
             Authorization: `Bearer ${this.token}`,
             Accept: 'application/json',
+            'User-Agent': userAgent(),
         };
     }
 
@@ -93,6 +95,7 @@ export default class NovemApi {
             ? { ...this.headers, ...additionalHeaders }
             : {
                   Authorization: this.headers.Authorization,
+                  'User-Agent': this.headers['User-Agent'],
                   ...additionalHeaders,
               };
 
@@ -202,6 +205,7 @@ export default class NovemApi {
                 headers: {
                     Authorization: `Bearer ${this.token}`,
                     'Content-Type': 'application/json',
+                    'User-Agent': userAgent(),
                 },
                 body: JSON.stringify({ query, variables }),
             });

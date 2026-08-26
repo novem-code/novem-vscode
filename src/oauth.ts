@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as crypto from 'crypto';
 import { writeConfig, getCurrentConfig, setActiveProfile } from './config';
+import { userAgent } from './user-agent';
 
 const CLIENT_ID = 'novem-vscode';
 const REDIRECT_URI = 'vscode://novem.novem-vscode/oauth/callback';
@@ -111,7 +112,10 @@ export async function handleOAuthCallback(uri: vscode.Uri): Promise<void> {
         // Exchange code for token
         const tokenResp = await fetch(`${oauthBase}/oauth/token`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'User-Agent': userAgent(),
+            },
             body: new URLSearchParams({
                 grant_type: 'authorization_code',
                 code,
@@ -131,7 +135,7 @@ export async function handleOAuthCallback(uri: vscode.Uri): Promise<void> {
 
         // Fetch username via /whoami
         const whoamiResp = await fetch(`${auth.apiRoot.replace(/\/$/, '')}/whoami`, {
-            headers: { Authorization: `Bearer ${token}` },
+            headers: { Authorization: `Bearer ${token}`, 'User-Agent': userAgent() },
         });
 
         if (!whoamiResp.ok) {
@@ -144,7 +148,7 @@ export async function handleOAuthCallback(uri: vscode.Uri): Promise<void> {
         let tokenName = 'oauth-vscode';
         try {
             const tokenInfoResp = await fetch(`${auth.apiRoot.replace(/\/$/, '')}/token`, {
-                headers: { Authorization: `Bearer ${token}` },
+                headers: { Authorization: `Bearer ${token}`, 'User-Agent': userAgent() },
             });
             if (tokenInfoResp.ok) {
                 const tokenInfo = await tokenInfoResp.json();
