@@ -2,12 +2,21 @@ import React, { useRef, useEffect, useState, type ReactNode } from 'react';
 
 /**
  * Maximum possible page width across all doc formats — 16:9 pres slides are
- * 1280px wide (wider than landscape A4's 1122px). The inner div starts at
- * this width so the renderer has room to lay out the widest page at full
- * size without internal scaling; the actual widest wrapper is measured after
- * render and the inner div resized to match.
+ * 1280px wide (wider than landscape A4's 1122px). The inner div is FIXED at
+ * this width (plus gutter slack) so the renderer always lays out the widest
+ * page at full size without internal scaling.
+ *
+ * The inner width must never follow the measured content width: ns.js's doc
+ * renderer derives its own docScale from the inner div's clientWidth, so
+ * feeding the rendered wrapper width back into the inner div couples two
+ * scalers. When anything shaves a few pixels off a round (a scrollbar
+ * gutter, a panel border), the coupled loop ratchets the doc smaller on
+ * every pass — the preview visibly zooms out and restarts over and over.
+ * The slack keeps ns.js's containerWidth ≥ the widest page even after a
+ * gutter reservation, so its docScale stays exactly 1.
  */
 const MAX_PAGE_WIDTH = 1280;
+const INNER_WIDTH = MAX_PAGE_WIDTH + 32;
 
 interface DocScaleWrapperProps {
     children: ReactNode;
@@ -15,20 +24,24 @@ interface DocScaleWrapperProps {
 
 /**
  * Renders children at full natural size (wide enough for any page orientation),
- * then scales the entire output to fit the available container width. Ported
- * from gaia/webapp so doc previews match the webapp's embedded/thread view: all
+ * then scales the entire output to fit the available container width: all
  * pages stacked, scaled to the panel width, scrolling vertically.
  *
  * After ns.js renders, the actual widest page wrapper is measured to determine
- * the effective content width. The inner div is then resized to match, so pages
- * sit flush-left inside it and all centering is handled by leftOffset.
+ * the effective content width — used only for the scale factor, never fed back
+ * into the inner div's width (see INNER_WIDTH above for why that coupling is
+ * forbidden).
+ *
+ * This means:
+ *   - Landscape pages fill the container width
+ *   - Portrait pages are proportionally narrower (correct relative sizing)
+ *   - Portrait-only documents still fill the container (no wasted space)
  */
 export default function DocScaleWrapper({ children }: DocScaleWrapperProps) {
     const outerRef = useRef<HTMLDivElement>(null);
     const innerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(1);
     const [leftOffset, setLeftOffset] = useState(0);
-    const [innerWidth, setInnerWidth] = useState(MAX_PAGE_WIDTH);
     const [wrapperHeight, setWrapperHeight] = useState<number | undefined>(undefined);
 
     const measure = () => {
@@ -52,11 +65,13 @@ export default function DocScaleWrapper({ children }: DocScaleWrapperProps) {
         }
 
         const newScale = Math.min(availableWidth / contentWidth, 1);
-        const scaledWidth = contentWidth * newScale;
 
         setScale(newScale);
-        setInnerWidth(contentWidth);
-        setLeftOffset(Math.max(0, (availableWidth - scaledWidth) / 2));
+        // Wrappers center themselves inside the fixed-width inner div
+        // (margin: auto), so centering the inner centers the content. The
+        // offset goes negative when the scaled inner exceeds the container —
+        // that clips only the inner's empty side margins, symmetrically.
+        setLeftOffset((availableWidth - INNER_WIDTH * newScale) / 2);
         setWrapperHeight(inner.scrollHeight * newScale);
     };
 
@@ -99,7 +114,7 @@ export default function DocScaleWrapper({ children }: DocScaleWrapperProps) {
             <div
                 ref={innerRef}
                 style={{
-                    width: `${innerWidth}px`,
+                    width: `${INNER_WIDTH}px`,
                     position: 'absolute',
                     top: 0,
                     left: `${leftOffset}px`,
