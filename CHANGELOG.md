@@ -4,6 +4,26 @@ All notable changes to the "novem-vscode" extension will be documented in this f
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-08-26
+
+### What's Changed
+* Remove unregistered novem.profile command declaration
+* Add Dependabot config for grouped weekly dependency updates
+* build(deps): bump the actions group with 2 updates
+* build(deps): bump actions/checkout from 6.0.2 to 7.0.1
+* build(deps): bump actions/setup-node from 6.2.0 to 7.0.0
+* build(deps-dev): bump @vscode/test-electron from 2.5.2 to 3.1.0
+* build(deps): bump ini from 4.1.3 to 7.0.0
+* build(deps-dev): bump react, react-dom and @types/react
+* Declare *.css modules so tsc 6 accepts the webview's side-effect imports
+* build(deps-dev): bump the npm-tooling group across 1 directory with 5 updates
+* build(deps-dev): bump typescript from 5.9.3 to 6.0.3
+* Send User-Agent: novem-vscode/<version> on every request
+* Pin the doc preview's inner width to stop the zoom-out loop
+
+
+**Full Changelog**: https://github.com/novem-code/novem-vscode/compare/v0.1.11...v0.1.12
+
 ## [0.1.11] - 2026-07-23
 
 ### What's Changed
