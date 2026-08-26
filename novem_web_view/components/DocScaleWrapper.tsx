@@ -1,19 +1,13 @@
 import React, { useRef, useEffect, useState, type ReactNode } from 'react';
 
 /**
- * Maximum possible page width across all doc formats — 16:9 pres slides are
- * 1280px wide (wider than landscape A4's 1122px). The inner div is FIXED at
- * this width (plus gutter slack) so the renderer always lays out the widest
- * page at full size without internal scaling.
- *
- * The inner width must never follow the measured content width: ns.js's doc
- * renderer derives its own docScale from the inner div's clientWidth, so
- * feeding the rendered wrapper width back into the inner div couples two
- * scalers. When anything shaves a few pixels off a round (a scrollbar
- * gutter, a panel border), the coupled loop ratchets the doc smaller on
- * every pass — the preview visibly zooms out and restarts over and over.
- * The slack keeps ns.js's containerWidth ≥ the widest page even after a
- * gutter reservation, so its docScale stays exactly 1.
+ * Widest page across all doc formats — 16:9 pres slides at 1280px (wider than
+ * landscape A4's 1122px). The inner div is FIXED at this width plus gutter
+ * slack: ns.js derives its own docScale from the inner div's clientWidth, so
+ * feeding the measured content width back into it couples two scalers, and
+ * any few-pixel shave (scrollbar gutter, panel border) then ratchets the doc
+ * smaller on every pass. The slack keeps ns.js laying out at full size
+ * (docScale exactly 1) even after a gutter reservation.
  */
 const MAX_PAGE_WIDTH = 1280;
 const INNER_WIDTH = MAX_PAGE_WIDTH + 32;
@@ -23,19 +17,9 @@ interface DocScaleWrapperProps {
 }
 
 /**
- * Renders children at full natural size (wide enough for any page orientation),
- * then scales the entire output to fit the available container width: all
- * pages stacked, scaled to the panel width, scrolling vertically.
- *
- * After ns.js renders, the actual widest page wrapper is measured to determine
- * the effective content width — used only for the scale factor, never fed back
- * into the inner div's width (see INNER_WIDTH above for why that coupling is
- * forbidden).
- *
- * This means:
- *   - Landscape pages fill the container width
- *   - Portrait pages are proportionally narrower (correct relative sizing)
- *   - Portrait-only documents still fill the container (no wasted space)
+ * Renders children at full natural size, then scales the whole output to fit
+ * the container width: pages stacked, scrolling vertically. Landscape pages
+ * fill the width; portrait pages come out proportionally narrower.
  */
 export default function DocScaleWrapper({ children }: DocScaleWrapperProps) {
     const outerRef = useRef<HTMLDivElement>(null);
@@ -51,8 +35,8 @@ export default function DocScaleWrapper({ children }: DocScaleWrapperProps) {
 
         const availableWidth = outer.clientWidth;
 
-        // After ns.js renders, find the widest page wrapper to determine
-        // the actual content width. Falls back to MAX_PAGE_WIDTH before render.
+        // Widest rendered page = content width (only the scale factor uses
+        // it — never the inner div's width; see INNER_WIDTH above).
         let contentWidth = MAX_PAGE_WIDTH;
         const wrappers = inner.querySelectorAll('.novem--doc--page-wrapper');
         if (wrappers.length > 0) {
@@ -67,10 +51,8 @@ export default function DocScaleWrapper({ children }: DocScaleWrapperProps) {
         const newScale = Math.min(availableWidth / contentWidth, 1);
 
         setScale(newScale);
-        // Wrappers center themselves inside the fixed-width inner div
-        // (margin: auto), so centering the inner centers the content. The
-        // offset goes negative when the scaled inner exceeds the container —
-        // that clips only the inner's empty side margins, symmetrically.
+        // Pages center in the inner div (margin: auto), so center the inner;
+        // a negative offset clips only its empty side margins, symmetrically.
         setLeftOffset((availableWidth - INNER_WIDTH * newScale) / 2);
         setWrapperHeight(inner.scrollHeight * newScale);
     };
