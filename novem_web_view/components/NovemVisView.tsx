@@ -48,9 +48,12 @@ const NovemVisView = (props: VisViewProps) => {
     // declaration order, so data-dark-mode is applied before the (async)
     // register reads getAppliedTheme() for its ns-config-theme hint.
     useVisTheme(mode);
-    useNsRegistration(type, viewData, TARGET_ID, refreshKey);
+    const nsError = useNsRegistration(type, viewData, TARGET_ID, refreshKey);
 
-    const target = <div className="nv-target" id={TARGET_ID} />;
+    // Kept mounted (just hidden) while an error shows: a refresh clears the
+    // error and re-registers into this same node, which must already exist by
+    // the time the async register resolves.
+    const target = <div className="nv-target" id={TARGET_ID} hidden={!!nsError} />;
 
     return (
         <div className={`nv-frame nv-frame--${variant}`}>
@@ -64,6 +67,12 @@ const NovemVisView = (props: VisViewProps) => {
             <div
                 className={`nv-body nv-body--${variant}${bodyClassName ? ` ${bodyClassName}` : ''}`}
             >
+                {nsError && (
+                    <div className="nv-error" role="alert">
+                        <p className="nv-error__title">Preview unavailable</p>
+                        <p className="nv-error__detail">{nsError}</p>
+                    </div>
+                )}
                 {scale ? <DocScaleWrapper>{target}</DocScaleWrapper> : target}
             </div>
         </div>

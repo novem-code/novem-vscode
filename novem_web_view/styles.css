@@ -138,3 +138,35 @@ html:not([data-dark-mode]) body.vscode-high-contrast .nv-body {
 .nv-mail--size-large {
     --nv-mail-width: 1100px;
 }
+
+/*
+ * Shown in place of the vis target when the ns.js library can't be loaded
+ * (unreachable asset host, 404, stalled fetch). Uses the editor's own error
+ * tokens so it reads as native VSCode, and the detail line carries the URL we
+ * tried — the fastest way to spot a misconfigured api_root.
+ */
+.nv-error {
+    flex: 0 0 auto;
+    align-self: center;
+    max-width: 60ch;
+    margin: auto;
+    padding: 16px 20px;
+
+    border: 1px solid var(--vscode-inputValidation-errorBorder, var(--vscode-panel-border));
+    border-radius: 4px;
+    background: var(--vscode-inputValidation-errorBackground, var(--vscode-editor-background));
+    color: var(--vscode-editor-foreground);
+    text-align: center;
+}
+.nv-error__title {
+    margin: 0 0 6px;
+    font-weight: 600;
+}
+.nv-error__detail {
+    margin: 0;
+    /* URLs are long and unbreakable — wrap rather than overflow the panel. */
+    overflow-wrap: anywhere;
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 0.9em;
+    opacity: 0.85;
+}
