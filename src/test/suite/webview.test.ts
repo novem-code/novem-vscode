@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import { avatarStyle } from '../../../novem_web_view/utils';
-import { getCurrentTheme } from '../../../novem_web_view/ns';
+import { getCurrentTheme, resolveNsHosts } from '../../../novem_web_view/ns';
 
 suite('avatarStyle (avatar URL fix)', () => {
     test('uses the avatar URL verbatim — no size suffix', () => {
@@ -52,5 +52,43 @@ suite('getCurrentTheme (editor theme matching)', () => {
     test('vscode-high-contrast-light → light', () => {
         withBodyClass('vscode-high-contrast-light');
         assert.strictEqual(getCurrentTheme(), 'light');
+    });
+});
+
+suite('resolveNsHosts (ns.js follows the configured deployment)', () => {
+    test('api.* is stripped to the apex asset host', () => {
+        const { apiUrl, assetUrl } = resolveNsHosts('https://api.novem.io/v1/');
+        assert.strictEqual(apiUrl, 'https://api.novem.io');
+        assert.strictEqual(assetUrl, 'https://novem.io');
+    });
+
+    test('a dev api root resolves to the dev asset host, not novem.io', () => {
+        // The whole point of the fix: pointing api_root at another deployment
+        // must load that deployment's vislib. Loading prod's bundle instead
+        // caps the preview at whatever prod's vislib supports.
+        const { apiUrl, assetUrl } = resolveNsHosts('https://api.neuf.dev/v1/');
+        assert.strictEqual(apiUrl, 'https://api.neuf.dev');
+        assert.strictEqual(assetUrl, 'https://neuf.dev');
+    });
+
+    test('a host without an api. prefix is left alone', () => {
+        const { apiUrl, assetUrl } = resolveNsHosts('https://novem.example.com/v1/');
+        assert.strictEqual(apiUrl, 'https://novem.example.com');
+        assert.strictEqual(assetUrl, 'https://novem.example.com');
+    });
+
+    test('only the leading api. label is rewritten', () => {
+        const { assetUrl } = resolveNsHosts('https://api.internal.example.com/v1/');
+        assert.strictEqual(assetUrl, 'https://internal.example.com');
+    });
+
+    test('a non-http port and path are dropped — origin only', () => {
+        const { apiUrl, assetUrl } = resolveNsHosts('http://localhost:8080/v1/');
+        assert.strictEqual(apiUrl, 'http://localhost:8080');
+        assert.strictEqual(assetUrl, 'http://localhost:8080');
+    });
+
+    test('throws on a malformed api root rather than guessing a host', () => {
+        assert.throws(() => resolveNsHosts('not-a-url'));
     });
 });
