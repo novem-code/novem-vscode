@@ -4,6 +4,7 @@ import * as https from 'https';
 // Import the functions from config.ts
 import { getCurrentConfig, UserProfile, getActiveProfile } from './config';
 import {
+    MyTreeItem,
     PlotsProvider,
     MailsProvider,
     GridsProvider,
@@ -11,6 +12,8 @@ import {
     JobsProvider,
     ReposProvider,
     NovemDummyProvider,
+    NovemResourcesProvider,
+    type VisType,
 } from './tree';
 
 import { setupCommands, setupAuthCommands } from './commands';
@@ -27,19 +30,6 @@ let jobsProvider: InstanceType<typeof JobsProvider> | null = null;
 let reposProvider: InstanceType<typeof ReposProvider> | null = null;
 
 type RootProvider = { primeRootItems(items: any[]): void };
-type NovemTreeProvider = vscode.TreeDataProvider<vscode.TreeItem> & {
-    attachTreeView(treeView: vscode.TreeView<vscode.TreeItem>): void;
-};
-
-function registerNovemTreeView(
-    context: vscode.ExtensionContext,
-    viewId: string,
-    provider: NovemTreeProvider,
-): void {
-    const treeView = vscode.window.createTreeView(viewId, { treeDataProvider: provider });
-    provider.attachTreeView(treeView);
-    context.subscriptions.push(treeView);
-}
 
 function primeProviderRoot(
     aggregatePromise: Promise<VisAggregate | null>,
@@ -191,22 +181,59 @@ export async function activate(context: vscode.ExtensionContext) {
     mailsProvider = new MailsProvider(novemApi, context);
     gridsProvider = new GridsProvider(novemApi, context);
     docsProvider = new DocsProvider(novemApi, context);
+    jobsProvider = new JobsProvider(novemApi, context);
+    reposProvider = new ReposProvider(novemApi, context);
 
-    registerNovemTreeView(context, 'novem-plots', plotsProvider);
-    registerNovemTreeView(context, 'novem-mails', mailsProvider);
-    registerNovemTreeView(context, 'novem-grids', gridsProvider);
-    registerNovemTreeView(context, 'novem-docs', docsProvider);
+    // One view, six sections. The per-type providers still own their own
+    // loading, caching and refreshing; the resources provider only stitches
+    // them together and decides which sections start open.
+    const resourcesProvider = new NovemResourcesProvider({
+        plots: plotsProvider,
+        mails: mailsProvider,
+        grids: gridsProvider,
+        docs: docsProvider,
+        jobs: jobsProvider,
+        repos: reposProvider,
+    });
+    const resourcesView = vscode.window.createTreeView('novem-resources', {
+        treeDataProvider: resourcesProvider,
+        // One view holding everything means a drilled-into tree has no title
+        // bar of its own to collapse from. VSCode's built-in collapse-all is
+        // the one action that puts the whole sidebar back to section rows.
+        showCollapseAll: true,
+        // So Isolate can take two plots at once: with multi-select, a command
+        // run from the tree is handed the whole selection as its second
+        // argument, which makes ctrl/cmd+click the gesture for "these two".
+        canSelectMany: true,
+    });
+    resourcesProvider.attachTreeView(resourcesView);
+    context.subscriptions.push(resourcesView, resourcesProvider);
+
+    // Narrowing a section to one resource is opt-in per resource: a section
+    // with 89 plots buries the one you opened, but working on two at once is
+    // just as common, so nothing hides a sibling until asked.
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.isolateResource',
+            // The clicked row comes first, the selection second -- and the
+            // selection is what to isolate, since right-clicking inside a
+            // multi-selection means all of it.
+            (item: MyTreeItem, selection?: MyTreeItem[]) => {
+                const items = (selection?.length ? selection : [item]).filter(
+                    each => each instanceof MyTreeItem,
+                );
+                if (items.length) resourcesProvider.isolate(items);
+            },
+        ),
+        vscode.commands.registerCommand('novem.showAllInSection', (type: VisType) => {
+            resourcesProvider.showAll(type);
+        }),
+    );
 
     primeProviderRoot(selfVisPromise, 'plots', plotsProvider);
     primeProviderRoot(selfVisPromise, 'mails', mailsProvider);
     primeProviderRoot(selfVisPromise, 'grids', gridsProvider);
     primeProviderRoot(selfVisPromise, 'docs', docsProvider);
-
-    jobsProvider = new JobsProvider(novemApi, context);
-    reposProvider = new ReposProvider(novemApi, context);
-
-    registerNovemTreeView(context, 'novem-jobs', jobsProvider);
-    registerNovemTreeView(context, 'novem-repos', reposProvider);
 
     primeProviderRootItems(jobsRootPromise, jobsProvider);
     primeProviderRootItems(reposRootPromise, reposProvider);
