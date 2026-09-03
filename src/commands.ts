@@ -398,7 +398,8 @@ const createViewFunction = (
 
         if (item) {
             selectedItem = options.find((vis: QuickPickItem) => vis.description === item?.name) as
-                QuickPickItem | undefined;
+                | QuickPickItem
+                | undefined;
         } else {
             // Present choices
             selectedItem = (await vscode.window.showQuickPick(options, {

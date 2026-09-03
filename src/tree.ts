@@ -3,6 +3,36 @@ import * as vscode from 'vscode';
 import { UserConfig, UserProfile, typeToIcon, getActiveProfile } from './config';
 import NovemApi from './novem-api';
 
+export type VisType = 'plots' | 'mails' | 'grids' | 'docs' | 'jobs' | 'repos';
+
+// The create action for each resource type. Non-empty sections expose it as an
+// inline button on the section row; empty ones render `emptyLabel` as a child,
+// which is the only call to action a user with no resources of that type sees.
+const CREATE_ACTIONS: Record<VisType, { command: string; emptyLabel: string }> = {
+    plots: { command: 'novem.createNovemPlot', emptyLabel: 'Create Your First Plot' },
+    mails: { command: 'novem.createNovemMail', emptyLabel: 'Create Your First E-Mail' },
+    grids: { command: 'novem.createNovemGrid', emptyLabel: 'Create Your First Grid' },
+    docs: { command: 'novem.createNovemDoc', emptyLabel: 'Create Your First Document' },
+    jobs: { command: 'novem.createNovemJob', emptyLabel: 'Create Your First Job' },
+    repos: { command: 'novem.createNovemRepo', emptyLabel: 'Create Your First Repo' },
+};
+
+// One row per resource type, in the order they appear in the sidebar.
+const SECTIONS: { type: VisType; label: string; icon: string }[] = [
+    { type: 'plots', label: 'Plots', icon: 'graph' },
+    { type: 'mails', label: 'E-Mails', icon: 'mail' },
+    { type: 'grids', label: 'Grids', icon: 'table' },
+    { type: 'docs', label: 'Documents', icon: 'book' },
+    { type: 'jobs', label: 'Jobs', icon: 'run' },
+    { type: 'repos', label: 'Repos', icon: 'repo' },
+];
+
+function createLoadingItem(): vscode.TreeItem {
+    const loadingItem = new vscode.TreeItem('Loading...');
+    loadingItem.iconPath = new vscode.ThemeIcon('loading~spin');
+    return loadingItem;
+}
+
 // Base class for all Novem tree providers
 export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     protected context: vscode.ExtensionContext;
@@ -20,8 +50,8 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
 
     private statusMessage: string | null = null;
     private rootItems: vscode.TreeItem[] | null = null;
+    private rootCount: number | null = null;
     private rootLoadPromise: Promise<void> | null = null;
-    private treeView: vscode.TreeView<vscode.TreeItem> | null = null;
 
     // Top-level resource nodes by id, captured on each root fetch so a single
     // resource's subtree can be refreshed without rebuilding the whole tree.
@@ -34,10 +64,9 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
         // which call refresh() to surface/remove a resource.
         this.api.invalidateVisCache();
         this.rootItems = null;
+        this.rootCount = null;
         this.rootLoadPromise = null;
         this.rootNodes.clear();
-        this.setRootLoadVerified(false);
-        this.updateTreeViewMessage();
         this._onDidChangeTreeData.fire();
     }
 
@@ -66,19 +95,36 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
         this._onDidChangeTreeData.fire();
     }
 
-    attachTreeView(treeView: vscode.TreeView<vscode.TreeItem>): void {
-        this.treeView = treeView;
-        this.updateTreeViewMessage();
-    }
-
     primeRootItems(response: any[]): void {
-        const { items, rootNodes } = this.buildRootTreeItems(response);
+        const { items, rootNodes, count } = this.buildRootTreeItems(response);
         this.rootItems = items;
         this.rootNodes = rootNodes;
+        this.rootCount = count;
         this.rootLoadPromise = null;
-        this.setRootLoadVerified(true);
-        this.updateTreeViewMessage();
         this._onDidChangeTreeData.fire();
+    }
+
+    /**
+     * How many resources of this type the user has, or null while the root list
+     * is still loading. NovemResourcesProvider needs every count in before it
+     * can decide which sections open.
+     */
+    rootResourceCount(): number | null {
+        return this.rootCount;
+    }
+
+    /**
+     * Start the root fetch if it hasn't run yet (or was invalidated by
+     * refresh()), and report the count if it's already in. Priming from the
+     * activation-time aggregate usually beats us to it; this is the fallback
+     * for when that request failed.
+     */
+    ensureRootLoaded(): number | null {
+        if (this.rootCount === null && !this.rootLoadPromise) {
+            const profile = this.context.globalState.get('userProfile') as UserProfile;
+            this.getRootTreeItems(profile.user_info.username!);
+        }
+        return this.rootCount;
     }
 
     async getTreeItem(element: vscode.TreeItem): Promise<vscode.TreeItem> {
@@ -90,63 +136,37 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
     abstract getRootItems(username: string): Promise<any[]>;
     abstract getChildItems(visId: string, path?: string): Promise<any[]>;
 
-    private static readonly CREATE_COMMANDS: Record<string, { command: string; label: string }> = {
-        plots: { command: 'novem.createNovemPlot', label: 'Create New Plot...' },
-        mails: { command: 'novem.createNovemMail', label: 'Create New Mail...' },
-        grids: { command: 'novem.createNovemGrid', label: 'Create New Grid...' },
-        docs: { command: 'novem.createNovemDoc', label: 'Create New Document...' },
-        jobs: { command: 'novem.createNovemJob', label: 'Create New Job...' },
-        repos: { command: 'novem.createNovemRepo', label: 'Create New Repo...' },
-    };
-
     private getRootTreeItems(username: string): vscode.TreeItem[] {
         if (this.rootItems) {
             return this.withStatusItem(this.rootItems);
         }
 
         if (!this.rootLoadPromise) {
-            this.setRootLoadVerified(false);
             let rootLoad: Promise<void>;
             rootLoad = this.fetchRootTreeItems(username)
-                .then(({ items, rootNodes }) => {
+                .then(({ items, rootNodes, count }) => {
                     if (this.rootLoadPromise === rootLoad) {
                         this.rootItems = items;
                         this.rootNodes = rootNodes;
+                        this.rootCount = count;
                     }
                 })
                 .finally(() => {
                     if (this.rootLoadPromise === rootLoad) {
                         this.rootLoadPromise = null;
-                        this.setRootLoadVerified(true);
-                        this.updateTreeViewMessage();
                         this._onDidChangeTreeData.fire();
                     }
                 });
             this.rootLoadPromise = rootLoad;
-            this.updateTreeViewMessage();
         }
 
-        return [this.createLoadingItem()];
-    }
-
-    private updateTreeViewMessage(): void {
-        if (!this.treeView) return;
-        this.treeView.message = this.rootItems ? undefined : 'Loading...';
-    }
-
-    private setRootLoadVerified(value: boolean): void {
-        void vscode.commands.executeCommand('setContext', `novem.${this.getType()}Loaded`, value);
-    }
-
-    private createLoadingItem(): vscode.TreeItem {
-        const loadingItem = new vscode.TreeItem('Loading...');
-        loadingItem.iconPath = new vscode.ThemeIcon('loading~spin');
-        return loadingItem;
+        return [createLoadingItem()];
     }
 
     private buildRootTreeItems(response: any[]): {
         items: vscode.TreeItem[];
         rootNodes: Map<string, MyTreeItem>;
+        count: number;
     } {
         const items: vscode.TreeItem[] = [];
         const rootNodes = new Map<string, MyTreeItem>();
@@ -178,22 +198,21 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
             rootNodes.set(node.name, node);
         }
 
-        // Add a "Create New..." button at the bottom (only when there are items;
-        // empty views use viewsWelcome instead)
-        if (rootItems.length > 0) {
-            const createInfo = BaseNovemProvider.CREATE_COMMANDS[this.getType()];
-            if (createInfo) {
-                const createItem = new vscode.TreeItem(createInfo.label);
-                createItem.iconPath = new vscode.ThemeIcon('add');
-                createItem.command = {
-                    command: createInfo.command,
-                    title: createInfo.label,
-                };
-                items.push(createItem);
-            }
+        // A section with resources gets its create action as an inline button on
+        // the section row, so the tree stays as short as it can be. An empty
+        // section has no row to hover, so the call to action goes in the tree.
+        if (rootItems.length === 0) {
+            const createInfo = CREATE_ACTIONS[this.getType()];
+            const createItem = new vscode.TreeItem(createInfo.emptyLabel);
+            createItem.iconPath = new vscode.ThemeIcon('add');
+            createItem.command = {
+                command: createInfo.command,
+                title: createInfo.emptyLabel,
+            };
+            items.push(createItem);
         }
 
-        return { items, rootNodes };
+        return { items, rootNodes, count: rootItems.length };
     }
 
     private withStatusItem(items: vscode.TreeItem[]): vscode.TreeItem[] {
@@ -208,7 +227,7 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
 
     private async fetchRootTreeItems(
         username: string,
-    ): Promise<{ items: vscode.TreeItem[]; rootNodes: Map<string, MyTreeItem> }> {
+    ): Promise<{ items: vscode.TreeItem[]; rootNodes: Map<string, MyTreeItem>; count: number }> {
         try {
             console.log(`Fetching root items for ${this.getType()}`);
             const response = await this.getRootItems(username);
@@ -216,9 +235,12 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
             return this.buildRootTreeItems(response);
         } catch (error) {
             console.error(`Error loading ${this.getType()}:`, error);
+            // Count 0 rather than leaving it unknown: a failed list must not
+            // hold the rest of the sidebar behind a spinner forever.
             return {
                 items: [new vscode.TreeItem(`Error loading ${this.getType()}`)],
                 rootNodes: new Map(),
+                count: 0,
             };
         }
     }
@@ -278,8 +300,6 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
     }
 }
 
-type VisType = 'plots' | 'mails' | 'grids' | 'docs' | 'jobs' | 'repos';
-
 function makeProvider(
     type: VisType,
     getRootFn: (api: NovemApi, username: string) => Promise<any[]>,
@@ -332,6 +352,182 @@ export const ReposProvider = makeProvider(
     (api, u) => api.getReposForUser(u),
     (api, id, path) => api.getDetailsForRepo(id, path),
 );
+
+/**
+ * A resource-type row ("Plots", "Jobs", ...) in the unified sidebar tree.
+ */
+export class NovemSectionItem extends vscode.TreeItem {
+    constructor(
+        public readonly visType: VisType,
+        label: string,
+        icon: string,
+    ) {
+        super(label, vscode.TreeItemCollapsibleState.Collapsed);
+        // A stable id is what lets VSCode remember the user's own expand and
+        // collapse per section, so our computed state only decides how a
+        // section first appears and never fights them afterwards.
+        this.id = `novem-section-${visType}`;
+        this.iconPath = new vscode.ThemeIcon(icon);
+        this.contextValue = `section-${visType}`;
+    }
+}
+
+/**
+ * The whole Novem sidebar as one tree: a row per resource type, each delegating
+ * to the per-type provider that already knows how to load it.
+ *
+ * Six separate views could only ever be collapsed through package.json, which
+ * VSCode applies to the initial layout and never again. Sections are tree items
+ * here, so their collapsed state is ours to decide from what the user actually
+ * has: everything shut except the one type they use, and everything open for a
+ * new user, whose six "Create your first..." rows are the point of the view.
+ */
+export class NovemResourcesProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+    private readonly sections = new Map<VisType, NovemSectionItem>();
+    private readonly counts = new Map<VisType, number>();
+    private readonly subscriptions: vscode.Disposable[] = [];
+    private treeView: vscode.TreeView<vscode.TreeItem> | null = null;
+    private sectionsBuilt = false;
+
+    private _onDidChangeTreeData = new vscode.EventEmitter<
+        vscode.TreeItem | undefined | null | void
+    >();
+    readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null | void> =
+        this._onDidChangeTreeData.event;
+
+    constructor(private readonly providers: Record<VisType, BaseNovemProvider>) {
+        for (const { type } of SECTIONS) {
+            this.subscriptions.push(
+                providers[type].onDidChangeTreeData(element =>
+                    this.onSectionChanged(type, element),
+                ),
+            );
+        }
+    }
+
+    dispose(): void {
+        for (const subscription of this.subscriptions) subscription.dispose();
+        this.subscriptions.length = 0;
+        this._onDidChangeTreeData.dispose();
+    }
+
+    attachTreeView(treeView: vscode.TreeView<vscode.TreeItem>): void {
+        this.treeView = treeView;
+        this.updateTreeViewMessage();
+    }
+
+    getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
+        return element;
+    }
+
+    // Needed by reveal(). Only top-level resources have a parent we can name
+    // without walking their path back through the API, and nothing reveals
+    // anything deeper than that.
+    getParent(element: vscode.TreeItem): vscode.TreeItem | undefined {
+        if (element instanceof MyTreeItem && element.path.split('/').length === 2) {
+            return this.sections.get(element.visType as VisType);
+        }
+        return undefined;
+    }
+
+    async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
+        if (element instanceof NovemSectionItem) {
+            return (await this.providers[element.visType].getChildren()) ?? [];
+        }
+        if (element instanceof MyTreeItem) {
+            return (await element.parent.getChildren(element)) ?? [];
+        }
+        if (element) return [];
+        return this.getSectionItems();
+    }
+
+    private getSectionItems(): vscode.TreeItem[] {
+        const counts = new Map<VisType, number | null>();
+        for (const { type } of SECTIONS) {
+            counts.set(type, this.providers[type].ensureRootLoaded());
+        }
+
+        // Which sections open depends on all six counts, so hold the tree back
+        // until they're all in. Every list is fetched in parallel at activation,
+        // so this is one round trip's wait, not six — and it avoids the sections
+        // visibly rearranging themselves a moment after they first paint.
+        if (!this.sectionsBuilt && [...counts.values()].some(count => count === null)) {
+            this.updateTreeViewMessage();
+            return [createLoadingItem()];
+        }
+
+        const populated = SECTIONS.filter(({ type }) => (counts.get(type) ?? 0) > 0);
+        const soleType = populated.length === 1 ? populated[0].type : null;
+        const openEverything = populated.length === 0;
+        const firstBuild = !this.sectionsBuilt;
+
+        this.sectionsBuilt = true;
+        this.updateTreeViewMessage();
+
+        return SECTIONS.map(({ type, label, icon }) => {
+            const section = this.sectionItem(type, label, icon);
+            if (firstBuild && (openEverything || type === soleType)) {
+                section.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+            }
+            const count = counts.get(type) ?? null;
+            if (count !== null) this.counts.set(type, count);
+            section.description = this.countLabel(count);
+            return section;
+        });
+    }
+
+    // Section items are created once and mutated in place: firing a change event
+    // for one only works against the object VSCode was handed.
+    private sectionItem(type: VisType, label: string, icon: string): NovemSectionItem {
+        let section = this.sections.get(type);
+        if (!section) {
+            section = new NovemSectionItem(type, label, icon);
+            this.sections.set(type, section);
+        }
+        return section;
+    }
+
+    // The count on a collapsed row is the only thing telling the user what's
+    // behind it, so an empty section says so rather than showing a bare 0.
+    private countLabel(count: number | null): string {
+        if (count === null) return '';
+        return count > 0 ? String(count) : 'empty';
+    }
+
+    private onSectionChanged(type: VisType, element?: MyTreeItem | null | void): void {
+        const section = this.sections.get(type);
+        if (!section) {
+            // Still on the loading placeholder — rebuild the root instead.
+            this._onDidChangeTreeData.fire();
+            return;
+        }
+        if (element) {
+            this._onDidChangeTreeData.fire(element);
+            return;
+        }
+        // VSCode never re-requests the children of a collapsed row, so a
+        // section invalidated by refresh() would sit on a stale count forever
+        // unless we drive the reload ourselves. It's a no-op once the count is
+        // back, and the load fires this handler again with the new one.
+        const count = this.providers[type].ensureRootLoaded();
+        const previous = this.counts.get(type);
+        if (count !== null) this.counts.set(type, count);
+        section.description = this.countLabel(count);
+        this._onDidChangeTreeData.fire(section);
+
+        // Something new landed in this section. If it's collapsed the user just
+        // created a resource they can't see, so open it for them — but only on
+        // growth, so a delete or a plain refresh leaves their layout alone.
+        if (previous !== undefined && count !== null && count > previous) {
+            void this.treeView?.reveal(section, { expand: true, select: false, focus: false });
+        }
+    }
+
+    private updateTreeViewMessage(): void {
+        if (!this.treeView) return;
+        this.treeView.message = this.sectionsBuilt ? undefined : 'Loading...';
+    }
+}
 
 // Keep the original class name for backward compatibility
 export const NovemSideBarProvider = BaseNovemProvider;

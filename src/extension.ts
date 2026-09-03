@@ -11,6 +11,7 @@ import {
     JobsProvider,
     ReposProvider,
     NovemDummyProvider,
+    NovemResourcesProvider,
 } from './tree';
 
 import { setupCommands, setupAuthCommands } from './commands';
@@ -27,19 +28,6 @@ let jobsProvider: InstanceType<typeof JobsProvider> | null = null;
 let reposProvider: InstanceType<typeof ReposProvider> | null = null;
 
 type RootProvider = { primeRootItems(items: any[]): void };
-type NovemTreeProvider = vscode.TreeDataProvider<vscode.TreeItem> & {
-    attachTreeView(treeView: vscode.TreeView<vscode.TreeItem>): void;
-};
-
-function registerNovemTreeView(
-    context: vscode.ExtensionContext,
-    viewId: string,
-    provider: NovemTreeProvider,
-): void {
-    const treeView = vscode.window.createTreeView(viewId, { treeDataProvider: provider });
-    provider.attachTreeView(treeView);
-    context.subscriptions.push(treeView);
-}
 
 function primeProviderRoot(
     aggregatePromise: Promise<VisAggregate | null>,
@@ -191,22 +179,30 @@ export async function activate(context: vscode.ExtensionContext) {
     mailsProvider = new MailsProvider(novemApi, context);
     gridsProvider = new GridsProvider(novemApi, context);
     docsProvider = new DocsProvider(novemApi, context);
+    jobsProvider = new JobsProvider(novemApi, context);
+    reposProvider = new ReposProvider(novemApi, context);
 
-    registerNovemTreeView(context, 'novem-plots', plotsProvider);
-    registerNovemTreeView(context, 'novem-mails', mailsProvider);
-    registerNovemTreeView(context, 'novem-grids', gridsProvider);
-    registerNovemTreeView(context, 'novem-docs', docsProvider);
+    // One view, six sections. The per-type providers still own their own
+    // loading, caching and refreshing; the resources provider only stitches
+    // them together and decides which sections start open.
+    const resourcesProvider = new NovemResourcesProvider({
+        plots: plotsProvider,
+        mails: mailsProvider,
+        grids: gridsProvider,
+        docs: docsProvider,
+        jobs: jobsProvider,
+        repos: reposProvider,
+    });
+    const resourcesView = vscode.window.createTreeView('novem-resources', {
+        treeDataProvider: resourcesProvider,
+    });
+    resourcesProvider.attachTreeView(resourcesView);
+    context.subscriptions.push(resourcesView, resourcesProvider);
 
     primeProviderRoot(selfVisPromise, 'plots', plotsProvider);
     primeProviderRoot(selfVisPromise, 'mails', mailsProvider);
     primeProviderRoot(selfVisPromise, 'grids', gridsProvider);
     primeProviderRoot(selfVisPromise, 'docs', docsProvider);
-
-    jobsProvider = new JobsProvider(novemApi, context);
-    reposProvider = new ReposProvider(novemApi, context);
-
-    registerNovemTreeView(context, 'novem-jobs', jobsProvider);
-    registerNovemTreeView(context, 'novem-repos', reposProvider);
 
     primeProviderRootItems(jobsRootPromise, jobsProvider);
     primeProviderRootItems(reposRootPromise, reposProvider);

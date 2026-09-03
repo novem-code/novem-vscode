@@ -239,92 +239,152 @@
         "menus": {
             "view/item/context": [
                 {
+                    "command": "novem.createNovemPlot",
+                    "when": "view == novem-resources && viewItem == section-plots",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "novem.refreshNovemPlots",
+                    "when": "view == novem-resources && viewItem == section-plots",
+                    "group": "inline@2"
+                },
+                {
+                    "command": "novem.createNovemMail",
+                    "when": "view == novem-resources && viewItem == section-mails",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "novem.refreshNovemMails",
+                    "when": "view == novem-resources && viewItem == section-mails",
+                    "group": "inline@2"
+                },
+                {
+                    "command": "novem.createNovemGrid",
+                    "when": "view == novem-resources && viewItem == section-grids",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "novem.refreshNovemGrids",
+                    "when": "view == novem-resources && viewItem == section-grids",
+                    "group": "inline@2"
+                },
+                {
+                    "command": "novem.createNovemDoc",
+                    "when": "view == novem-resources && viewItem == section-docs",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "novem.refreshNovemDocs",
+                    "when": "view == novem-resources && viewItem == section-docs",
+                    "group": "inline@2"
+                },
+                {
+                    "command": "novem.createNovemJob",
+                    "when": "view == novem-resources && viewItem == section-jobs",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "novem.refreshNovemJobs",
+                    "when": "view == novem-resources && viewItem == section-jobs",
+                    "group": "inline@2"
+                },
+                {
+                    "command": "novem.createNovemRepo",
+                    "when": "view == novem-resources && viewItem == section-repos",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "novem.refreshNovemRepos",
+                    "when": "view == novem-resources && viewItem == section-repos",
+                    "group": "inline@2"
+                },
+                {
                     "command": "novem.viewNovemPlot",
-                    "when": "view == novem-plots && viewItem =~ /^plot-top/",
+                    "when": "view == novem-resources && viewItem =~ /^plot-top/",
                     "title": "View",
                     "group": "0_view"
                 },
                 {
                     "command": "novem.viewNovemMail",
-                    "when": "view == novem-mails && viewItem == mail-top",
+                    "when": "view == novem-resources && viewItem == mail-top",
                     "title": "View",
                     "group": "0_view"
                 },
                 {
                     "command": "novem.viewNovemGrid",
-                    "when": "view == novem-grids && viewItem == grid-top",
+                    "when": "view == novem-resources && viewItem == grid-top",
                     "title": "View",
                     "group": "0_view"
                 },
                 {
                     "command": "novem.viewNovemDoc",
-                    "when": "view == novem-docs && viewItem == doc-top",
+                    "when": "view == novem-resources && viewItem == doc-top",
                     "title": "View",
                     "group": "0_view"
                 },
                 {
                     "command": "novem.runJob",
-                    "when": "view == novem-jobs && viewItem == job-top",
+                    "when": "view == novem-resources && viewItem == job-top",
                     "title": "Run",
                     "group": "0_view"
                 },
                 {
                     "command": "novem.editResource",
-                    "when": "view == novem-plots && viewItem == plot-top-custom",
+                    "when": "view == novem-resources && viewItem == plot-top-custom",
                     "title": "Edit",
                     "group": "1_show"
                 },
                 {
                     "command": "novem.editResource",
-                    "when": "view == novem-mails && viewItem == mail-top",
+                    "when": "view == novem-resources && viewItem == mail-top",
                     "title": "Edit",
                     "group": "1_show"
                 },
                 {
                     "command": "novem.editResource",
-                    "when": "view == novem-grids && viewItem == grid-top",
+                    "when": "view == novem-resources && viewItem == grid-top",
                     "title": "Edit",
                     "group": "1_show"
                 },
                 {
                     "command": "novem.editResource",
-                    "when": "view == novem-docs && viewItem == doc-top",
+                    "when": "view == novem-resources && viewItem == doc-top",
                     "title": "Edit",
                     "group": "1_show"
                 },
                 {
                     "command": "novem.testMail",
-                    "when": "view == novem-mails && viewItem == mail-top",
+                    "when": "view == novem-resources && viewItem == mail-top",
                     "title": "Test",
                     "group": "1_show"
                 },
                 {
                     "command": "novem.sendMail",
-                    "when": "view == novem-mails && viewItem == mail-top",
+                    "when": "view == novem-resources && viewItem == mail-top",
                     "title": "Send",
                     "group": "1_show"
                 },
                 {
                     "command": "novem.cloneNovemRepo",
-                    "when": "view == novem-repos && viewItem == repo-top",
+                    "when": "view == novem-resources && viewItem == repo-top",
                     "title": "Clone",
                     "group": "1_show"
                 },
                 {
                     "command": "novem.cloneNovemRepo",
-                    "when": "view == novem-repos && viewItem == repo-top",
+                    "when": "view == novem-resources && viewItem == repo-top",
                     "title": "Clone",
                     "group": "inline"
                 },
                 {
                     "command": "novem.renameResource",
-                    "when": "view =~ /^novem-/ && viewItem =~ /-top($|-)/",
+                    "when": "view == novem-resources && viewItem =~ /-top($|-)/",
                     "title": "Rename",
                     "group": "4_manipulate@1"
                 },
                 {
                     "command": "novem.deleteResource",
-                    "when": "view =~ /^novem-/ && viewItem =~ /-top($|-)/",
+                    "when": "view == novem-resources && viewItem =~ /-top($|-)/",
                     "title": "Delete",
                     "group": "4_manipulate@2"
                 },
@@ -345,66 +405,6 @@
                 }
             ],
             "view/title": [
-                {
-                    "command": "novem.createNovemPlot",
-                    "when": "view == novem-plots",
-                    "group": "navigation"
-                },
-                {
-                    "command": "novem.refreshNovemPlots",
-                    "when": "view == novem-plots",
-                    "group": "navigation"
-                },
-                {
-                    "command": "novem.createNovemMail",
-                    "when": "view == novem-mails",
-                    "group": "navigation"
-                },
-                {
-                    "command": "novem.refreshNovemMails",
-                    "when": "view == novem-mails",
-                    "group": "navigation"
-                },
-                {
-                    "command": "novem.createNovemGrid",
-                    "when": "view == novem-grids",
-                    "group": "navigation"
-                },
-                {
-                    "command": "novem.refreshNovemGrids",
-                    "when": "view == novem-grids",
-                    "group": "navigation"
-                },
-                {
-                    "command": "novem.createNovemDoc",
-                    "when": "view == novem-docs",
-                    "group": "navigation"
-                },
-                {
-                    "command": "novem.refreshNovemDocs",
-                    "when": "view == novem-docs",
-                    "group": "navigation"
-                },
-                {
-                    "command": "novem.createNovemJob",
-                    "when": "view == novem-jobs",
-                    "group": "navigation"
-                },
-                {
-                    "command": "novem.refreshNovemJobs",
-                    "when": "view == novem-jobs",
-                    "group": "navigation"
-                },
-                {
-                    "command": "novem.createNovemRepo",
-                    "when": "view == novem-repos",
-                    "group": "navigation"
-                },
-                {
-                    "command": "novem.refreshNovemRepos",
-                    "when": "view == novem-repos",
-                    "group": "navigation"
-                },
                 {
                     "command": "novem.selectProfile",
                     "when": "novem.loggedIn",
@@ -494,36 +494,8 @@
         "views": {
             "novem": [
                 {
-                    "id": "novem-plots",
-                    "name": "Plots",
-                    "commands": [
-                        "novem.createNovemPlot"
-                    ],
-                    "when": "novem.loggedIn"
-                },
-                {
-                    "id": "novem-mails",
-                    "name": "E-Mails",
-                    "when": "novem.loggedIn"
-                },
-                {
-                    "id": "novem-grids",
-                    "name": "Grids",
-                    "when": "novem.loggedIn"
-                },
-                {
-                    "id": "novem-docs",
-                    "name": "Documents",
-                    "when": "novem.loggedIn"
-                },
-                {
-                    "id": "novem-jobs",
-                    "name": "Jobs",
-                    "when": "novem.loggedIn"
-                },
-                {
-                    "id": "novem-repos",
-                    "name": "Repos",
+                    "id": "novem-resources",
+                    "name": "Resources",
                     "when": "novem.loggedIn"
                 },
                 {
@@ -534,36 +506,6 @@
             ]
         },
         "viewsWelcome": [
-            {
-                "view": "novem-plots",
-                "contents": "[$(graph) Create Your First Plot](command:novem.createNovemPlot)",
-                "when": "novem.loggedIn && novem.plotsLoaded"
-            },
-            {
-                "view": "novem-mails",
-                "contents": "[$(mail) Create Your First E-Mail](command:novem.createNovemMail)",
-                "when": "novem.loggedIn && novem.mailsLoaded"
-            },
-            {
-                "view": "novem-grids",
-                "contents": "[$(table) Create Your First Grid](command:novem.createNovemGrid)",
-                "when": "novem.loggedIn && novem.gridsLoaded"
-            },
-            {
-                "view": "novem-docs",
-                "contents": "[$(book) Create Your First Document](command:novem.createNovemDoc)",
-                "when": "novem.loggedIn && novem.docsLoaded"
-            },
-            {
-                "view": "novem-jobs",
-                "contents": "[$(run) Create Your First Job](command:novem.createNovemJob)",
-                "when": "novem.loggedIn && novem.jobsLoaded"
-            },
-            {
-                "view": "novem-repos",
-                "contents": "[$(repo) Create Your First Repo](command:novem.createNovemRepo)",
-                "when": "novem.loggedIn && novem.reposLoaded"
-            },
             {
                 "view": "novem-login",
                 "contents": "$(loading~spin) Loading Novem…",
