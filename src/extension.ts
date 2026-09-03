@@ -4,6 +4,7 @@ import * as https from 'https';
 // Import the functions from config.ts
 import { getCurrentConfig, UserProfile, getActiveProfile } from './config';
 import {
+    MyTreeItem,
     PlotsProvider,
     MailsProvider,
     GridsProvider,
@@ -12,6 +13,7 @@ import {
     ReposProvider,
     NovemDummyProvider,
     NovemResourcesProvider,
+    type VisType,
 } from './tree';
 
 import { setupCommands, setupAuthCommands } from './commands';
@@ -195,9 +197,38 @@ export async function activate(context: vscode.ExtensionContext) {
     });
     const resourcesView = vscode.window.createTreeView('novem-resources', {
         treeDataProvider: resourcesProvider,
+        // One view holding everything means a drilled-into tree has no title
+        // bar of its own to collapse from. VSCode's built-in collapse-all is
+        // the one action that puts the whole sidebar back to section rows.
+        showCollapseAll: true,
+        // So Isolate can take two plots at once: with multi-select, a command
+        // run from the tree is handed the whole selection as its second
+        // argument, which makes ctrl/cmd+click the gesture for "these two".
+        canSelectMany: true,
     });
     resourcesProvider.attachTreeView(resourcesView);
     context.subscriptions.push(resourcesView, resourcesProvider);
+
+    // Narrowing a section to one resource is opt-in per resource: a section
+    // with 89 plots buries the one you opened, but working on two at once is
+    // just as common, so nothing hides a sibling until asked.
+    context.subscriptions.push(
+        vscode.commands.registerCommand(
+            'novem.isolateResource',
+            // The clicked row comes first, the selection second -- and the
+            // selection is what to isolate, since right-clicking inside a
+            // multi-selection means all of it.
+            (item: MyTreeItem, selection?: MyTreeItem[]) => {
+                const items = (selection?.length ? selection : [item]).filter(
+                    each => each instanceof MyTreeItem,
+                );
+                if (items.length) resourcesProvider.isolate(items);
+            },
+        ),
+        vscode.commands.registerCommand('novem.showAllInSection', (type: VisType) => {
+            resourcesProvider.showAll(type);
+        }),
+    );
 
     primeProviderRoot(selfVisPromise, 'plots', plotsProvider);
     primeProviderRoot(selfVisPromise, 'mails', mailsProvider);

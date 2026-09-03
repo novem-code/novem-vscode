@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 
 import NovemApi from '../../novem-api';
-import { BaseNovemProvider, NovemResourcesProvider, VisType } from '../../tree';
+import { BaseNovemProvider, MyTreeItem, NovemResourcesProvider, VisType } from '../../tree';
 
 const ALL_TYPES: VisType[] = ['plots', 'mails', 'grids', 'docs', 'jobs', 'repos'];
 
@@ -20,6 +20,26 @@ function fakeContext(username: string): vscode.ExtensionContext {
             get: (key: string) => (key === 'userProfile' ? { user_info: { username } } : undefined),
         },
     } as unknown as vscode.ExtensionContext;
+}
+
+function fakeTreeView() {
+    const revealed: vscode.TreeItem[] = [];
+    const onCollapse: ((event: { element: vscode.TreeItem }) => void)[] = [];
+    const view = {
+        reveal: async (item: vscode.TreeItem) => {
+            revealed.push(item);
+        },
+        onDidCollapseElement: (handler: (event: { element: vscode.TreeItem }) => void) => {
+            onCollapse.push(handler);
+            return { dispose: () => undefined };
+        },
+    } as unknown as vscode.TreeView<vscode.TreeItem>;
+
+    return {
+        view,
+        revealed,
+        collapse: (element: vscode.TreeItem) => onCollapse.forEach(handler => handler({ element })),
+    };
 }
 
 function labelOf(item: vscode.TreeItem): string {
@@ -159,12 +179,12 @@ suite('NovemResourcesProvider sections', () => {
 
         assert.deepStrictEqual(loading.map(labelOf), ['Loading...']);
         assert.deepStrictEqual(sections.map(labelOf), [
-            'Plots',
-            'E-Mails',
-            'Grids',
-            'Documents',
-            'Jobs',
-            'Repos',
+            'PLOTS',
+            'E-MAILS',
+            'GRIDS',
+            'DOCUMENTS',
+            'JOBS',
+            'REPOS',
         ]);
     });
 
@@ -215,18 +235,14 @@ suite('NovemResourcesProvider sections', () => {
             plots: [{ id: 'a' }],
             jobs: [{ id: 'b' }],
         });
-        const revealed: vscode.TreeItem[] = [];
-        resources.attachTreeView({
-            reveal: async (item: vscode.TreeItem) => {
-                revealed.push(item);
-            },
-        } as unknown as vscode.TreeView<vscode.TreeItem>);
+        const { view, revealed } = fakeTreeView();
+        resources.attachTreeView(view);
 
         providers.grids.setRoots([{ id: 'fresh-grid' }]);
         providers.grids.refresh();
         await waitFor(() => revealed.length > 0, 'the new grid should open its section');
 
-        assert.deepStrictEqual(revealed.map(labelOf), ['Grids']);
+        assert.deepStrictEqual(revealed.map(labelOf), ['GRIDS']);
         assert.strictEqual(sections[2].description, '1');
 
         // A delete leaves the user's layout alone.
@@ -236,6 +252,223 @@ suite('NovemResourcesProvider sections', () => {
         await waitFor(() => sections[2].description === 'empty', 'the count should drop back');
 
         assert.deepStrictEqual(revealed, []);
+        resources.dispose();
+    });
+
+    test('isolate narrows a section to one resource and offers a way back', async () => {
+        const { resources, sections } = await loadSections({
+            plots: [{ id: 'a' }, { id: 'b' }, { id: 'c' }],
+        });
+        const { view, revealed } = fakeTreeView();
+        resources.attachTreeView(view);
+
+        const plots = await resources.getChildren(sections[0]);
+        assert.deepStrictEqual(plots.map(labelOf), ['a', 'b', 'c']);
+
+        resources.isolate([plots[1] as MyTreeItem]);
+        const isolated = await resources.getChildren(sections[0]);
+
+        assert.deepStrictEqual(isolated.map(labelOf), ['Show all 3 plots', 'b']);
+        assert.strictEqual(sections[0].description, '1/3', 'the hidden siblings stay counted');
+        assert.deepStrictEqual(
+            revealed.map(labelOf),
+            ['b'],
+            'isolating opens the resource, so what is left is the subtree',
+        );
+
+        // The way back is a row, because the other two plots are unreachable.
+        assert.strictEqual(isolated[0].command?.command, 'novem.showAllInSection');
+        assert.deepStrictEqual(isolated[0].command?.arguments, ['plots']);
+
+        resources.showAll('plots');
+        assert.deepStrictEqual((await resources.getChildren(sections[0])).map(labelOf), [
+            'a',
+            'b',
+            'c',
+        ]);
+        assert.strictEqual(sections[0].description, '3');
+        resources.dispose();
+    });
+
+    test('isolates two siblings at once and keeps them both', async () => {
+        const { resources, sections } = await loadSections({
+            plots: [{ id: 'a' }, { id: 'b' }, { id: 'c' }],
+        });
+        const { view, revealed, collapse } = fakeTreeView();
+        resources.attachTreeView(view);
+
+        const plots = await resources.getChildren(sections[0]);
+        resources.isolate([plots[0] as MyTreeItem, plots[2] as MyTreeItem]);
+
+        assert.deepStrictEqual((await resources.getChildren(sections[0])).map(labelOf), [
+            'Show all 3 plots',
+            'a',
+            'c',
+        ]);
+        assert.strictEqual(sections[0].description, '2/3');
+        assert.deepStrictEqual(revealed.map(labelOf), ['a', 'c'], 'both should open');
+
+        // Collapsing one of the two leaves the other isolated, rather than
+        // throwing both back into the full list.
+        collapse(plots[0]);
+        assert.deepStrictEqual((await resources.getChildren(sections[0])).map(labelOf), [
+            'Show all 3 plots',
+            'c',
+        ]);
+        assert.strictEqual(sections[0].description, '1/3');
+
+        // Collapsing the last one ends the isolation.
+        collapse(plots[2]);
+        assert.deepStrictEqual((await resources.getChildren(sections[0])).map(labelOf), [
+            'a',
+            'b',
+            'c',
+        ]);
+        assert.strictEqual(sections[0].description, '3');
+        resources.dispose();
+    });
+
+    test('splits a selection spanning types across their sections', async () => {
+        const { resources, sections } = await loadSections({
+            plots: [{ id: 'a' }, { id: 'b' }],
+            jobs: [{ id: 'j1' }, { id: 'j2' }],
+        });
+        resources.attachTreeView(fakeTreeView().view);
+
+        const plots = await resources.getChildren(sections[0]);
+        const jobs = await resources.getChildren(sections[4]);
+        resources.isolate([plots[1] as MyTreeItem, jobs[0] as MyTreeItem]);
+
+        assert.deepStrictEqual((await resources.getChildren(sections[0])).map(labelOf), [
+            'Show all 2 plots',
+            'b',
+        ]);
+        assert.deepStrictEqual((await resources.getChildren(sections[4])).map(labelOf), [
+            'Show all 2 jobs',
+            'j1',
+        ]);
+        resources.dispose();
+    });
+
+    test('ignores files inside a resource — only whole resources isolate', async () => {
+        const { resources, sections } = await loadSections({ plots: [{ id: 'a' }, { id: 'b' }] });
+        resources.attachTreeView(fakeTreeView().view);
+
+        const plots = (await resources.getChildren(sections[0])) as MyTreeItem[];
+        const files = (await resources.getChildren(plots[0])) as MyTreeItem[];
+        resources.isolate(files);
+
+        assert.deepStrictEqual(
+            (await resources.getChildren(sections[0])).map(labelOf),
+            ['a', 'b'],
+            'isolating a file would hide the rest of the resource it lives in',
+        );
+        assert.strictEqual(sections[0].description, '2');
+        resources.dispose();
+    });
+
+    test('isolates per section, so a plot and a job can be open at once', async () => {
+        const { resources, sections } = await loadSections({
+            plots: [{ id: 'a' }, { id: 'b' }],
+            jobs: [{ id: 'j1' }, { id: 'j2' }],
+        });
+        resources.attachTreeView(fakeTreeView().view);
+
+        const [plots, jobs] = [
+            await resources.getChildren(sections[0]),
+            await resources.getChildren(sections[4]),
+        ];
+        resources.isolate([plots[0] as MyTreeItem]);
+        resources.isolate([jobs[1] as MyTreeItem]);
+
+        assert.deepStrictEqual((await resources.getChildren(sections[0])).map(labelOf), [
+            'Show all 2 plots',
+            'a',
+        ]);
+        assert.deepStrictEqual((await resources.getChildren(sections[4])).map(labelOf), [
+            'Show all 2 jobs',
+            'j2',
+        ]);
+
+        // Leaving one isolated section is not leaving the other.
+        resources.showAll('plots');
+        assert.deepStrictEqual((await resources.getChildren(sections[0])).map(labelOf), ['a', 'b']);
+        assert.deepStrictEqual((await resources.getChildren(sections[4])).map(labelOf), [
+            'Show all 2 jobs',
+            'j2',
+        ]);
+        resources.dispose();
+    });
+
+    test('collapsing the isolated resource brings the siblings back', async () => {
+        const { resources, sections } = await loadSections({ plots: [{ id: 'a' }, { id: 'b' }] });
+        const { view, collapse } = fakeTreeView();
+        resources.attachTreeView(view);
+
+        const plots = await resources.getChildren(sections[0]);
+        resources.isolate([plots[0] as MyTreeItem]);
+        collapse(plots[0]);
+
+        assert.deepStrictEqual((await resources.getChildren(sections[0])).map(labelOf), ['a', 'b']);
+        assert.strictEqual(sections[0].description, '2');
+
+        // Collapsing something else is not a way out.
+        resources.isolate([plots[0] as MyTreeItem]);
+        collapse(plots[1]);
+        assert.deepStrictEqual((await resources.getChildren(sections[0])).map(labelOf), [
+            'Show all 2 plots',
+            'a',
+        ]);
+        resources.dispose();
+    });
+
+    test('drops the isolation when the resource it named is gone', async () => {
+        const { providers, resources, sections } = await loadSections({
+            plots: [{ id: 'a' }, { id: 'b' }],
+        });
+        resources.attachTreeView(fakeTreeView().view);
+
+        const plots = await resources.getChildren(sections[0]);
+        resources.isolate([plots[1] as MyTreeItem]);
+
+        providers.plots.setRoots([{ id: 'a' }]);
+        providers.plots.refresh();
+        await waitFor(
+            () => providers.plots.rootResourceCount() === 1,
+            'the refreshed root list should come back',
+        );
+
+        assert.deepStrictEqual(
+            (await resources.getChildren(sections[0])).map(labelOf),
+            ['a'],
+            'a deleted resource must not leave the section stuck on nothing',
+        );
+        assert.strictEqual(sections[0].description, '1');
+        resources.dispose();
+    });
+
+    test('drops the isolation when a resource is created into the section', async () => {
+        const { providers, resources, sections } = await loadSections({
+            plots: [{ id: 'a' }, { id: 'b' }],
+        });
+        resources.attachTreeView(fakeTreeView().view);
+
+        const plots = await resources.getChildren(sections[0]);
+        resources.isolate([plots[0] as MyTreeItem]);
+
+        providers.plots.setRoots([{ id: 'a' }, { id: 'b' }, { id: 'fresh' }]);
+        providers.plots.refresh();
+        await waitFor(
+            () => providers.plots.rootResourceCount() === 3,
+            'the new plot should come back in the root list',
+        );
+
+        assert.deepStrictEqual(
+            (await resources.getChildren(sections[0])).map(labelOf),
+            ['a', 'b', 'fresh'],
+            'a plot created while isolated must not land hidden',
+        );
+        assert.strictEqual(sections[0].description, '3');
         resources.dispose();
     });
 

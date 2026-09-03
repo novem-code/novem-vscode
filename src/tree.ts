@@ -18,14 +18,34 @@ const CREATE_ACTIONS: Record<VisType, { command: string; emptyLabel: string }> =
 };
 
 // One row per resource type, in the order they appear in the sidebar.
+//
+// Labels are upper case because these rows replaced six view headers, which
+// VSCode itself renders upper case. A tree item gets no styling of its own --
+// no separator, no padding, no font weight -- so the casing is what separates
+// a section from the resources under it.
 const SECTIONS: { type: VisType; label: string; icon: string }[] = [
-    { type: 'plots', label: 'Plots', icon: 'graph' },
-    { type: 'mails', label: 'E-Mails', icon: 'mail' },
-    { type: 'grids', label: 'Grids', icon: 'table' },
-    { type: 'docs', label: 'Documents', icon: 'book' },
-    { type: 'jobs', label: 'Jobs', icon: 'run' },
-    { type: 'repos', label: 'Repos', icon: 'repo' },
+    { type: 'plots', label: 'PLOTS', icon: 'graph' },
+    { type: 'mails', label: 'E-MAILS', icon: 'mail' },
+    { type: 'grids', label: 'GRIDS', icon: 'table' },
+    { type: 'docs', label: 'DOCUMENTS', icon: 'book' },
+    { type: 'jobs', label: 'JOBS', icon: 'run' },
+    { type: 'repos', label: 'REPOS', icon: 'repo' },
 ];
+
+// The way out of an isolated section, and the only sign of the siblings it is
+// hiding, so it names how many there are.
+function createShowAllItem(type: VisType, total: number): vscode.TreeItem {
+    const noun = SECTIONS.find(section => section.type === type)?.label.toLowerCase() ?? type;
+    const showAll = new vscode.TreeItem(`Show all ${total} ${noun}`);
+    showAll.id = `novem-show-all-${type}`;
+    showAll.iconPath = new vscode.ThemeIcon('arrow-left');
+    showAll.command = {
+        command: 'novem.showAllInSection',
+        title: 'Show All',
+        arguments: [type],
+    };
+    return showAll;
+}
 
 function createLoadingItem(): vscode.TreeItem {
     const loadingItem = new vscode.TreeItem('Loading...');
@@ -385,6 +405,11 @@ export class NovemSectionItem extends vscode.TreeItem {
 export class NovemResourcesProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private readonly sections = new Map<VisType, NovemSectionItem>();
     private readonly counts = new Map<VisType, number>();
+    // The resources a section is narrowed to, by name, for the types the user
+    // has asked to isolate. A set rather than one name because two plots side
+    // by side is a normal way to work; per type, so isolating a plot leaves a
+    // job isolated (or not) exactly as it was.
+    private readonly isolated = new Map<VisType, Set<string>>();
     private readonly subscriptions: vscode.Disposable[] = [];
     private treeView: vscode.TreeView<vscode.TreeItem> | null = null;
     private sectionsBuilt = false;
@@ -413,7 +438,79 @@ export class NovemResourcesProvider implements vscode.TreeDataProvider<vscode.Tr
 
     attachTreeView(treeView: vscode.TreeView<vscode.TreeItem>): void {
         this.treeView = treeView;
+        // Collapsing the resource you isolated is the other way out, next to
+        // the "Show all" row: shutting it would otherwise leave the section
+        // showing a single collapsed row and no sign of the rest.
+        this.subscriptions.push(
+            treeView.onDidCollapseElement(({ element }) => {
+                if (element instanceof MyTreeItem) this.deisolate(element);
+            }),
+        );
         this.updateTreeViewMessage();
+    }
+
+    /**
+     * Narrow each section to the resources given, hiding their siblings.
+     * Opt-in -- nothing isolates on its own -- because working on two plots
+     * side by side is as common as wanting one of them on its own, which is
+     * also why this takes a selection rather than a single resource.
+     *
+     * A selection spanning types isolates each type to its own share of it.
+     */
+    isolate(items: MyTreeItem[]): void {
+        const byType = new Map<VisType, Set<string>>();
+        for (const item of items) {
+            const type = item.visType as VisType;
+            // Only whole resources: isolating a file inside one would hide the
+            // rest of the resource, which is not what the section is listing.
+            if (!this.sections.has(type) || item.path.split('/').length !== 2) continue;
+            const names = byType.get(type) ?? new Set<string>();
+            names.add(item.name);
+            byType.set(type, names);
+        }
+
+        for (const [type, names] of byType) {
+            this.isolated.set(type, names);
+            this.refreshSection(type);
+        }
+
+        // Isolating from collapsed rows should open them: hiding the siblings
+        // is only worth anything if what's left is the subtrees you wanted.
+        for (const item of items) {
+            if (this.isIsolated(item)) {
+                void this.treeView?.reveal(item, { expand: true, select: false, focus: false });
+            }
+        }
+    }
+
+    /** Undo isolate(): the section lists everything again. */
+    showAll(type: VisType): void {
+        if (!this.isolated.delete(type)) return;
+        this.refreshSection(type);
+    }
+
+    private isIsolated(item: MyTreeItem): boolean {
+        return this.isolated.get(item.visType as VisType)?.has(item.name) ?? false;
+    }
+
+    /**
+     * Drop one resource from a section's isolation, ending it once nothing is
+     * left. Collapsing one of two isolated plots should leave the other
+     * isolated, not throw both back into a list of 89.
+     */
+    private deisolate(item: MyTreeItem): void {
+        const type = item.visType as VisType;
+        const names = this.isolated.get(type);
+        if (!names?.delete(item.name)) return;
+        if (names.size === 0) this.isolated.delete(type);
+        this.refreshSection(type);
+    }
+
+    private refreshSection(type: VisType): void {
+        const section = this.sections.get(type);
+        if (!section) return;
+        section.description = this.countLabel(this.counts.get(type) ?? null, type);
+        this._onDidChangeTreeData.fire(section);
     }
 
     getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
@@ -432,13 +529,37 @@ export class NovemResourcesProvider implements vscode.TreeDataProvider<vscode.Tr
 
     async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
         if (element instanceof NovemSectionItem) {
-            return (await this.providers[element.visType].getChildren()) ?? [];
+            const children = (await this.providers[element.visType].getChildren()) ?? [];
+            return this.applyIsolation(element.visType, children);
         }
         if (element instanceof MyTreeItem) {
             return (await element.parent.getChildren(element)) ?? [];
         }
         if (element) return [];
         return this.getSectionItems();
+    }
+
+    /**
+     * An isolated section shows the chosen resource and a row to get back; the
+     * siblings are simply not returned. VSCode has no way to hide or filter
+     * rows, but which children a section has is ours to decide.
+     */
+    private applyIsolation(type: VisType, children: vscode.TreeItem[]): vscode.TreeItem[] {
+        const names = this.isolated.get(type);
+        if (!names) return children;
+
+        const chosen = children.filter(
+            child => child instanceof MyTreeItem && names.has(child.name),
+        );
+        if (chosen.length === 0) {
+            // Every isolated resource is gone -- renamed, or deleted from
+            // elsewhere. Drop the isolation rather than showing nothing.
+            this.showAll(type);
+            return children;
+        }
+
+        const total = children.filter(child => child instanceof MyTreeItem).length;
+        return [createShowAllItem(type, total), ...chosen];
     }
 
     private getSectionItems(): vscode.TreeItem[] {
@@ -471,7 +592,7 @@ export class NovemResourcesProvider implements vscode.TreeDataProvider<vscode.Tr
             }
             const count = counts.get(type) ?? null;
             if (count !== null) this.counts.set(type, count);
-            section.description = this.countLabel(count);
+            section.description = this.countLabel(count, type);
             return section;
         });
     }
@@ -489,8 +610,12 @@ export class NovemResourcesProvider implements vscode.TreeDataProvider<vscode.Tr
 
     // The count on a collapsed row is the only thing telling the user what's
     // behind it, so an empty section says so rather than showing a bare 0.
-    private countLabel(count: number | null): string {
+    // An isolated section reads "2/89", so the hidden siblings are visible as a
+    // number even when the section is shut.
+    private countLabel(count: number | null, type: VisType): string {
         if (count === null) return '';
+        const isolated = this.isolated.get(type);
+        if (isolated) return `${isolated.size}/${count}`;
         return count > 0 ? String(count) : 'empty';
     }
 
@@ -512,13 +637,22 @@ export class NovemResourcesProvider implements vscode.TreeDataProvider<vscode.Tr
         const count = this.providers[type].ensureRootLoaded();
         const previous = this.counts.get(type);
         if (count !== null) this.counts.set(type, count);
-        section.description = this.countLabel(count);
+
+        // Something new landed in this section — only growth, so a delete or a
+        // plain refresh leaves the user's layout alone.
+        const grew = previous !== undefined && count !== null && count > previous;
+
+        // An isolated section hides every sibling, so a resource created into
+        // one would land invisible. That's the same "out of sight" problem the
+        // reveal below exists to prevent, so creating drops the isolation.
+        if (grew) this.isolated.delete(type);
+
+        section.description = this.countLabel(count, type);
         this._onDidChangeTreeData.fire(section);
 
-        // Something new landed in this section. If it's collapsed the user just
-        // created a resource they can't see, so open it for them — but only on
-        // growth, so a delete or a plain refresh leaves their layout alone.
-        if (previous !== undefined && count !== null && count > previous) {
+        // If the section is collapsed the user just created a resource they
+        // can't see, so open it for them.
+        if (grew) {
             void this.treeView?.reveal(section, { expand: true, select: false, focus: false });
         }
     }
@@ -567,6 +701,10 @@ export class MyTreeItem extends vscode.TreeItem {
 
         this.path = `${parentPath}/${this.name}`;
         this.visType = visType;
+        // A stable id per row. Isolating a resource re-renders its whole
+        // section, and without an id VSCode tracks rows by position, so the
+        // expansion the user just made would be dropped on the way.
+        this.id = `novem-item-${visType}${this.path}`;
 
         const FILE_DOCTYPES: Record<string, string> = {
             'custom.js': 'javascript',

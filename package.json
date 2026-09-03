@@ -189,6 +189,11 @@
                 "icon": "$(edit)"
             },
             {
+                "command": "novem.isolateResource",
+                "title": "Isolate",
+                "icon": "$(screen-full)"
+            },
+            {
                 "command": "novem.login",
                 "title": "novem: Login"
             },
@@ -377,6 +382,12 @@
                     "group": "inline"
                 },
                 {
+                    "command": "novem.isolateResource",
+                    "when": "view == novem-resources && viewItem =~ /-top($|-)/",
+                    "title": "Isolate",
+                    "group": "2_isolate"
+                },
+                {
                     "command": "novem.renameResource",
                     "when": "view == novem-resources && viewItem =~ /-top($|-)/",
                     "title": "Rename",
@@ -442,6 +453,10 @@
                 },
                 {
                     "command": "novem.editResource",
+                    "when": "false"
+                },
+                {
+                    "command": "novem.isolateResource",
                     "when": "false"
                 },
                 {
