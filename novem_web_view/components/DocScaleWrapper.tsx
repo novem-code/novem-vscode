@@ -35,6 +35,17 @@ export default function DocScaleWrapper({ children }: DocScaleWrapperProps) {
 
         const availableWidth = outer.clientWidth;
 
+        // A zero width is the ABSENCE of a layout, not a layout to scale to:
+        // it reads that way before first paint, while an ancestor is
+        // display:none (a backgrounded panel), and transiently while the
+        // browser re-lays-out on an editor zoom change. Committing it sets
+        // scale(0) — the doc goes invisible inside a box that keeps its
+        // height — and it only returns if some later mutation happens to fire
+        // another measure. Keep the last good scale AND height: a stale
+        // height is invisible while the box has no width, and the next real
+        // measurement replaces both.
+        if (!(availableWidth > 0)) return;
+
         // Widest rendered page = content width (only the scale factor uses
         // it — never the inner div's width; see INNER_WIDTH above).
         let contentWidth = MAX_PAGE_WIDTH;
