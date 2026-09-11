@@ -49,8 +49,8 @@ importers:
         specifier: ^13.0.6
         version: 13.0.6
       mocha:
-        specifier: ^12.0.0-rc.6
-        version: 12.0.0-rc.6
+        specifier: ^12.0.0
+        version: 12.0.0
       prettier:
         specifier: ^3.9.6
         version: 3.9.6
@@ -621,8 +621,8 @@ packages:
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
 
-  js-yaml@5.3.0:
-    resolution: {integrity: sha512-muutsYr+e2+d3rTgUGslq5rxbBlUy3cJ61IsHag2QNDQV+7zXWjkUpmALIajhrlLlrgRUiymj6U3zUr/TMK84Q==}
+  js-yaml@5.4.1:
+    resolution: {integrity: sha512-28R/k+NAjeuf7+CKlTxWZVExJGwVVLwY06DgEnOMz2gEpfNkDcD7QvyiVPT0xy0XXhU8vHsd4Ot42OOPdJG7dQ==}
     hasBin: true
 
   json-buffer@3.0.1:
@@ -671,8 +671,8 @@ packages:
     resolution: {integrity: sha512-tEBHqDnIoM/1rXME1zgka9g6Q2lcoCkxHLuc7ODJ5BxbP5d4c2Z5cGgtXAku59200Cx7diuHTOYfSBD8n6mm8A==}
     engines: {node: '>=16 || 14 >=14.17'}
 
-  mocha@12.0.0-rc.6:
-    resolution: {integrity: sha512-JfQk/OfLIU+Ajm76oTYM5YZn7gHWUZZF9+V9FQhveAv4mnB5I0Qwmtqx6O8uWGwmK+rPaqCBPlXS5+mcmgYbKg==}
+  mocha@12.0.0:
+    resolution: {integrity: sha512-NYNh5IFt6WYqm9bi4601m7vix8MZdXC0DwS4gY6WhXO2RgJWhivhISVmq1oklCif18OSI9l+vx5Mdm5oh1XGiQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
@@ -788,8 +788,8 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
-  serialize-javascript@7.1.0:
-    resolution: {integrity: sha512-RNEqWOyhhUQYN9V1GfHwu9AR/g+NTciH6Z5u3/no6X3/w+04J2lVDL+svFQVXgXrEGBMG2puMVN3gq2SNGuTGw==}
+  serialize-javascript@7.1.1:
+    resolution: {integrity: sha512-k3CMsaIvvdSwm8oLB4MXSl0wH2/cwlH7xGcnRd2DaeRmBkbzYmyT8j0tsX60DwD1eRwHTpNpH8ljKu9oUT1MeQ==}
     engines: {node: '>=20.0.0'}
 
   set-cookie-parser@2.7.2:
@@ -1381,7 +1381,7 @@ snapshots:
 
   isexe@2.0.0: {}
 
-  js-yaml@5.3.0:
+  js-yaml@5.4.1:
     dependencies:
       argparse: 2.0.1
 
@@ -1430,7 +1430,7 @@ snapshots:
 
   minipass@7.1.3: {}
 
-  mocha@12.0.0-rc.6:
+  mocha@12.0.0:
     dependencies:
       browser-stdout: 1.3.1
       chokidar: 5.0.0
@@ -1440,11 +1440,11 @@ snapshots:
       glob: 13.0.6
       is-path-inside: 3.0.3
       is-unicode-supported: 0.1.0
-      js-yaml: 5.3.0
+      js-yaml: 5.4.1
       minimatch: 10.2.6
       ms: 2.1.3
       picocolors: 1.1.1
-      serialize-javascript: 7.1.0
+      serialize-javascript: 7.1.1
       strip-json-comments: 5.0.3
       supports-color: 8.1.1
       workerpool: 10.0.3
@@ -1553,7 +1553,7 @@ snapshots:
 
   semver@7.8.5: {}
 
-  serialize-javascript@7.1.0: {}
+  serialize-javascript@7.1.1: {}
 
   set-cookie-parser@2.7.2: {}
 
