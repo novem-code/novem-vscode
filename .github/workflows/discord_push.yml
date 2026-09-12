@@ -9,7 +9,7 @@ on:
 
 jobs:
   notify_push:
-    uses: novem-code/github-actions/.github/workflows/discord_push.yml@v4
+    uses: novem-code/github-actions/.github/workflows/discord_push.yml@7d5ccc27529a994252f9b802f042477467ffac8e
     with:
       branch_name: ${{ github.ref }}
       commit_message: ${{ github.event.head_commit.message }}
