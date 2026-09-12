@@ -9,10 +9,11 @@ on:
      - closed
      - ready_for_review
      - converted_to_draft
+     - reopened
 
 jobs:
   notify:
-    uses: novem-code/github-actions/.github/workflows/discord_pr.yml@v4
+    uses: novem-code/github-actions/.github/workflows/discord_pr.yml@7d5ccc27529a994252f9b802f042477467ffac8e
     with:
       pr_title: ${{ github.event.pull_request.title }}
       pr_number: ${{ github.event.pull_request.number }}
