@@ -593,7 +593,7 @@
         "@types/mocha": "^10.0.1",
         "@types/node": "^20.19.43",
         "@types/react": "^19.2.18",
-        "@types/react-dom": "^19.2.5",
+        "@types/react-dom": "^19.2.7",
         "@types/vscode": "^1.72.0",
         "@vscode/test-electron": "^3.1.0",
         "esbuild": "^0.28.2",
@@ -605,7 +605,7 @@
         "react-dom": "^19.2.8",
         "react-router-dom": "^7.18.2",
         "typescript": "^6.0.3",
-        "typescript-eslint": "^8.68.0"
+        "typescript-eslint": "^8.69.0"
     },
     "dependencies": {
         "ini": "^7.0.0"
