@@ -545,7 +545,7 @@
         "test": "npm run compile && npm run lint && node ./out/src/test/runTest.js"
     },
     "devDependencies": {
-        "@types/d3-selection": "^3.0.7",
+        "@types/d3-selection": "^3.0.12",
         "@types/ini": "^4.1.1",
         "@types/mocha": "^10.0.1",
         "@types/node": "^20.19.43",
@@ -556,8 +556,8 @@
         "esbuild": "^0.28.2",
         "eslint": "^10.10.0",
         "glob": "^13.0.6",
-        "mocha": "^12.0.0",
-        "prettier": "^3.9.6",
+        "mocha": "^12.0.2",
+        "prettier": "^3.9.8",
         "react": "^19.3.0",
         "react-dom": "^19.3.0",
         "react-router-dom": "^7.18.4",
