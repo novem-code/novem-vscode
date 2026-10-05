@@ -4,6 +4,34 @@ All notable changes to the "novem-vscode" extension will be documented in this f
 
 ## [Unreleased]
 
+## [0.1.14] - 2026-10-05
+
+### What's Changed
+* build(deps-dev): bump glob from 10.5.0 to 13.0.6
+* build(deps-dev): bump @types/react-dom from 18.3.7 to 19.2.4
+* build(deps-dev): bump @types/ini from 1.3.34 to 4.1.1
+* Declare node and mocha types explicitly for tsc 6
+* build(deps-dev): bump mocha from 12.0.0-beta-9.4 to 12.0.0-rc.6
+* build(deps-dev): bump react-router-dom from 6.30.4 to 7.18.2
+* Load ns.js from the configured deployment, and report load failures
+* Don't scale a doc preview to a container that measured nothing
+* build(deps-dev): bump the npm-tooling group with 3 updates
+* workflows: bump the github-actions pin so reopens notify
+* build(deps-dev): bump the npm-tooling group with 2 updates
+* build(deps-dev): bump react-router-dom from 7.18.2 to 7.18.3 in the npm-runtime group
+* build(deps-dev): bump mocha from 12.0.0-rc.6 to 12.0.0
+* Collapse the sidebar into one tree with per-type sections
+* build(deps): bump pnpm/action-setup from 6.0.10 to 6.1.0 in the actions group
+* build(deps-dev): bump the npm-tooling group with 2 updates
+* build(deps-dev): bump the npm-runtime group across 1 directory with 2 updates
+* build(deps-dev): bump react-router-dom from 7.18.3 to 7.18.4 in the npm-runtime group
+* build(deps-dev): bump the npm-tooling group with 3 updates
+* build(deps-dev): bump the npm-tooling group with 3 updates
+* workflows: mint the release token from the release environment
+
+
+**Full Changelog**: https://github.com/novem-code/novem-vscode/compare/v0.1.12...v0.1.14
+
 ## [0.1.13] - 2026-10-05
 
 ### What's Changed
