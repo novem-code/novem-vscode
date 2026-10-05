@@ -29,6 +29,7 @@ workflows; prefer the same SHAs gaia uses for shared actions.
 | `actions/checkout` | `de0fac2e` | v6.0.2 |
 | `actions/setup-node` | `6044e13b` | v6.2.0 |
 | `actions/create-github-app-token` | `1b10c78c` | v3.1.1 |
+| `azure/login` | `a641126d` | v3.1.0 |
 | `pnpm/action-setup` | `0e279bb9` | v6.0.8 (self-updates to the packageManager-pinned pnpm; v6.0.6 ran bundled pnpm 11 and broke the Node 20 leg) |
 
 Dependabot (`../dependabot.yml`) opens weekly PRs for these pins. It rewrites
