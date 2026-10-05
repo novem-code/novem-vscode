@@ -4,20 +4,24 @@ on:
   release:
     types:
       - published
-  workflow_dispatch:
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    environment:
+      name: release
+      deployment: false
     permissions:
       contents: write
+      id-token: write
     steps:
       - name: Generate GitHub App token
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          client-id: ${{ vars.GHA_RELEASES_CLIENT_ID }}
+          private-key: ${{ secrets.GHA_RELEASES_PRIVATE_KEY }}
+          repositories: novem-vscode
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -126,10 +130,15 @@ jobs:
       - name: Install vsce
         run: npm install -g @vscode/vsce
 
+      - name: Log in to Microsoft Entra
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
       - name: Publish Extension
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
-        run: vsce publish
+        run: vsce publish --azure-credential
 
       - name: Send release notification to Discord
         if: success()
