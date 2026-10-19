@@ -959,7 +959,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             try {
                 await api.createNodeInDirectory(item.visType, `${item.path}/${nodeName}`);
                 vscode.window.showInformationMessage(`Created node "${nodeName}" in ${item.name}`);
-                item.parent.refresh();
+                item.parent.refreshResource(item.path.split('/')[1]);
             } catch (error) {
                 console.error('Error creating node:', error);
                 vscode.window.showErrorMessage(`Failed to create node "${nodeName}": ${error}`);
@@ -993,7 +993,7 @@ export function setupCommands(context: vscode.ExtensionContext, api: NovemApi) {
             try {
                 await api.deleteNode(item.visType, item.path);
                 vscode.window.showInformationMessage(`Deleted ${itemType} "${item.name}"`);
-                item.parent.refresh();
+                item.parent.refreshResource(item.path.split('/')[1]);
             } catch (error) {
                 console.error('Error deleting node:', error);
                 vscode.window.showErrorMessage(
