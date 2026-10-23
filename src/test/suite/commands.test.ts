@@ -8,6 +8,7 @@ import {
     JobsProvider,
     MyTreeItem,
     NovemResourcesProvider,
+    NovemSectionItem,
     VisType,
 } from '../../tree';
 
@@ -80,7 +81,10 @@ suite('Node mutations preserve the exploration tree', () => {
             const resources = new NovemResourcesProvider(providers);
             subscriptions.push(resources);
             const sections = await resources.getChildren();
-            const jobSection = sections[4];
+            const jobSection = sections.find(
+                section => section instanceof NovemSectionItem && section.visType === 'jobs',
+            );
+            assert.ok(jobSection);
             const [job] = (await resources.getChildren(jobSection)) as MyTreeItem[];
             const [config] = (await resources.getChildren(job)) as MyTreeItem[];
             const [env] = (await resources.getChildren(config)) as MyTreeItem[];

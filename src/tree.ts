@@ -266,14 +266,8 @@ export abstract class BaseNovemProvider implements vscode.TreeDataProvider<vscod
     }
 
     private async fetchChildTreeItems(element: MyTreeItem): Promise<vscode.TreeItem[]> {
-        function splitWithLimit(str: string, delimiter: string, limit: number): string[] {
-            const parts = str.split(delimiter);
-            const selected = parts.slice(0, limit);
-            selected.push(parts.slice(limit).join(delimiter));
-            return selected;
-        }
-
-        const [_, visId, path] = splitWithLimit(element.path, '/', 2);
+        const visId = element.visId;
+        const path = element.path.split('/').slice(2).join('/');
 
         try {
             console.log(`Fetching child items for ${this.getType()} - ${visId}/${path || ''}`);
@@ -681,6 +675,10 @@ export class NovemDummyProvider implements vscode.TreeDataProvider<vscode.TreeIt
 export class MyTreeItem extends vscode.TreeItem {
     public readonly path: string;
     public readonly desc: string;
+
+    get visId(): string {
+        return this.path.split('/')[1];
+    }
 
     constructor(
         public readonly parent: BaseNovemProvider,
