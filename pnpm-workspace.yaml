@@ -14,13 +14,7 @@ onlyBuiltDependencies:
 # published (possibly compromised) version won't be pulled in until it has aged.
 minimumReleaseAge: 10080
 
-# Flat node_modules (like npm / Yarn Classic). Required so the VSCode
-# extension-host test runner resolves deps such as `mocha`; pnpm's default
-# symlinked layout is not resolvable there.
+# Flat node_modules (like npm / Yarn Classic). Originally required so the
+# VSCode extension-host test runner could resolve mocha; pnpm's default
+# symlinked layout was not resolvable there.
 nodeLinker: hoisted
-
-# Force the patched js-yaml for GHSA-h67p-54hq-rp68 (quadratic-complexity DoS
-# in merge-key handling). Only pulled in transitively by mocha (dev/test only),
-# which asks for ^4.1.0, so 4.2.0 satisfies it.
-overrides:
-  js-yaml@>=4.0.0 <=4.1.1: 4.2.0

@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import { suite, test, beforeEach, afterEach } from 'node:test';
 import { avatarStyle } from '../../../novem_web_view/utils';
 import { getCurrentTheme, resolveNsHosts } from '../../../novem_web_view/ns';
 
@@ -23,10 +24,10 @@ suite('getCurrentTheme (editor theme matching)', () => {
     const g = global as unknown as { document?: { body: { className: string } } };
     let savedDoc: { body: { className: string } } | undefined;
 
-    setup(() => {
+    beforeEach(() => {
         savedDoc = g.document;
     });
-    teardown(() => {
+    afterEach(() => {
         g.document = savedDoc;
     });
 
