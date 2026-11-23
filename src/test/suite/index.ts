@@ -76,13 +76,22 @@ export function run(): Promise<void> {
                 // The last test or suite dequeued is the one that is running.
                 running = data.name;
             }
-            // A failing test also fails its enclosing suites; count tests only.
-            if (data?.details?.type !== 'suite') {
-                if (type === 'test:pass') {
-                    passes++;
-                } else if (type === 'test:fail') {
-                    failures++;
-                }
+            if (type === 'test:pass' && data.details?.type !== 'suite') {
+                passes++;
+            }
+            // Count each failure once, at its cause. A failure propagates up
+            // (enclosing suites fail with 'subtestsFailed') and down (tests
+            // under a failed suite or `before` hook fail with
+            // 'cancelledByParent'); skip both. Suites still count when they
+            // fail themselves: a throwing suite body registers no tests, so
+            // its suite failure is the only signal.
+            const failureType = data?.details?.error?.failureType;
+            if (
+                type === 'test:fail' &&
+                failureType !== 'subtestsFailed' &&
+                failureType !== 'cancelledByParent'
+            ) {
+                failures++;
             }
             if (data?.nesting !== 0) {
                 return;
