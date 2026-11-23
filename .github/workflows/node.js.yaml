@@ -36,8 +36,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: "pnpm"
-      # nodeLinker: hoisted (pnpm-workspace.yaml) gives a flat node_modules so the
-      # VSCode extension-host test runner resolves deps like mocha.
+      # nodeLinker: hoisted (pnpm-workspace.yaml) gives a flat node_modules, as
+      # npm would.
       - run: pnpm install --frozen-lockfile
       # Build the webview SPA bundle (esbuild) so webview breakage is caught here;
       # `pnpm test` then compiles the extension, lints, and runs the suite.

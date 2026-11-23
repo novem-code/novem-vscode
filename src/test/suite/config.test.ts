@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import { suite, test } from 'node:test';
 import { parseConfig, typeToIcon, updateConfigForProfile } from '../../config';
 
 const miniConfig = `

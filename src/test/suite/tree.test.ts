@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import { suite, test } from 'node:test';
 import * as vscode from 'vscode';
 
 import NovemApi from '../../novem-api';

@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import { suite, test, beforeEach, afterEach } from 'node:test';
 import * as vscode from 'vscode';
 
 import { setupCommands } from '../../commands';
@@ -20,7 +21,7 @@ suite('Node mutations preserve the exploration tree', () => {
     const originalWarningMessage = vscode.window.showWarningMessage;
     let subscriptions: vscode.Disposable[];
 
-    setup(() => {
+    beforeEach(() => {
         commands.clear();
         subscriptions = [];
         vscode.commands.registerCommand = (name, handler) => {
@@ -32,7 +33,7 @@ suite('Node mutations preserve the exploration tree', () => {
         vscode.window.showWarningMessage = (async () => 'Delete') as typeof originalWarningMessage;
     });
 
-    teardown(() => {
+    afterEach(() => {
         for (const subscription of subscriptions) subscription.dispose();
         vscode.commands.registerCommand = originalRegisterCommand;
         vscode.window.showInputBox = originalInputBox;

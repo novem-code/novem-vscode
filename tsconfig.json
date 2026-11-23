@@ -9,6 +9,6 @@
         "strict": true,
         "skipLibCheck": true,
         "jsx": "react",
-        "types": ["node", "mocha"]
+        "types": ["node"]
     }
 }

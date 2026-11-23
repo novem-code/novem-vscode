@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import { suite, test, beforeEach, afterEach } from 'node:test';
 import NovemApi, { VIS_TYPE_PREFIX } from '../../novem-api';
 
 // Captured outgoing requests for the active fake fetch.
@@ -96,11 +97,11 @@ suite('VIS_TYPE_PREFIX includes grids and docs', () => {
 suite('NovemApi grid/doc endpoints', () => {
     let api: NovemApi;
 
-    setup(() => {
+    beforeEach(() => {
         installFakeFetch([]);
         api = new NovemApi(API_ROOT, 'test-token');
     });
-    teardown(() => restoreFetch());
+    afterEach(() => restoreFetch());
 
     test('getGridsForUser hits /u/<user>/g', async () => {
         await api.getGridsForUser('sen');
@@ -157,7 +158,7 @@ suite('NovemApi grid/doc endpoints', () => {
 });
 
 suite('NovemApi GraphQL aggregate', () => {
-    teardown(() => restoreFetch());
+    afterEach(() => restoreFetch());
 
     const meResponse = () => ({
         data: {
@@ -255,11 +256,11 @@ suite('NovemApi GraphQL aggregate', () => {
 suite('NovemApi resource-action endpoints', () => {
     let api: NovemApi;
 
-    setup(() => {
+    beforeEach(() => {
         installFakeFetch([]);
         api = new NovemApi(API_ROOT, 'test-token');
     });
-    teardown(() => restoreFetch());
+    afterEach(() => restoreFetch());
 
     // Walk every visType so a future addition (or removal) to VIS_TYPE_PREFIX
     // can't quietly skip a type. Each pair drives one rename + one delete call.
@@ -317,7 +318,7 @@ suite('NovemApi empty-body tolerance', () => {
     // Regression: PATCH and POST against the Novem API often return HTTP 2xx
     // with an empty body. makeRequest used to JSON.parse('') and throw
     // "Unexpected end of JSON input"; it should now resolve to undefined.
-    teardown(() => restoreFetch());
+    afterEach(() => restoreFetch());
 
     test('rename succeeds when the server returns an empty 2xx body', async () => {
         installEmptyBodyFetch();
@@ -340,8 +341,8 @@ suite('NovemApi empty-body tolerance', () => {
 suite('every request identifies the extension', () => {
     const UA = /^novem-vscode\/\S+$/;
 
-    setup(() => installFakeFetch([]));
-    teardown(() => restoreFetch());
+    beforeEach(() => installFakeFetch([]));
+    afterEach(() => restoreFetch());
 
     test('JSON REST requests carry the UA', async () => {
         await new NovemApi(API_ROOT, 'tok').getGridsForUser('sen');
