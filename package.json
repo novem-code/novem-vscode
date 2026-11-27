@@ -557,7 +557,7 @@
         "prettier": "^3.10.1",
         "react": "^19.3.1",
         "react-dom": "^19.3.1",
-        "react-router-dom": "^7.18.5",
+        "react-router-dom": "^7.18.6",
         "typescript": "^6.0.3",
         "typescript-eslint": "^8.72.2"
     },
